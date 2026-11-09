@@ -63,7 +63,7 @@ function element() {
 
 function runDemo(
   location,
-  state = { id: 2, name: "Example State", iso3166_2: "EX-ES" },
+  state = { id: 2, name: "Example State", iso3166_2: "EX-ES", path_key: "es" },
   options = {},
 ) {
   const ids = [
@@ -89,8 +89,8 @@ function runDemo(
     "/countries.json": options.countries || [
       { id: 1, name: "Example", iso2: "EX", phonecode: "999" },
     ],
-    "/states/country/ex.json": [state],
-    [`/cities/state/${state.iso3166_2 ? "ex-es" : "2"}.json`]: [
+    "/countries/ex/states.json": [state],
+    [`/countries/ex/states/${state.path_key}/cities.json`]: [
       { id: 3, name: "Example City" },
     ],
   };
@@ -201,7 +201,7 @@ test("a slow country request cannot replace the latest state selection", async (
           status: 200,
           json: async () => ({ data: fixtures["/countries.json"] }),
         };
-      if (url.pathname.endsWith("/states/country/ex.json")) return first;
+      if (url.pathname.endsWith("/countries/ex/states.json")) return first;
       return {
         status: 200,
         json: async () => ({ data: [{ id: 8, name: "Second State" }] }),
@@ -271,12 +271,12 @@ for (const [name, page, expected] of [
   [
     "web root",
     "https://example.test/demo/demo.html",
-    "https://example.test/api/v1/countries.json",
+    "https://example.test/api/v2/countries.json",
   ],
   [
     "subpath",
     "https://example.test/project/demo/demo.html",
-    "https://example.test/project/api/v1/countries.json",
+    "https://example.test/project/api/v2/countries.json",
   ],
 ]) {
   test(`demo loads countries relative to its deployment at ${name}`, async () => {
@@ -295,20 +295,20 @@ for (const [name, page, state, expected] of [
   [
     "ISO code at the web root",
     "https://example.test/demo/demo.html",
-    { id: 2, name: "Example State", iso3166_2: "EX-ES" },
-    "https://example.test/api/v1/cities/state/ex-es.json",
+    { id: 2, name: "Example State", iso3166_2: "EX-ES", path_key: "es" },
+    "https://example.test/api/v2/countries/ex/states/es/cities.json",
   ],
   [
     "ISO code under a subpath",
     "https://example.test/project/demo/demo.html",
-    { id: 2, name: "Example State", iso3166_2: "EX-ES" },
-    "https://example.test/project/api/v1/cities/state/ex-es.json",
+    { id: 2, name: "Example State", iso3166_2: "EX-ES", path_key: "es" },
+    "https://example.test/project/api/v2/countries/ex/states/es/cities.json",
   ],
   [
     "numeric fallback",
     "https://example.test/demo/demo.html",
-    { id: 2, name: "Example State" },
-    "https://example.test/api/v1/cities/state/2.json",
+    { id: 2, name: "Example State", path_key: "id-2" },
+    "https://example.test/api/v2/countries/ex/states/id-2/cities.json",
   ],
 ]) {
   test(`selected city reports the state list actually fetched using ${name}`, async () => {
@@ -381,12 +381,12 @@ for (const [name, page, expected] of [
   [
     "web root",
     "https://example.test/index.html",
-    "https://example.test/api/v1/",
+    "https://example.test/api/v2/",
   ],
   [
     "subpath",
     "https://example.test/project/index.html",
-    "https://example.test/project/api/v1/",
+    "https://example.test/project/api/v2/",
   ],
 ]) {
   test(`homepage quick start resolves API examples at ${name}`, async () => {

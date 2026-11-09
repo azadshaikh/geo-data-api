@@ -12,6 +12,8 @@ let root;
 let port;
 let server;
 let symlinkAvailable = false;
+let legacySymlinkAvailable = false;
+let currentSymlinkAvailable = false;
 let boundAddress;
 
 function request(url, method = "GET") {
@@ -56,6 +58,16 @@ before(async () => {
     path.join(root, "dist", "api", "sample.json"),
     '{"data":[1]}',
   );
+  await fs.mkdir(path.join(root, "dist", "api", "v1"), { recursive: true });
+  await fs.writeFile(
+    path.join(root, "dist", "api", "v1", "old.json"),
+    '{"old":true}',
+  );
+  await fs.mkdir(path.join(root, "dist", "api", "v2"), { recursive: true });
+  await fs.writeFile(
+    path.join(root, "dist", "api", "v2", "sample.json"),
+    '{"data":[]}',
+  );
   await fs.writeFile(
     path.join(root, "dist", "image.png"),
     Buffer.from([0, 255, 127, 10]),
@@ -64,6 +76,26 @@ before(async () => {
   try {
     await fs.symlink(root, path.join(root, "dist", "outside-link"), "junction");
     symlinkAvailable = true;
+  } catch (error) {
+    if (!["EPERM", "EACCES", "ENOTSUP"].includes(error.code)) throw error;
+  }
+  try {
+    await fs.symlink(
+      path.join(root, "dist", "api", "v2"),
+      path.join(root, "dist", "current-alias"),
+      "junction",
+    );
+    currentSymlinkAvailable = true;
+  } catch (error) {
+    if (!["EPERM", "EACCES", "ENOTSUP"].includes(error.code)) throw error;
+  }
+  try {
+    await fs.symlink(
+      path.join(root, "dist", "api", "v1"),
+      path.join(root, "dist", "legacy-alias"),
+      "junction",
+    );
+    legacySymlinkAvailable = true;
   } catch (error) {
     if (!["EPERM", "EACCES", "ENOTSUP"].includes(error.code)) throw error;
   }
@@ -147,6 +179,45 @@ test("answers HEAD requests without a response body", async () => {
   assert.equal(response.status, 200);
   assert.equal(response.headers["content-type"], "application/json");
   assert.equal(response.body.length, 0);
+});
+
+test("does not expose a preserved old API output", async () => {
+  const response = await request("/api/v1/old.json");
+  assert.equal(response.status, 404);
+  assert.doesNotMatch(response.body.toString(), /old/);
+});
+
+test("does not expose old API output through alternate paths", async (t) => {
+  for (const pathname of [
+    "/./api/v1/old.json",
+    "//api/v1/old.json",
+    "/%2e/api/v1/old.json",
+  ]) {
+    const response = await request(pathname);
+    assert.equal(response.status, 404, pathname);
+  }
+  if (legacySymlinkAvailable) {
+    const response = await request("/legacy-alias/old.json");
+    assert.equal(response.status, 404);
+  } else {
+    t.diagnostic("Symlink alias check unavailable on this machine");
+  }
+});
+
+test("requires revalidation for mutable v2 API URLs", async () => {
+  const paths = [
+    "/api/v2/sample.json",
+    "/./api/v2/sample.json",
+    "//api/v2/sample.json",
+  ];
+  if (currentSymlinkAvailable) paths.push("/current-alias/sample.json");
+  for (const pathname of paths) {
+    const response = await request(pathname);
+    assert.equal(response.status, 200);
+    assert.match(response.headers["cache-control"], /max-age=0/);
+    assert.match(response.headers["cache-control"], /must-revalidate/);
+    assert.equal(response.headers["x-content-type-options"], "nosniff");
+  }
 });
 
 test("rejects traversal outside the generated output", async () => {

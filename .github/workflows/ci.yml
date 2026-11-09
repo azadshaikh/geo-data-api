@@ -18,6 +18,7 @@ jobs:
       - run: npm ci --no-audit --no-fund
       - run: npm run lint
       - run: npm run format:check
+      - run: npm run contracts:check
       - run: npm test
       - run: npm run build
       - run: npm run verify -- --max-search-shard-bytes 5000000
@@ -49,10 +50,10 @@ jobs:
           docker run -d --name geo-data-api-smoke -p 127.0.0.1:39741:3000 geo-data-api:ci
           trap 'docker logs geo-data-api-smoke; docker rm -f geo-data-api-smoke' EXIT
           for attempt in $(seq 1 30); do
-            if curl -fsS http://127.0.0.1:39741/api/v1/api-info.json >/dev/null; then break; fi
+            if curl -fsS http://127.0.0.1:39741/api/v2/api-info.json >/dev/null; then break; fi
             sleep 1
           done
           city_id=$(node -p "require('./db/cities.json')[0].id")
-          curl -fsS "http://127.0.0.1:39741/api/v1/cities/${city_id}.json" | node -e 'let s="";process.stdin.on("data",x=>s+=x);process.stdin.on("end",()=>{if(JSON.parse(s).data.id!==Number(process.argv[1]))process.exit(1)})' "$city_id"
+          curl -fsS "http://127.0.0.1:39741/api/v2/cities/${city_id}.json" | node -e 'let s="";process.stdin.on("data",x=>s+=x);process.stdin.on("end",()=>{if(JSON.parse(s).data.id!==Number(process.argv[1]))process.exit(1)})' "$city_id"
           curl -fsS http://127.0.0.1:39741/demo/demo.html >/dev/null
           curl -fsS http://127.0.0.1:39741/docs/index.html >/dev/null

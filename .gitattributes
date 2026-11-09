@@ -1,0 +1,5 @@
+# Generated contracts are byte-compared by `npm run contracts:check`.
+/openapi.json text eol=lf
+/types/index.d.ts text eol=lf
+/packages/client/models.d.ts text eol=lf
+/src/generated/validators.js text eol=lf

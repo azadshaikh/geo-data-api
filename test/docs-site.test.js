@@ -44,10 +44,10 @@ function openDocs(page, clipboard) {
 }
 
 for (const [page, expected] of [
-  ["https://example.test/docs/index.html", "https://example.test/api/v1/"],
+  ["https://example.test/docs/index.html", "https://example.test/api/v2/"],
   [
     "https://example.test/project/docs/guides.html",
-    "https://example.test/project/api/v1/",
+    "https://example.test/project/api/v2/",
   ],
 ]) {
   test(`documentation examples use the deployment API base at ${page}`, () => {
@@ -78,7 +78,7 @@ function example(file, id) {
   return match[1]
     .replace(
       /<span data-api-base>[\s\S]*?<\/span>/g,
-      "https://example.test/project/api/v1/",
+      "https://example.test/project/api/v2/",
     )
     .replaceAll("&lt;", "<")
     .replaceAll("&gt;", ">")
@@ -108,7 +108,7 @@ function exampleContext(fixtures) {
 }
 
 test("the getting started example fetches countries from the deployed API", async () => {
-  const base = "https://example.test/project/api/v1/";
+  const base = "https://example.test/project/api/v2/";
   const run = exampleContext({
     [`${base}countries.json`]: { data: [{ name: "Example" }] },
   });
@@ -121,30 +121,39 @@ test("the getting started example fetches countries from the deployed API", asyn
 });
 
 test("the picker example requests the country, state, and city lists", async () => {
-  const base = "https://example.test/project/api/v1/";
+  const base = "https://example.test/project/api/v2/";
   const run = exampleContext({
     [`${base}countries.json`]: { data: [{ name: "Country" }] },
-    [`${base}states/country/us.json`]: { data: [{ name: "State" }] },
-    [`${base}cities/state/us-ca.json`]: { data: [{ name: "City" }] },
+    [`${base}countries/us/states.json`]: {
+      data: [{ name: "State", path_key: "id-2312" }],
+    },
+    [`${base}countries/us/states/id-2312/cities.json`]: {
+      data: [{ name: "City" }],
+    },
   });
   await vm.runInContext(example("guides.html", "picker-code"), run.context);
   assert.deepEqual(run.requests, [
     `${base}countries.json`,
-    `${base}states/country/us.json`,
-    `${base}cities/state/us-ca.json`,
+    `${base}countries/us/states.json`,
+    `${base}countries/us/states/id-2312/cities.json`,
   ]);
   assert.equal(run.logged[0].cities[0].name, "City");
 });
 
-test("the city search example folds accents and reuses the country shard", async () => {
-  const url =
-    "https://example.test/project/api/v1/search/cities/country/br.json";
+test("the city search example loads every page and reuses them", async () => {
+  const base = "https://example.test/project/api/v2/";
   const run = exampleContext({
-    [url]: {
+    [`${base}countries/br/cities/index.json`]: {
       data: [
-        { name: "São Paulo", name_normalized: "sao paulo" },
-        { name: "Rio", name_normalized: "rio" },
+        { filename: "countries/br/cities/1.json", count: 1 },
+        { filename: "countries/br/cities/2.json", count: 1 },
       ],
+    },
+    [`${base}countries/br/cities/1.json`]: {
+      data: [{ name: "São Paulo", name_normalized: "sao paulo" }],
+    },
+    [`${base}countries/br/cities/2.json`]: {
+      data: [{ name: "Rio", name_normalized: "rio" }],
     },
   });
   await vm.runInContext(example("guides.html", "search-code"), run.context);
@@ -154,21 +163,31 @@ test("the city search example folds accents and reuses the country shard", async
     run.context,
   );
   assert.equal(second[0].name, "Rio");
-  assert.deepEqual(run.requests, [url]);
+  assert.deepEqual(run.requests, [
+    `${base}countries/br/cities/index.json`,
+    `${base}countries/br/cities/1.json`,
+    `${base}countries/br/cities/2.json`,
+  ]);
 });
 
-test("the city search example can retry a failed shard request", async () => {
+test("the city search example retries a failed country index", async () => {
   let attempts = 0;
   const context = vm.createContext({
     URL,
-    fetch: async () => {
+    fetch: async (url) => {
       attempts += 1;
-      return attempts === 1
-        ? { ok: false, status: 503 }
-        : {
-            ok: true,
-            json: async () => ({ data: [{ name_normalized: "sao paulo" }] }),
-          };
+      if (attempts === 1) return { ok: false, status: 503 };
+      if (String(url).endsWith("index.json"))
+        return {
+          ok: true,
+          json: async () => ({
+            data: [{ filename: "countries/br/cities/1.json", count: 1 }],
+          }),
+        };
+      return {
+        ok: true,
+        json: async () => ({ data: [{ name_normalized: "sao paulo" }] }),
+      };
     },
     console,
   });
@@ -185,11 +204,11 @@ test("the city search example can retry a failed shard request", async () => {
     (await vm.runInContext('searchBrazilianCities("sao")', context)).length,
     1,
   );
-  assert.equal(attempts, 2);
+  assert.equal(attempts, 3);
 });
 
 test("the city lookup example fetches a direct file and handles missing IDs", async () => {
-  const base = "https://example.test/project/api/v1/";
+  const base = "https://example.test/project/api/v2/";
   const run = exampleContext({
     [`${base}cities/57995.json`]: { data: { id: 57995, name: "Bhopal" } },
     [`${base}cities/57996.json`]: null,

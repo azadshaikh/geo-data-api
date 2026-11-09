@@ -6,6 +6,7 @@ const { test } = require("node:test");
 const config = require("../src/config");
 const StatesGenerator = require("../src/generators/states");
 const CitiesGenerator = require("../src/generators/cities");
+const { normalizeDataset } = require("../src/utils/v2-model");
 
 test("distinct timezones with the same legacy slug retain distinct data and index paths", async (t) => {
   const output = await fs.mkdtemp(path.join(os.tmpdir(), "geo-timezone-"));
@@ -38,7 +39,8 @@ test("distinct timezones with the same legacy slug retain distinct data and inde
       timezone: "Etc/GMT+12",
     },
   ];
-  await new StatesGenerator(states, countries).generate();
+  const data = normalizeDataset(countries, states, []);
+  await new StatesGenerator(data.states, data.countries).generate();
   const index = JSON.parse(
     await fs.readFile(path.join(output, "states/timezones.json"), "utf8"),
   );
@@ -51,14 +53,8 @@ test("distinct timezones with the same legacy slug retain distinct data and inde
     );
     assert.equal(data.meta.timezone, item.timezone);
     assert.equal(data.data.length, 1);
+    assert.equal(data.data[0].id, item.timezone === "Etc/GMT-12" ? 10 : 11);
   }
-  const legacy = JSON.parse(
-    await fs.readFile(
-      path.join(output, "states/timezone/Etc-GMT-12.json"),
-      "utf8",
-    ),
-  );
-  assert.equal(legacy.meta.timezone, "Etc/GMT+12");
 });
 
 test("city timezone indexes distinguish colliding legacy slugs", async (t) => {
@@ -70,7 +66,15 @@ test("city timezone indexes distinguish colliding legacy slugs", async (t) => {
     await fs.rm(output, { recursive: true, force: true });
   });
   const countries = [{ id: 1, iso2: "EX", name: "Example" }];
-  const states = [{ id: 2, iso3166_2: "EX-A", name: "Example State" }];
+  const states = [
+    {
+      id: 2,
+      iso2: "A",
+      iso3166_2: "EX-A",
+      name: "Example State",
+      country_id: 1,
+    },
+  ];
   const cities = [
     {
       id: 10,
@@ -91,7 +95,12 @@ test("city timezone indexes distinguish colliding legacy slugs", async (t) => {
       timezone: "Etc/GMT+12",
     },
   ];
-  await new CitiesGenerator(cities, states, countries).generate();
+  const data = normalizeDataset(countries, states, cities);
+  await new CitiesGenerator(
+    data.cities,
+    data.states,
+    data.countries,
+  ).generate();
   const index = JSON.parse(
     await fs.readFile(path.join(output, "cities/timezones.json"), "utf8"),
   );
@@ -103,5 +112,6 @@ test("city timezone indexes distinguish colliding legacy slugs", async (t) => {
     );
     assert.equal(data.meta.timezone, item.timezone);
     assert.equal(data.data.length, 1);
+    assert.equal(data.data[0].id, item.timezone === "Etc/GMT-12" ? 10 : 11);
   }
 });

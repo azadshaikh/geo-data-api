@@ -5,7 +5,7 @@ const fs = require("node:fs");
 function commandsFor(source, destination) {
   if (!/^s3:\/\/[^/]+(?:\/.*)?$/.test(destination || ""))
     throw new Error("Destination must be an s3:// bucket URL");
-  const cache = "public, max-age=300, s-maxage=86400";
+  const cache = "public, max-age=0, must-revalidate";
   return [["*.json"], ["*.json.gz", "gzip"], ["*.json.br", "br"]].map(
     ([pattern, encoding]) => [
       "s3",
@@ -27,7 +27,7 @@ function commandsFor(source, destination) {
 
 if (require.main === module) {
   try {
-    const [destination, source = "dist/api/v1"] = process.argv.slice(2);
+    const [destination, source = "dist/api/v2"] = process.argv.slice(2);
     if (!fs.statSync(source).isDirectory())
       throw new Error("Source must be an existing API directory");
     for (const args of commandsFor(source, destination)) {
@@ -40,7 +40,7 @@ if (require.main === module) {
     }
   } catch (error) {
     console.error(
-      `${error.message}\nUsage: node scripts/s3-sync.js s3://bucket/api/v1 [source-directory]`,
+      `${error.message}\nUsage: node scripts/s3-sync.js s3://bucket/api/v2 [source-directory]`,
     );
     process.exitCode = 1;
   }

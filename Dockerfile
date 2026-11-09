@@ -16,7 +16,7 @@ RUN npm run build
 
 # The generator stages the API in a private temporary directory. Allow the
 # unprivileged runtime user to traverse the finished static output.
-RUN chmod a+rx /app/dist/api/v1
+RUN chmod a+rx /app/dist/api/v2
 
 # Keep the license alongside generated files when inspecting the npm package
 # from the builder stage.
@@ -35,6 +35,6 @@ COPY --from=builder /app/src/server.js ./src/server.js
 USER node
 EXPOSE 3000
 HEALTHCHECK --interval=30s --timeout=5s --start-period=15s --retries=3 \
-  CMD ["node", "-e", "require('node:http').get('http://127.0.0.1:'+(process.env.PORT||3000)+'/api/v1/api-info.json',r=>{r.resume();process.exit(r.statusCode===200?0:1)}).on('error',()=>process.exit(1))"]
+  CMD ["node", "-e", "require('node:http').get('http://127.0.0.1:'+(process.env.PORT||3000)+'/api/v2/api-info.json',r=>{r.resume();process.exit(r.statusCode===200?0:1)}).on('error',()=>process.exit(1))"]
 
 CMD ["node", "src/server.js"]

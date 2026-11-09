@@ -15,6 +15,9 @@ test("the build generates the machine-readable API catalogs", (t) => {
   fs.cpSync(path.resolve(__dirname, "../scripts"), path.join(root, "scripts"), {
     recursive: true,
   });
+  fs.cpSync(path.resolve(__dirname, "../schemas"), path.join(root, "schemas"), {
+    recursive: true,
+  });
   fs.copyFileSync(
     path.resolve(__dirname, "../package.json"),
     path.join(root, "package.json"),
@@ -63,7 +66,7 @@ test("the build generates the machine-readable API catalogs", (t) => {
     timeout: 30000,
   });
   assert.equal(result.status, 0, `${result.stdout}\n${result.stderr}`);
-  const output = path.join(root, "dist", "api", "v1");
+  const output = path.join(root, "dist", "api", "v2");
   const infoPath = path.join(output, "api-info.json");
   const documentationPath = path.join(output, "documentation.json");
   assert.ok(
@@ -76,16 +79,19 @@ test("the build generates the machine-readable API catalogs", (t) => {
   );
   const info = JSON.parse(fs.readFileSync(infoPath, "utf8"));
   const documentation = JSON.parse(fs.readFileSync(documentationPath, "utf8"));
-  assert.equal(info.endpoints.cities.batches, "cities/batches.json");
-  assert.ok(documentation.endpoints.cities["GET /cities/batches.json"]);
+  assert.equal(info.endpoints.cities.individual, "cities/{id}.json");
+  assert.ok(documentation.endpoints.cities["GET /cities/{id}.json"]);
   const shardIndex = JSON.parse(
     fs.readFileSync(path.join(output, "search/cities/index.json"), "utf8"),
   );
-  assert.equal(shardIndex.data[0].filename, "search/cities/country/ex.json");
+  assert.equal(shardIndex.data[0].filename, "countries/ex/cities/index.json");
   const shard = JSON.parse(
     fs.readFileSync(path.join(output, shardIndex.data[0].filename), "utf8"),
   );
-  assert.equal(shard.data[0].id, 3);
+  const page = JSON.parse(
+    fs.readFileSync(path.join(output, shard.data[0].filename), "utf8"),
+  );
+  assert.equal(page.data[0].id, 3);
 
   const compressed = spawnSync(
     process.execPath,

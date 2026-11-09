@@ -19,63 +19,102 @@ test("demo API paths resolve relative to the deployed project", () => {
   const { apiBaseUrl } = require("../demo/examples");
   assert.equal(
     apiBaseUrl("https://example.test/project/demo/demo.html"),
-    "https://example.test/project/api/v1/",
+    "https://example.test/project/api/v2/",
   );
 });
 
-test("country-scoped city search folds diacritics and reuses its shard", async () => {
+test("country-scoped search follows every page, folds accents, and caches requests", async () => {
   const { createGeoClient } = require("../demo/examples");
-  const requests = [];
-  const client = createGeoClient(
-    "https://example.test/project/api/v1/",
-    async (url) => {
-      requests.push(url);
-      return {
-        ok: true,
-        status: 200,
-        json: async () => ({
-          data: [
-            {
-              id: 1,
-              name: "São Paulo",
-              name_normalized: "sao paulo",
-              state_name: "São Paulo",
-            },
-            {
-              id: 2,
-              name: "Rio de Janeiro",
-              name_normalized: "rio de janeiro",
-              state_name: "Rio de Janeiro",
-            },
-          ],
-        }),
-      };
+  const base = "https://example.test/project/api/v2/";
+  const fixtures = {
+    [`${base}countries/br/cities/index.json`]: {
+      data: [
+        { filename: "countries/br/cities/1.json", count: 1 },
+        { filename: "countries/br/cities/2.json", count: 1 },
+      ],
     },
+    [`${base}countries/br/cities/1.json`]: {
+      data: [{ id: 1, name: "São Paulo", name_normalized: "sao paulo" }],
+    },
+    [`${base}countries/br/cities/2.json`]: {
+      data: [
+        { id: 2, name: "Rio de Janeiro", name_normalized: "rio de janeiro" },
+      ],
+    },
+  };
+  const requests = [];
+  const client = createGeoClient(base, async (url) => {
+    requests.push(url);
+    assert.ok(Object.hasOwn(fixtures, url), `unexpected request ${url}`);
+    return { ok: true, status: 200, json: async () => fixtures[url] };
+  });
+  assert.equal(
+    (await client.searchCities("BR", "sao paulo")).matches[0].name,
+    "São Paulo",
   );
-  const first = await client.searchCities("BR", "sao paulo");
-  assert.equal(first.matches[0].name, "São Paulo");
-  assert.equal(first.total, 1);
-  await client.searchCities("br", "rio");
+  assert.equal(
+    (await client.searchCities("br", "rio")).matches[0].name,
+    "Rio de Janeiro",
+  );
   assert.deepEqual(requests, [
-    "https://example.test/project/api/v1/search/cities/country/br.json",
+    `${base}countries/br/cities/index.json`,
+    `${base}countries/br/cities/1.json`,
+    `${base}countries/br/cities/2.json`,
   ]);
 });
 
-test("a country without a search shard returns an empty result", async () => {
+test("an empty country index returns no cities and a missing index reports 404", async () => {
   const { createGeoClient } = require("../demo/examples");
-  const client = createGeoClient("https://example.test/api/v1/", async () => ({
+  const empty = createGeoClient("https://example.test/api/v2/", async () => ({
+    ok: true,
+    status: 200,
+    json: async () => ({ data: [] }),
+  }));
+  assert.equal((await empty.searchCities("EX", "town")).total, 0);
+  const missing = createGeoClient("https://example.test/api/v2/", async () => ({
     ok: false,
     status: 404,
   }));
-  const result = await client.searchCities("EX", "town");
-  assert.equal(result.total, 0);
-  assert.deepEqual(result.matches, []);
+  await assert.rejects(missing.searchCities("EX", "town"), /404/);
+});
+
+test("city search handles an empty page and reports a missing page", async () => {
+  const { createGeoClient } = require("../demo/examples");
+  const client = createGeoClient(
+    "https://example.test/api/v2/",
+    async (url) => {
+      if (url.endsWith("/index.json"))
+        return {
+          ok: true,
+          status: 200,
+          json: async () => ({
+            data: [{ filename: "countries/ex/cities/1.json", count: 0 }],
+          }),
+        };
+      return { ok: true, status: 200, json: async () => ({ data: [] }) };
+    },
+  );
+  assert.deepEqual((await client.searchCities("EX", "town")).matches, []);
+  const missing = createGeoClient(
+    "https://example.test/api/v2/",
+    async (url) =>
+      url.endsWith("/index.json")
+        ? {
+            ok: true,
+            status: 200,
+            json: async () => ({
+              data: [{ filename: "countries/ex/cities/1.json", count: 1 }],
+            }),
+          }
+        : { ok: false, status: 404 },
+  );
+  await assert.rejects(missing.searchCities("EX", "town"), /404/);
 });
 
 test("a failed request can be retried", async () => {
   const { createGeoClient } = require("../demo/examples");
   let attempts = 0;
-  const client = createGeoClient("https://example.test/api/v1/", async () => {
+  const client = createGeoClient("https://example.test/api/v2/", async () => {
     attempts++;
     return attempts === 1
       ? { ok: false, status: 503 }
@@ -165,6 +204,14 @@ test("the search example exposes a retry after the country list fails", async (t
               json: async () => ({ data: [{ name: "Brazil", iso2: "BR" }] }),
             };
       }
+      if (url.endsWith("/cities/index.json"))
+        return {
+          ok: true,
+          status: 200,
+          json: async () => ({
+            data: [{ filename: "countries/br/cities/1.json", count: 1 }],
+          }),
+        };
       return {
         ok: true,
         status: 200,
@@ -190,7 +237,7 @@ test("city lookup fetches one detail file and handles missing IDs", async () => 
   const { createGeoClient } = require("../demo/examples");
   const requests = [];
   const client = createGeoClient(
-    "https://example.test/project/api/v1/",
+    "https://example.test/project/api/v2/",
     async (url) => {
       requests.push(url);
       return url.endsWith("/cities/12.json")
@@ -205,8 +252,8 @@ test("city lookup fetches one detail file and handles missing IDs", async () => 
   assert.equal((await client.lookupCity("12")).city.name, "Example City");
   assert.equal((await client.lookupCity("13")).city, null);
   assert.deepEqual(requests, [
-    "https://example.test/project/api/v1/cities/12.json",
-    "https://example.test/project/api/v1/cities/13.json",
+    "https://example.test/project/api/v2/cities/12.json",
+    "https://example.test/project/api/v2/cities/13.json",
   ]);
   await assert.rejects(client.lookupCity("not-an-id"), /valid.*id/i);
 });
@@ -214,7 +261,7 @@ test("city lookup fetches one detail file and handles missing IDs", async () => 
 test("city lookup rejects path-like IDs before making a request", async () => {
   const { createGeoClient } = require("../demo/examples");
   const client = createGeoClient(
-    "https://example.test/project/api/v1/",
+    "https://example.test/project/api/v2/",
     async () => {
       throw new Error("Unexpected request");
     },
@@ -250,7 +297,7 @@ test("the displayed lookup example fetches the direct city file", async () => {
   );
   assert.equal(result.name, "Example");
   assert.deepEqual(requested, [
-    "https://example.test/project/api/v1/cities/12.json",
+    "https://example.test/project/api/v2/cities/12.json",
   ]);
 });
 

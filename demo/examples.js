@@ -8,7 +8,7 @@
   }
 })(typeof globalThis === "undefined" ? this : globalThis, function () {
   function apiBaseUrl(pageUrl) {
-    return new URL("../api/v1/", pageUrl).href;
+    return new URL("../api/v2/", pageUrl).href;
   }
 
   function normalizeName(value) {
@@ -65,15 +65,33 @@
         throw new Error("Choose a country first");
       const term = normalizeName(query);
       if (term.length < 2) throw new Error("Enter at least two characters");
-      const relative = `search/cities/country/${countryCode.toLowerCase()}.json`;
-      const payload = await read(relative, true);
-      if (payload === null)
-        return { matches: [], total: 0, endpoint: endpoint(relative) };
-      if (!Array.isArray(payload?.data))
-        throw new Error("City search data is unavailable");
-      const matches = payload.data.filter((city) =>
-        normalizeName(city.name_normalized || city.name).includes(term),
+      const code = countryCode.toLowerCase();
+      const relative = `countries/${code}/cities/index.json`;
+      const index = await read(relative);
+      if (!Array.isArray(index?.data))
+        throw new Error("City index is unavailable");
+      const pagePrefix = `countries/${code}/cities/`;
+      const pages = await Promise.all(
+        index.data.map(async (entry) => {
+          const filename = entry?.filename;
+          if (
+            typeof filename !== "string" ||
+            !filename.startsWith(pagePrefix) ||
+            !/^[1-9][0-9]*\.json$/.test(filename.slice(pagePrefix.length))
+          ) {
+            throw new Error("Invalid city page in index");
+          }
+          const page = await read(filename);
+          if (!Array.isArray(page?.data))
+            throw new Error("City search data is unavailable");
+          return page.data;
+        }),
       );
+      const matches = pages
+        .flat()
+        .filter((city) =>
+          normalizeName(city.name_normalized || city.name).includes(term),
+        );
       return {
         matches: matches.slice(0, limit),
         total: matches.length,
@@ -139,17 +157,22 @@
             : "No cities found. Try another name or country.",
         );
         setText("search-endpoint", new URL(result.endpoint).pathname);
-        const shard = `search/cities/country/${searchCountry.value.toLowerCase()}.json`;
+        const indexPath = `countries/${searchCountry.value.toLowerCase()}/cities/index.json`;
         setText(
           "search-code",
           [
-            "const base = new URL('../api/v1/', location.href);",
-            `const res = await fetch(new URL('${shard}', base));`,
-            "const { data } = await res.json();",
+            "const base = new URL('../api/v2/', location.href);",
+            "async function getJson(path) {",
+            "  const res = await fetch(new URL(path, base));",
+            "  if (!res.ok) throw new Error(`Request failed (${res.status})`);",
+            "  return (await res.json()).data;",
+            "}",
+            `const index = await getJson('${indexPath}');`,
+            "const pages = await Promise.all(index.map(page => getJson(page.filename)));",
             `const query = ${JSON.stringify(searchInput.value.trim())}`,
             "  .toLowerCase().normalize('NFD')",
             "  .replace(/\\p{M}/gu, '');",
-            "const matches = data.filter(city =>",
+            "const matches = pages.flat().filter(city =>",
             "  city.name_normalized.includes(query)",
             ");",
           ].join("\n"),
@@ -230,7 +253,7 @@
       const request = ++lookupRequest;
       const button = byId("lookup-button");
       button.disabled = true;
-      setText("lookup-status", "Finding the right batch…");
+      setText("lookup-status", "Finding the city…");
       byId("lookup-result").replaceChildren();
       try {
         const result = await client.lookupCity(byId("lookup-id").value);

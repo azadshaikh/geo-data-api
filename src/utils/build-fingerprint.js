@@ -11,7 +11,6 @@ async function buildFingerprint({ datasetVersion, config, options, timestamp, ge
   hash.update(JSON.stringify({
     datasetVersion, settings, timestamp, generatorVersion,
     compression: { enabled: !!options.compress, threshold: options.compressionThreshold ?? 1024 },
-    omitGlobalCityIndex: !!options.omitGlobalCityIndex,
     runtime: {
       node: process.versions.node, zlib: process.versions.zlib, brotli: process.versions.brotli,
       icu: process.versions.icu, locale: Intl.DateTimeFormat().resolvedOptions().locale,
@@ -25,6 +24,8 @@ async function buildFingerprint({ datasetVersion, config, options, timestamp, ge
   }
   const verifier = await fs.readFile(path.resolve(__dirname, "../../scripts/verify.js"));
   hash.update(`verify.js\0${verifier.length}\0`).update(verifier);
+  const schema = await fs.readFile(path.resolve(__dirname, "../../schemas/geo-data.schema.json"));
+  hash.update(`geo-data.schema.json\0${schema.length}\0`).update(schema);
   return `sha256:${hash.digest("hex")}`;
 }
 

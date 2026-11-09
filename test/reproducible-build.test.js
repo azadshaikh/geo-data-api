@@ -33,6 +33,9 @@ test("builds are reproducible and preserve the previous output on collision", (t
     path.resolve(__dirname, "../package.json"),
     path.join(root, "package.json"),
   );
+  fs.cpSync(path.resolve(__dirname, "../schemas"), path.join(root, "schemas"), {
+    recursive: true,
+  });
   fs.mkdirSync(path.join(root, "db"));
   const data = {
     countries: [{ id: 1, name: "Example", iso2: "EX", iso3: "EXP" }],
@@ -78,7 +81,7 @@ test("builds are reproducible and preserve the previous output on collision", (t
   }
   const first = build();
   assert.equal(first.status, 0, first.stderr);
-  const output = path.join(root, "dist/api/v1");
+  const output = path.join(root, "dist/api/v2");
   const initialFiles = filesUnder(output);
   const initial = new Map(
     initialFiles.map((name) => [
@@ -129,6 +132,19 @@ test("builds are reproducible and preserve the previous output on collision", (t
     fingerprintBefore,
   );
 
+  const fingerprintAfterCode = JSON.parse(
+    fs.readFileSync(path.join(output, "manifest.json")),
+  ).build_fingerprint;
+  fs.appendFileSync(path.join(root, "schemas/geo-data.schema.json"), "\n");
+  const schemaChanged = build();
+  assert.equal(schemaChanged.status, 0, schemaChanged.stderr);
+  assert.match(schemaChanged.stdout, /Generating countries endpoints/);
+  assert.notEqual(
+    JSON.parse(fs.readFileSync(path.join(output, "manifest.json")))
+      .build_fingerprint,
+    fingerprintAfterCode,
+  );
+
   fs.writeFileSync(path.join(output, "user-note.txt"), "keep this file");
   const withExtra = build();
   assert.equal(withExtra.status, 0, withExtra.stderr);
@@ -155,8 +171,14 @@ test("builds are reproducible and preserve the previous output on collision", (t
   );
   const changed = build();
   assert.equal(changed.status, 0, changed.stderr);
-  assert.equal(fs.existsSync(path.join(output, "states/ex-es.json")), false);
-  assert.equal(fs.existsSync(path.join(output, "states/ex-zz.json")), true);
+  assert.equal(
+    fs.existsSync(path.join(output, "countries/ex/states/es.json")),
+    false,
+  );
+  assert.equal(
+    fs.existsSync(path.join(output, "countries/ex/states/zz.json")),
+    true,
+  );
   assert.equal(
     fs.readFileSync(path.join(output, "user-note.txt"), "utf8"),
     "keep this file",

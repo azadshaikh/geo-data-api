@@ -1,6 +1,6 @@
 {
   "name": "geo-data-api",
-  "version": "1.1.0",
+  "version": "2.0.0",
   "description": "Generate a static JSON API for geographic data including countries, states, and cities that can be hosted on any CDN. Transform geographic datasets into a small, cacheable, CDN-ready API with search capabilities.",
   "main": "src/data-processor.js",
   "types": "types/index.d.ts",
@@ -11,19 +11,22 @@
     "node": ">=22"
   },
   "scripts": {
-    "test": "node --test --test-concurrency=1 \"test/*.test.js\"",
-    "build": "node src/data-processor.js && npm run build:demo && node scripts/check-cloudflare-assets.js --if-cloudflare",
+    "test": "node --test --test-concurrency=1 \"test/*.test.js\" && npm run test:client",
+    "test:client": "npm --prefix packages/client test",
+    "contracts": "node scripts/generate-contracts.js",
+    "contracts:check": "node scripts/generate-contracts.js --check",
+    "build": "node src/data-processor.js && npm run build:demo",
     "build:pretty": "node src/data-processor.js --pretty",
-    "build:compress": "node src/data-processor.js --compress && npm run build:demo && node scripts/check-cloudflare-assets.js --if-cloudflare",
+    "build:compress": "node src/data-processor.js --compress && npm run build:demo",
     "build:docs": "node src/docs-updater.js",
     "build:demo": "node src/demo-copier.js",
     "verify": "node scripts/verify.js",
     "lint": "node scripts/lint.js",
     "check:package": "node scripts/check-package.js",
     "deploy:s3": "node scripts/s3-sync.js",
-    "format": "prettier --write \"scripts/**/*.js\" \"test/**/*.js\" \"demo/**/*.{js,html}\" \"docs/*.{html,css,js}\" \"schemas/**/*.json\" \"types/**/*.ts\" index.html 404.html openapi.json",
-    "format:check": "prettier --check \"scripts/**/*.js\" \"test/**/*.js\" \"demo/**/*.{js,html}\" \"docs/*.{html,css,js}\" \"schemas/**/*.json\" \"types/**/*.ts\" index.html 404.html openapi.json",
-    "clean": "node -e \"require('fs').rmSync('dist/api/v1', { recursive: true, force: true })\"",
+    "format": "prettier --write \"scripts/**/*.js\" \"test/**/*.js\" \"packages/client/**/*.{js,ts,json}\" \"demo/**/*.{js,html}\" \"docs/*.{html,css,js}\" \"schemas/**/*.json\" \"types/**/*.ts\" index.html 404.html openapi.json",
+    "format:check": "prettier --check \"scripts/**/*.js\" \"test/**/*.js\" \"packages/client/**/*.{js,ts,json}\" \"demo/**/*.{js,html}\" \"docs/*.{html,css,js}\" \"schemas/**/*.json\" \"types/**/*.ts\" index.html 404.html openapi.json",
+    "clean": "node -e \"require('fs').rmSync('dist/api/v2', { recursive: true, force: true })\"",
     "dev": "npm run build",
     "dev:pretty": "npm run build:pretty",
     "dev:serve": "npm run dev && npm run serve",
@@ -39,8 +42,12 @@
   },
   "homepage": "https://geo-data-api.asterodigital.com",
   "files": [
-    "dist/",
-    "!dist/**/.*-backup-*/**",
+    "dist/api/v2/",
+    "dist/index.html",
+    "dist/404.html",
+    "dist/_headers",
+    "dist/demo/",
+    "dist/docs/",
     "src/",
     "scripts/",
     "schemas/",
@@ -71,6 +78,7 @@
     "url": "https://asterodigital.com"
   },
   "devDependencies": {
+    "ajv": "^8.20.0",
     "prettier": "^3.6.2",
     "typescript": "5.9.3"
   }

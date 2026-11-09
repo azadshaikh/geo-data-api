@@ -224,7 +224,7 @@
             <div class="mt-5 flex flex-wrap gap-2">
               <span
                 class="rounded-full border border-[#d4e9d9] bg-[#eaf6eb] px-3 py-1 text-[10px] font-bold uppercase tracking-wider text-[#397958]"
-                >API v1</span
+                >API v2</span
               ><span
                 class="rounded-full border border-[#e0eae0] bg-white px-3 py-1 text-[10px] font-bold uppercase tracking-wider text-[#71877a]"
                 >Static JSON</span
@@ -276,7 +276,7 @@
                       >Search locally</strong
                     >
                     <p class="mt-1 text-[13px] leading-5">
-                      Load a country shard.
+                      Load a country’s city pages.
                     </p>
                   </div>
                 </div>
@@ -322,7 +322,7 @@
                   <pre
                     tabindex="0"
                     class="docs-code px-5 py-5 text-xs leading-6 sm:text-[13px]"
-                  ><code id="first-request-code">const API_BASE = "<span data-api-base>https://unpkg.com/geo-data-api@latest/dist/api/v1/</span>";
+                  ><code id="first-request-code">const API_BASE = "<span data-api-base>https://example.com/api/v2/</span>";
 
 async function listCountries() {
   const response = await fetch(API_BASE + "countries.json");
@@ -336,7 +336,7 @@ listCountries().then(console.log).catch(console.error);</code></pre>
                 <p class="mt-4 text-[13px]">
                   For another deployment, replace the base URL with that host’s
                   API URL. You can also
-                  <a href="../api/v1/countries.json">open the country list</a>
+                  <a href="../api/v2/countries.json">open the country list</a>
                   directly.
                 </p>
               </div>
@@ -360,7 +360,8 @@ listCountries().then(console.log).catch(console.error);</code></pre>
                   Most endpoints return a <code>data</code> value and a
                   <code>meta</code> object. Lists contain arrays; individual
                   country, state, and city endpoints contain an object. City
-                  batches use an object keyed by city ID.
+                  pages contain summaries, while individual city files contain
+                  details.
                 </p>
                 <div
                   class="mt-5 min-w-0 overflow-hidden rounded-2xl bg-[#152a22] text-[#d6e8d8] shadow-sm"
@@ -386,7 +387,7 @@ listCountries().then(console.log).catch(console.error);</code></pre>
   "data": [
     { "id": 1, "name": "Afghanistan", "iso2": "AF", "phonecode": "93" }
   ],
-  "meta": { "type": "countries", "count": 1, "api_version": "v1" }
+  "meta": { "type": "countries", "count": 1, "api_version": "v2", "generated_at": "2025-09-12T09:30:16.000Z" }
 }</code></pre>
                 </div>
                 <p class="mt-4 text-[13px]">

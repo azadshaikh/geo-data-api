@@ -1,6 +1,7 @@
 const fs = require("node:fs/promises");
 const path = require("node:path");
 const { createHash, randomBytes } = require("node:crypto");
+const { matchRoute } = require("../api-contract");
 
 async function listFiles(root, prefix = "") {
   let entries;
@@ -70,6 +71,10 @@ async function preserveExtras(output, stage, generatedPaths) {
       if (previous) throw new Error(`Generated output conflicts with preserved file: ${relative}`);
       if (generated.get(key) !== relative) throw new Error(`Output filename collision: ${generated.get(key)} and ${relative}`);
       continue;
+    }
+    const routeName = relative.replace(/\.(?:gz|br)$/i, "");
+    if (matchRoute(routeName)) {
+      throw new Error(`Preserved file occupies a reserved API route: ${relative}`);
     }
     const destination = safePath(stage, relative);
     await fs.mkdir(path.dirname(destination), { recursive: true });

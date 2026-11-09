@@ -30,6 +30,19 @@ function isOutside(root, target) {
   );
 }
 
+function isLegacyApiPath(value) {
+  return /^\/?api\/v1(?:\/|$)/i.test(value.replace(/\\/g, "/"));
+}
+
+function setApiCacheHeaders(res) {
+  res.setHeader("Cache-Control", "public, max-age=0, must-revalidate");
+  res.setHeader("X-Content-Type-Options", "nosniff");
+}
+
+function isCurrentApiPath(value) {
+  return /^\/?api\/v2(?:\/|$)/i.test(value.replace(/\\/g, "/"));
+}
+
 const server = http.createServer(async (req, res) => {
   for (const [name, value] of Object.entries(corsHeaders))
     res.setHeader(name, value);
@@ -64,6 +77,15 @@ const server = http.createServer(async (req, res) => {
     return;
   }
 
+  // Keep an old local build recoverable without exposing it as part of v2.
+  if (isLegacyApiPath(path.posix.normalize(pathname))) {
+    res.writeHead(404);
+    res.end("Not Found");
+    return;
+  }
+
+  if (isCurrentApiPath(path.posix.normalize(pathname))) setApiCacheHeaders(res);
+
   try {
     const root = await fs.promises.realpath(outputDir);
     const requested = path.resolve(
@@ -83,6 +105,12 @@ const server = http.createServer(async (req, res) => {
       res.end("Forbidden");
       return;
     }
+    if (isLegacyApiPath(path.relative(root, file))) {
+      res.writeHead(404);
+      res.end("Not Found");
+      return;
+    }
+    if (isCurrentApiPath(path.relative(root, file))) setApiCacheHeaders(res);
     const content = await fs.promises.readFile(file);
     const contentType =
       mimeTypes[path.extname(file).toLowerCase()] || "application/octet-stream";
@@ -111,19 +139,19 @@ server.listen(port, host, () => {
   console.log(`   🏠 Homepage:      http://localhost:${port}`);
   console.log(`   🎮 Demo:          http://localhost:${port}/demo/demo.html`);
   console.log(
-    `   🌍 Countries:     http://localhost:${port}/api/v1/countries.json`,
+    `   🌍 Countries:     http://localhost:${port}/api/v2/countries.json`,
   );
   console.log(
-    `   🏛️  States:        http://localhost:${port}/api/v1/states/all.json`,
+    `   🏛️  States:        http://localhost:${port}/api/v2/states/all.json`,
   );
   console.log(
-    `   🏙️  Cities (US):   http://localhost:${port}/api/v1/cities/country/us.json`,
+    `   🏙️  Cities (US):   http://localhost:${port}/api/v2/countries/us/cities/index.json`,
   );
   console.log(
-    `   🏙️  Cities (CA):   http://localhost:${port}/api/v1/cities/state/us-ca.json`,
+    `   🏙️  Cities (CA):   http://localhost:${port}/api/v2/countries/us/states/ca/cities.json`,
   );
   console.log(
-    `   🔍 Search:        http://localhost:${port}/api/v1/search/countries.json`,
+    `   🔍 Search:        http://localhost:${port}/api/v2/search/countries.json`,
   );
   console.log("");
   console.log("💡 Tips:");

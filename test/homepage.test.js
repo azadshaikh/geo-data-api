@@ -33,7 +33,7 @@ function runHome(page, response, options = {}) {
       },
     ]),
   );
-  elements["quick-start-code"].textContent = "fetch('./api/v1/countries.json')";
+  elements["quick-start-code"].textContent = "fetch('./api/v2/countries.json')";
   const requests = [];
   const copied = [];
   let fallbackField;
@@ -114,11 +114,11 @@ test("the copy button gives a manual-copy message if both methods fail", async (
 for (const [page, expected] of [
   [
     "https://example.test/index.html",
-    "https://example.test/api/v1/api-info.json",
+    "https://example.test/api/v2/api-info.json",
   ],
   [
     "https://example.test/project/index.html",
-    "https://example.test/project/api/v1/api-info.json",
+    "https://example.test/project/api/v2/api-info.json",
   ],
 ]) {
   test(`homepage loads real dataset counts relative to ${page}`, async () => {
@@ -180,7 +180,7 @@ test("copied quick start continues to target the API when used on another site",
   });
   await settle();
   assert.deepEqual(requests, [
-    "https://geo.example/project/api/v1/countries.json",
-    "https://geo.example/project/api/v1/countries/us.json",
+    "https://geo.example/project/api/v2/countries.json",
+    "https://geo.example/project/api/v2/countries/us.json",
   ]);
 });

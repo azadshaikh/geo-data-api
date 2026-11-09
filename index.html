@@ -259,7 +259,7 @@
             class="mb-6 inline-flex items-center gap-2 rounded-full border border-[#d4e9d9] bg-[#eaf6eb] px-3 py-1.5 text-[10px] font-bold uppercase tracking-[.17em] text-[#397958]"
           >
             <span class="h-1.5 w-1.5 rounded-full bg-[#3da56c]"></span> Open
-            geographic data <span class="mx-1 text-[#a2c7ad]">/</span> API v1
+            geographic data <span class="mx-1 text-[#a2c7ad]">/</span> API v2
           </div>
           <h1
             id="page-title"
@@ -344,12 +344,12 @@
             <pre
               class="code-scroll p-5 font-mono text-[11px] leading-6 sm:p-7 sm:text-xs"
             ><code id="quick-start-code" tabindex="0">// Get all countries
-fetch('./api/v1/countries.json')
+fetch('./api/v2/countries.json')
   .then(function (response) { return response.json(); })
   .then(function (data) { console.log(data); });
 
 // Get a country by ISO2
-fetch('./api/v1/countries/us.json')
+fetch('./api/v2/countries/us.json')
   .then(function (response) { return response.json(); })
   .then(function (data) { console.log(data); });</code></pre>
             <div
@@ -525,7 +525,7 @@ fetch('./api/v1/countries/us.json')
           class="overflow-hidden rounded-[22px] border border-[#e0e9e1] bg-white"
         >
           <a
-            href="./api/v1/countries.json"
+            href="./api/v2/countries.json"
             class="group flex items-center gap-3 border-b border-[#edf1ed] px-5 py-4 transition hover:bg-[#f7fbf7]"
             ><span
               class="rounded-md bg-[#eaf7ed] px-2 py-1 font-mono text-[10px] font-bold text-[#39875a]"
@@ -543,7 +543,7 @@ fetch('./api/v1/countries/us.json')
             >
               <use href="#icon-arrow" /></svg></a
           ><a
-            href="./api/v1/states/all.json"
+            href="./api/v2/countries/us/states.json"
             class="group flex items-center gap-3 border-b border-[#edf1ed] px-5 py-4 transition hover:bg-[#f7fbf7]"
             ><span
               class="rounded-md bg-[#eaf7ed] px-2 py-1 font-mono text-[10px] font-bold text-[#39875a]"
@@ -551,7 +551,7 @@ fetch('./api/v1/countries/us.json')
             ><span class="min-w-0 grow"
               ><span
                 class="block break-all font-mono text-xs font-semibold text-[#315d43]"
-                >states/all.json</span
+                >countries/us/states.json</span
               ><span class="mt-1 block text-xs text-[#5e7566]"
                 >Explore states and provinces</span
               ></span
@@ -561,7 +561,7 @@ fetch('./api/v1/countries/us.json')
             >
               <use href="#icon-arrow" /></svg></a
           ><a
-            href="./api/v1/cities/57995.json"
+            href="./api/v2/cities/57995.json"
             class="group flex items-center gap-3 border-b border-[#edf1ed] px-5 py-4 transition hover:bg-[#f7fbf7]"
             ><span
               class="rounded-md bg-[#eaf7ed] px-2 py-1 font-mono text-[10px] font-bold text-[#39875a]"
@@ -579,7 +579,7 @@ fetch('./api/v1/countries/us.json')
             >
               <use href="#icon-arrow" /></svg></a
           ><a
-            href="./api/v1/search/cities/index.json"
+            href="./api/v2/search/cities/index.json"
             class="group flex items-center gap-3 px-5 py-4 transition hover:bg-[#f7fbf7]"
             ><span
               class="rounded-md bg-[#eaf7ed] px-2 py-1 font-mono text-[10px] font-bold text-[#39875a]"
@@ -655,7 +655,7 @@ fetch('./api/v1/countries/us.json')
     </footer>
 
     <script>
-      const apiBase = new URL("./api/v1/", window.location.href).href;
+      const apiBase = new URL("./api/v2/", window.location.href).href;
       document.getElementById("quick-start-code").textContent = [
         `const API_BASE = ${JSON.stringify(apiBase)};`,
         "",
@@ -673,7 +673,7 @@ fetch('./api/v1/countries/us.json')
       (async function loadDatasetStats() {
         const status = document.getElementById("dataset-status");
         try {
-          const url = new URL("./api/v1/api-info.json", window.location.href);
+          const url = new URL("./api/v2/api-info.json", window.location.href);
           const response = await fetch(url);
           if (!response.ok) throw new Error("Dataset statistics unavailable");
           const { statistics } = await response.json();

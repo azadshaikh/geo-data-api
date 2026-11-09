@@ -2,12 +2,12 @@
   "outputDirectory": "dist",
   "headers": [
     {
-      "source": "/api/v1/(.*)",
+      "source": "/api/v2/(.*)",
       "headers": [
         { "key": "Access-Control-Allow-Origin", "value": "*" },
         {
           "key": "Cache-Control",
-          "value": "public, max-age=300, s-maxage=86400, stale-while-revalidate=86400"
+          "value": "public, max-age=0, must-revalidate"
         },
         { "key": "X-Content-Type-Options", "value": "nosniff" }
       ]

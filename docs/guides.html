@@ -224,7 +224,7 @@
             <div class="mt-5 flex flex-wrap gap-2">
               <span
                 class="rounded-full border border-[#d4e9d9] bg-[#eaf6eb] px-3 py-1 text-[10px] font-bold uppercase tracking-wider text-[#397958]"
-                >API v1</span
+                >API v2</span
               ><span
                 class="rounded-full border border-[#e0eae0] bg-white px-3 py-1 text-[10px] font-bold uppercase tracking-wider text-[#71877a]"
                 >Static JSON</span
@@ -272,7 +272,7 @@
                   <pre
                     tabindex="0"
                     class="docs-code px-5 py-5 text-xs leading-6 sm:text-[13px]"
-                  ><code id="picker-code">const API_BASE = "<span data-api-base>https://unpkg.com/geo-data-api@latest/dist/api/v1/</span>";
+                  ><code id="picker-code">const API_BASE = "<span data-api-base>https://example.com/api/v2/</span>";
 
 async function getJson(path) {
   const response = await fetch(new URL(path, API_BASE));
@@ -282,17 +282,21 @@ async function getJson(path) {
 
 async function loadPickerData() {
   const countries = await getJson("countries.json");
-  const states = await getJson("states/country/us.json");
-  const cities = await getJson("cities/state/us-ca.json");
+  const states = await getJson("countries/us/states.json");
+  // In an app, use the state chosen by the user.
+  const state = states.data[0];
+  const cities = state
+    ? await getJson(`countries/us/states/${state.path_key}/cities.json`)
+    : { data: [] };
   return { countries: countries.data, states: states.data, cities: cities.data };
 }
 
 loadPickerData().then(console.log).catch(console.error);</code></pre>
                 </div>
                 <p class="mt-4 text-[13px]">
-                  Replace <code>us</code> and <code>us-ca</code> with the
-                  selected country and state codes. If a state has no ISO 3166-2
-                  code, its city-list filename uses its numeric ID.
+                  Replace <code>us</code> with the lowercase country ISO2 and
+                  use the selected state's <code>path_key</code>. Fallback keys
+                  such as <code>id-2312</code> are provided by the API.
                 </p>
                 <a
                   class="mt-4 inline-block text-sm font-semibold"
@@ -317,8 +321,9 @@ loadPickerData().then(console.log).catch(console.error);</code></pre>
               </h2>
               <div class="mt-3 text-[15px] leading-7 text-[#526d5c]">
                 <p>
-                  Load the country’s city-search shard once, then filter it
-                  locally. Normalize the query in the same way as
+                  Load the country’s city-page index and each referenced page,
+                  then filter the summaries locally. Normalize the query in the
+                  same way as
                   <code>name_normalized</code> so a search for “Sao Paulo”
                   matches “São Paulo”.
                 </p>
@@ -342,7 +347,7 @@ loadPickerData().then(console.log).catch(console.error);</code></pre>
                   <pre
                     tabindex="0"
                     class="docs-code px-5 py-5 text-xs leading-6 sm:text-[13px]"
-                  ><code id="search-code">const API_BASE = "<span data-api-base>https://unpkg.com/geo-data-api@latest/dist/api/v1/</span>";
+                  ><code id="search-code">const API_BASE = "<span data-api-base>https://example.com/api/v2/</span>";
 
 async function getJson(path) {
   const response = await fetch(new URL(path, API_BASE));
@@ -354,30 +359,31 @@ function normalizeName(value) {
   return value.toLowerCase().normalize("NFD").replace(/\p{M}/gu, "");
 }
 
-let brazilShard;
+let brazilCities;
 async function searchBrazilianCities(query) {
   const normalized = normalizeName(query.trim());
   if (!normalized) return [];
-  if (!brazilShard) {
-    brazilShard = getJson("search/cities/country/br.json").catch(error =&gt; {
-      brazilShard = null;
-      throw error;
-    });
+  if (!brazilCities) {
+    brazilCities = getJson("countries/br/cities/index.json")
+      .then(index =&gt; Promise.all(index.data.map(page =&gt; getJson(page.filename))))
+      .then(pages =&gt; pages.flatMap(page =&gt; page.data))
+      .catch(error =&gt; {
+        brazilCities = null;
+        throw error;
+      });
   }
-  const result = await brazilShard;
-  return result.data.filter(city =&gt; city.name_normalized.includes(normalized));
+  const cities = await brazilCities;
+  return cities.filter(city =&gt; city.name_normalized.includes(normalized));
 }
 
 searchBrazilianCities("Sao Paulo").then(console.log).catch(console.error);</code></pre>
                 </div>
                 <p class="mt-4 text-[13px]">
-                  This folds combining marks; it is not full transliteration. A
-                  country with no city records may have no shard. Use
-                  <a href="../api/v1/search/cities/index.json"
-                    >the shard index</a
-                  >
-                  to discover available files, and cache the response for
-                  repeated searches.
+                  This folds combining marks; it is not full transliteration.
+                  Empty countries have an index with no pages. The
+                  <a href="../api/v2/search/cities/index.json">global index</a>
+                  links to every country index. Cache pages for repeated
+                  searches.
                 </p>
               </div>
             </section>
@@ -420,7 +426,7 @@ searchBrazilianCities("Sao Paulo").then(console.log).catch(console.error);</code
                   <pre
                     tabindex="0"
                     class="docs-code px-5 py-5 text-xs leading-6 sm:text-[13px]"
-                  ><code id="lookup-code">const API_BASE = "<span data-api-base>https://unpkg.com/geo-data-api@latest/dist/api/v1/</span>";
+                  ><code id="lookup-code">const API_BASE = "<span data-api-base>https://example.com/api/v2/</span>";
 
 async function getCity(cityId) {
   if (!Number.isSafeInteger(cityId) || cityId &lt; 0)
@@ -435,8 +441,9 @@ async function getCity(cityId) {
 getCity(57995).then(console.log).catch(console.error);</code></pre>
                 </div>
                 <p class="mt-4 text-[13px]">
-                  Missing IDs return <code>null</code> in this example. Batch
-                  files remain available when you need several cities together.
+                  Missing IDs return <code>null</code> in this example. City
+                  list pages contain summaries; the direct file has full
+                  details.
                 </p>
               </div>
             </section>
@@ -469,8 +476,8 @@ getCity(57995).then(console.log).catch(console.error);</code></pre>
                     appropriate for your clients.
                   </li>
                   <li>
-                    The combined search endpoint is a sample. Use the dedicated
-                    indexes for complete results.
+                    Follow every page in the country index for complete city
+                    results.
                   </li>
                 </ul>
                 <p class="mt-4">

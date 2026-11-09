@@ -1,478 +1,370 @@
 const assert = require("node:assert/strict");
-const fs = require("node:fs");
-const fsp = require("node:fs/promises");
+const fs = require("node:fs/promises");
 const os = require("node:os");
 const path = require("node:path");
 const { spawnSync } = require("node:child_process");
-const { fileURLToPath, pathToFileURL } = require("node:url");
 const { test } = require("node:test");
+const Ajv2020 = require("ajv/dist/2020");
+const schema = require("../schemas/geo-data.schema.json");
+const openapi = require("../openapi.json");
+const config = require("../src/config");
+const { getRoutes } = require("../src/api-contract");
+const APIInfoGenerator = require("../src/generators/docs/api-info-generator");
+const APIDocumentationGenerator = require("../src/generators/docs/api-documentation-generator");
+const { DataProcessor } = require("../src/data-processor");
 
-const root = path.resolve(__dirname, "..");
-const openapiFile = path.join(root, "openapi.json");
-const schemaFile = path.join(root, "schemas", "geo-data.schema.json");
-const declarationsFile = path.join(root, "types", "index.d.ts");
-
-function readJSON(file) {
-  assert.ok(fs.existsSync(file), `Missing contract file: ${file}`);
-  return JSON.parse(fs.readFileSync(file, "utf8"));
-}
-
-function resolveRef(fromFile, reference) {
-  const target = new URL(reference, pathToFileURL(fromFile));
-  assert.equal(
-    target.protocol,
-    "file:",
-    `Only local references are supported: ${reference}`,
-  );
-  const pointer = decodeURIComponent(target.hash.slice(1));
-  target.hash = "";
-  const targetFile = fileURLToPath(target);
-  let value = readJSON(targetFile);
-  if (pointer) {
-    assert.ok(pointer.startsWith("/"), `Not a JSON pointer: ${reference}`);
-    for (const raw of pointer.slice(1).split("/")) {
-      const key = raw.replace(/~1/g, "/").replace(/~0/g, "~");
-      assert.ok(
-        value && Object.hasOwn(value, key),
-        `Unresolved reference: ${reference}`,
-      );
-      value = value[key];
-    }
-  }
-  return { file: targetFile, value };
-}
-
-// Exercise the schema keywords used by these contracts without a runtime dependency.
-// This is deliberately not a replacement for a complete JSON Schema validator.
-function conforms(schema, data, file = schemaFile) {
-  if (schema.$ref) {
-    const target = resolveRef(file, schema.$ref);
-    if (!conforms(target.value, data, target.file)) return false;
-  }
-  if (schema.allOf && !schema.allOf.every((part) => conforms(part, data, file)))
-    return false;
-  if (schema.anyOf && !schema.anyOf.some((part) => conforms(part, data, file)))
-    return false;
-  if (Object.hasOwn(schema, "const") && data !== schema.const) return false;
-  if (schema.enum && !schema.enum.includes(data)) return false;
-  if (schema.type) {
-    const candidates = Array.isArray(schema.type) ? schema.type : [schema.type];
-    const matches = (type) => {
-      if (type === "null") return data === null;
-      if (type === "array") return Array.isArray(data);
-      if (type === "object")
-        return (
-          data !== null && typeof data === "object" && !Array.isArray(data)
-        );
-      if (type === "integer") return Number.isInteger(data);
-      return typeof data === type;
-    };
-    if (!candidates.some(matches)) return false;
-  }
-  if (
-    typeof data === "string" &&
-    schema.pattern &&
-    !new RegExp(schema.pattern).test(data)
-  )
-    return false;
-  if (
-    typeof data === "number" &&
-    schema.minimum !== undefined &&
-    data < schema.minimum
-  )
-    return false;
-  if (
-    Array.isArray(data) &&
-    schema.items &&
-    !data.every((item) => conforms(schema.items, item, file))
-  )
-    return false;
-  if (data !== null && typeof data === "object" && !Array.isArray(data)) {
-    if (
-      schema.required &&
-      !schema.required.every((key) => Object.hasOwn(data, key))
-    )
-      return false;
-    for (const [key, value] of Object.entries(data)) {
-      if (schema.properties && Object.hasOwn(schema.properties, key)) {
-        if (!conforms(schema.properties[key], value, file)) return false;
-      } else if (schema.additionalProperties === false) return false;
-      else if (
-        schema.additionalProperties &&
-        typeof schema.additionalProperties === "object"
-      ) {
-        if (!conforms(schema.additionalProperties, value, file)) return false;
-      }
-    }
-  }
-  return true;
-}
-
-test("OpenAPI and every reusable schema reference resolve locally", () => {
-  const doc = readJSON(openapiFile);
-  const schema = readJSON(schemaFile);
-  assert.match(doc.openapi, /^3\.1\./);
+test("the canonical schema describes the v2 normalized city and country fields", () => {
   assert.equal(schema.$schema, "https://json-schema.org/draft/2020-12/schema");
-  const checked = new Set();
-  function visit(node, file) {
-    if (!node || typeof node !== "object") return;
-    if (node.$ref) {
-      const target = resolveRef(file, node.$ref);
-      const key = `${target.file}:${node.$ref}`;
-      if (!checked.has(key)) {
-        checked.add(key);
-        visit(target.value, target.file);
-      }
-    }
-    for (const child of Object.values(node)) visit(child, file);
-  }
-  visit(doc, openapiFile);
-  visit(schema, schemaFile);
-  assert.ok(
-    checked.size >= 10,
-    "Endpoints should reference reusable contracts",
+  assert.ok(schema.$defs.CitySummary.properties.state_path_key);
+  assert.ok(schema.$defs.City.properties.wikidata_id);
+  assert.ok(schema.$defs.CountryTimezone.properties.zone_name);
+  assert.deepEqual(schema.$defs.Coordinate.type, ["number", "null"]);
+});
+
+test("OpenAPI exposes the hierarchical v2 endpoints", () => {
+  assert.equal(openapi.info.version, "v2");
+  for (const path of [
+    "/countries.json",
+    "/countries/{iso2}.json",
+    "/countries/{iso2}/states.json",
+    "/countries/{iso2}/states/{state}.json",
+    "/countries/{iso2}/states/{state}/cities.json",
+    "/countries/{iso2}/cities/index.json",
+    "/countries/{iso2}/cities/{page}.json",
+    "/cities/{id}.json",
+    "/search/cities/index.json",
+  ])
+    assert.ok(openapi.paths[path], path);
+  assert.equal(openapi.paths["/cities/batches.json"], undefined);
+});
+
+test("discovery catalogs use the shared routes and advertise city timezones only when generated", async (t) => {
+  const dir = await fs.mkdtemp(
+    path.join(os.tmpdir(), "geo-contract-discovery-"),
   );
-  for (const [route, item] of Object.entries(doc.paths)) {
-    assert.ok(item.get?.responses?.["200"], `${route} lacks a 200 response`);
-    const parameters = item.get.parameters || [];
-    for (const [, name] of route.matchAll(/\{([^}]+)\}/g)) {
-      assert.ok(
-        parameters.some(
-          (p) => p.name === name && p.in === "path" && p.required === true,
-        ),
-        `${route}: missing path parameter ${name}`,
-      );
-    }
+  const previous = {
+    output: config.OUTPUT_DIR,
+    version: config.API_VERSION,
+    base: config.CDN_BASE_URL,
+  };
+  t.after(async () => {
+    Object.assign(config, {
+      OUTPUT_DIR: previous.output,
+      API_VERSION: previous.version,
+      CDN_BASE_URL: previous.base,
+    });
+    await fs.rm(dir, { recursive: true, force: true });
+  });
+  Object.assign(config, {
+    OUTPUT_DIR: dir,
+    API_VERSION: "v2",
+    CDN_BASE_URL: "https://example.test/api/v2",
+  });
+  const countries = [{ id: 1, name: "India", iso2: "IN" }];
+  const states = [
+    { id: 2, name: "Example", country_id: 1, country_code: "IN" },
+  ];
+
+  for (const timezone of [null, "Asia/Kolkata"]) {
+    const cities = [{ id: 3, name: "Example", timezone, wikidata_id: null }];
+    await new APIInfoGenerator(countries, states, cities, {}).generate();
+    await new APIDocumentationGenerator(
+      countries,
+      states,
+      cities,
+      {},
+    ).generate();
+    const info = JSON.parse(await fs.readFile(path.join(dir, "api-info.json")));
+    const docs = JSON.parse(
+      await fs.readFile(path.join(dir, "documentation.json")),
+    );
+    const expected = getRoutes({ cityTimezones: !!timezone });
+    const infoRoutes = Object.values(info.endpoints)
+      .flatMap(Object.values)
+      .sort();
+    const docsRoutes = Object.values(docs.endpoints)
+      .flatMap(Object.keys)
+      .sort();
+    assert.deepEqual(infoRoutes, expected.map((route) => route.path).sort());
+    assert.deepEqual(
+      docsRoutes,
+      expected.map((route) => `GET /${route.path}`).sort(),
+    );
+    const text = JSON.stringify({ info, docs });
+    assert.doesNotMatch(
+      text,
+      /\/v1\b|cities\/batches|combined-sample|states\/country/,
+    );
+    assert.match(text, /countries\/\{iso2\}\/states/);
   }
 });
 
-test("contracts accept actual compact and pretty generator outputs", async (t) => {
-  const config = require("../src/config");
-  const CountriesGenerator = require("../src/generators/countries");
-  const StatesGenerator = require("../src/generators/states");
-  const CitiesGenerator = require("../src/generators/cities");
-  const SearchGenerator = require("../src/generators/search");
-  const doc = readJSON(openapiFile);
-  const output = await fsp.mkdtemp(
-    path.join(os.tmpdir(), "geo-contract-schema-"),
+test("generated declarations and OpenAPI are current and share all route descriptors", () => {
+  const result = spawnSync(
+    process.execPath,
+    ["scripts/generate-contracts.js", "--check"],
+    { cwd: path.join(__dirname, ".."), encoding: "utf8" },
   );
-  const previousOutput = config.OUTPUT_DIR;
-  const previousPretty = config.PRETTY_JSON;
-  const previousShardSize = config.COUNTRY_CITY_SHARD_SIZE;
-  config.COUNTRY_CITY_SHARD_SIZE = 1;
-  t.after(async () => {
-    config.OUTPUT_DIR = previousOutput;
-    config.PRETTY_JSON = previousPretty;
-    config.COUNTRY_CITY_SHARD_SIZE = previousShardSize;
-    await fsp.rm(output, { recursive: true, force: true });
-  });
+  assert.equal(result.status, 0, `${result.stdout}\n${result.stderr}`);
+  assert.deepEqual(
+    Object.keys(openapi.paths).sort(),
+    getRoutes()
+      .map((route) => `/${route.path}`)
+      .sort(),
+  );
+  for (const route of getRoutes()) {
+    const operation = openapi.paths[`/${route.path}`].get;
+    assert.equal(
+      operation.responses["200"].content["application/json"].schema.$ref,
+      `./schemas/geo-data.schema.json#/$defs/${route.response}`,
+    );
+    const expectedParameters = [...route.path.matchAll(/\{([^}]+)\}/g)].map(
+      (match) => match[1],
+    );
+    assert.deepEqual(
+      (operation.parameters || []).map((parameter) => parameter.name),
+      expectedParameters,
+    );
+    for (const parameter of operation.parameters || [])
+      assert.equal(parameter.required, true);
+  }
+});
+
+test("generated types express required v2 model fields and numeric coordinates", async (t) => {
+  const temp = await fs.mkdtemp(path.join(os.tmpdir(), "geo-v2-types-"));
+  t.after(() => fs.rm(temp, { recursive: true, force: true }));
+  const rootTypes = path
+    .join(__dirname, "../types/index.d.ts")
+    .replace(/\\/g, "/");
+  const clientTypes = path
+    .join(__dirname, "../packages/client/models.d.ts")
+    .replace(/\\/g, "/");
+  const source = `import type { Country, CountryCityPageIndexResponse, ProcessorOptions, DataProcessor } from ${JSON.stringify(rootTypes)};\nimport type { City, CitySummary, State } from ${JSON.stringify(clientTypes)};\ndeclare const country: Country;\ndeclare const state: State;\ndeclare const city: City;\ndeclare const summary: CitySummary;\ndeclare const index: CountryCityPageIndexResponse;\ndeclare const processor: DataProcessor;\nconst options: ProcessorOptions = { countryShardSize: 2 };\nconst coordinate: number | null = city.latitude;\nconst key: string = state.path_key;\nconst code: string | null = summary.state_code;\nconst timezone: string | null = country.timezones[0].zone_name;\nconst filename: string = index.data[0].filename;\nprocessor.run();\n// @ts-expect-error v2 coordinates cannot be strings\nconst wrongCoordinate: City['latitude'] = '0';\n// @ts-expect-error summary records do not contain details\nsummary.wikidata_id;\n// @ts-expect-error v2 requires a state path key\nconst incomplete: CitySummary = { id: 1, name: 'A' };\n`;
+  const file = path.join(temp, "check.ts");
+  await fs.writeFile(file, source);
+  const result = spawnSync(
+    process.execPath,
+    [
+      require.resolve("typescript/bin/tsc"),
+      "--noEmit",
+      "--strict",
+      "--skipLibCheck",
+      "--target",
+      "ES2022",
+      "--module",
+      "commonjs",
+      "--lib",
+      "ES2022,DOM",
+      file,
+      path.join(__dirname, "../packages/client/typecheck/consumer.ts"),
+    ],
+    { encoding: "utf8" },
+  );
+  assert.equal(result.status, 0, `${result.stdout}\n${result.stderr}`);
+});
+
+test("Draft 2020-12 schema validates every compact and pretty fixture output", async (t) => {
+  const fixture = await fs.mkdtemp(path.join(os.tmpdir(), "geo-v2-schema-"));
+  t.after(() => fs.rm(fixture, { recursive: true, force: true }));
+  const inputDir = path.join(fixture, "db");
+  await fs.mkdir(inputDir);
   const countries = [
     {
       id: 1,
-      name: "Côte",
-      iso2: "EX",
-      iso3: "EXP",
-      native: null,
+      name: "India",
+      iso2: "IN",
+      iso3: "IND",
       region: "Asia",
-      region_id: null,
+      region_id: 3,
       subregion: "Southern Asia",
-      latitude: "0.00000000",
-      longitude: "76.25000000",
-      translations: { en: "Example" },
+      subregion_id: 14,
+      latitude: "0",
+      longitude: "77.25",
+      timezones: [
+        {
+          zoneName: "Asia/Kolkata",
+          gmtOffset: 19800,
+          gmtOffsetName: "UTC+05:30",
+          abbreviation: "IST",
+          tzName: "India Standard Time",
+        },
+      ],
+      translations: { fr: "Inde" },
     },
+    { id: 2, name: "United States", iso2: "US", iso3: "USA" },
   ];
   const states = [
     {
-      id: 11,
-      name: "Région",
-      iso2: "A",
-      iso3166_2: "EX-A",
+      id: 3,
+      name: "Example",
+      iso2: "CON",
+      iso3166_2: "IN-CON",
       country_id: 1,
-      country_code: "EX",
-      country_name: "Côte",
+      country_code: "IN",
+      country_name: "India",
       type: "state",
-      timezone: "Etc/GMT+12",
-      level: null,
-      parent_id: "99",
-      latitude: "0.00000000",
-      longitude: "76.25000000",
+      timezone: "Asia/A",
+      latitude: "0",
+      longitude: "0",
     },
     {
-      id: 12,
-      name: "Second",
-      iso2: "B",
-      iso3166_2: "EX-B",
+      id: 4,
+      name: "Empty",
+      iso2: "EM",
+      iso3166_2: "IN-EM",
       country_id: 1,
-      country_code: "EX",
-      country_name: "Côte",
+      country_code: "IN",
+      country_name: "India",
       type: "state",
-      timezone: "Etc/GMT-12",
+      timezone: "Asia-A",
     },
   ];
   const cities = [
     {
-      id: 21,
-      name: "Málaga",
-      state_id: 11,
-      state_code: "A",
-      state_name: "Région",
+      id: 5,
+      name: "São",
+      state_id: 3,
+      state_name: "Old name",
+      state_code: "OLD",
       country_id: 1,
-      country_code: "EX",
-      country_name: "Côte",
-      latitude: "0.00000000",
-      longitude: "76.25000000",
-      timezone: "Etc/GMT+12",
-      wikiDataId: null,
+      country_code: "IN",
+      country_name: "Old country",
+      latitude: "0",
+      longitude: "12.5",
+      timezone: "Asia/A",
+      wikiDataId: "Q5",
     },
     {
-      id: 22,
-      name: "Other",
-      state_id: 12,
-      state_code: "B",
-      state_name: "Second",
+      id: 6,
+      name: "Zed",
+      state_id: 3,
+      state_name: "Example",
+      state_code: "CON",
       country_id: 1,
-      country_code: "EX",
-      country_name: "Côte",
-      latitude: "",
+      country_code: "IN",
+      country_name: "India",
+      latitude: null,
       longitude: null,
-      timezone: "Etc/GMT-12",
-    },
-    {
-      id: 23,
-      name: "Unknown",
-      state_id: 12,
-      state_name: "Second",
-      country_id: 999,
-      country_name: "Unknown",
-      country_code: "",
-      timezone: null,
+      timezone: "Asia-A",
     },
   ];
-  const examples = [
-    ["/countries.json", "countries.json"],
-    ["/countries/{iso2}.json", "countries/ex.json"],
-    ["/countries/regions.json", "countries/regions.json"],
-    ["/countries/region/{region}.json", "countries/region/asia.json"],
-    [
-      "/countries/subregion/{subregion}.json",
-      "countries/subregion/southern-asia.json",
-    ],
-    ["/states/all.json", "states/all.json"],
-    ["/states/{iso3166_2}.json", "states/ex-a.json"],
-    ["/states/country/{country_iso2}.json", "states/country/ex.json"],
-    ["/states/types.json", "states/types.json"],
-    ["/states/type/{type}.json", "states/type/state.json"],
-    ["/states/timezones.json", "states/timezones.json"],
-    ["/cities/{id}.json", "cities/21.json"],
-    ["/cities/country/{country_iso2}.json", "cities/country/ex.json"],
-    [
-      "/cities/country/{country_iso2}/index.json",
-      "cities/country/ex/index.json",
-    ],
-    ["/cities/country/{country_iso2}/{shard}.json", "cities/country/ex/1.json"],
-    ["/cities/state/{state_iso3166_2}.json", "cities/state/ex-a.json"],
-    ["/cities/batches.json", "cities/batches.json"],
-    ["/search/countries.json", "search/countries.json"],
-    ["/search/states.json", "search/states.json"],
-    ["/search/cities.json", "search/cities.json"],
-    ["/search/cities/index.json", "search/cities/index.json"],
-    ["/search/cities/country/{iso2}.json", "search/cities/country/ex.json"],
-    [
-      "/search/cities/country/{iso2}.json",
-      "search/cities/country/unknown.json",
-    ],
-    ["/search/combined-sample.json", "search/combined-sample.json"],
-    ["/search/combined.json", "search/combined.json"],
-  ];
-  for (const pretty of [false, true]) {
-    config.OUTPUT_DIR = path.join(output, pretty ? "pretty" : "compact");
-    config.PRETTY_JSON = pretty;
-    await new CountriesGenerator(countries).generate();
-    await new StatesGenerator(states, countries).generate();
-    await new CitiesGenerator(cities, states, countries).generate();
-    await new SearchGenerator(countries, states, cities).generate();
-    const readOutput = (file) => readJSON(path.join(config.OUTPUT_DIR, file));
-    const batchPath = readOutput("cities/batches.json").data[0].filename;
-    const stateTimezone = readOutput("states/timezones.json").data[0].endpoint;
-    const cityTimezone = readOutput("cities/timezones.json").data[0].endpoint;
-    for (const [route, file] of [
-      ...examples,
-      ["/cities/batch/{filename}", batchPath],
-      ["/states/timezone/{timezone}.json", stateTimezone],
-      ["/cities/timezones.json", "cities/timezones.json"],
-      ["/cities/timezone/{timezone}.json", cityTimezone],
-    ]) {
-      const operation = doc.paths[route]?.get;
-      assert.ok(operation, `OpenAPI is missing ${route}`);
-      const contract =
-        operation.responses["200"].content["application/json"].schema;
-      assert.ok(
-        conforms(contract, readOutput(file), openapiFile),
-        `${file} does not match ${route} in ${pretty ? "pretty" : "compact"} mode`,
-      );
-    }
-    const city = readOutput("cities/state/ex-a.json").data[0];
-    assert.equal(typeof city.latitude, pretty ? "string" : "number");
-    assert.equal(city.wikiDataId, null);
-    assert.equal(
-      readOutput("search/cities.json").data[0].name_normalized,
-      "malaga",
-    );
-  }
-});
-
-test("schemas reject malformed search shards, batch wrappers, and coordinates", () => {
-  const defs = readJSON(schemaFile).$defs;
-  assert.ok(conforms(defs.Coordinate, 0));
-  assert.ok(conforms(defs.Coordinate, "0.00000000"));
-  assert.ok(conforms(defs.Coordinate, null));
-  assert.equal(conforms(defs.Coordinate, {}), false);
-  const shardIndex = {
-    data: [
-      {
-        country_code: "EX",
-        country_name: "Example",
-        count: 3,
-        filename: "search/cities/country/ex.json",
-      },
-    ],
-    meta: {
-      type: "city_search_shard_index",
-      count: 1,
-      generated_at: "2026-01-01T00:00:00.000Z",
-      api_version: "v1",
-      searchable_fields: ["name"],
-      name_normalization: "lowercase and fold diacritics",
-    },
-  };
-  assert.ok(conforms(defs.CitySearchShardIndexResponse, shardIndex));
-  shardIndex.data[0].count = "3";
-  assert.equal(conforms(defs.CitySearchShardIndexResponse, shardIndex), false);
-  const batch = {
-    data: {
-      1: {
-        id: 1,
-        name: "City",
-        has_coordinates: true,
-        has_wikidata: false,
-        has_timezone: false,
-      },
-    },
-    meta: {
-      type: "cities_batch",
-      batch_range: "1-2",
-      cities_count: 1,
-      usage: "x",
-      api_version: "v1",
-      generated_at: "2026-01-01T00:00:00.000Z",
-    },
-  };
-  assert.ok(conforms(defs.CityBatchResponse, batch));
-  batch.data = [];
-  assert.equal(conforms(defs.CityBatchResponse, batch), false);
-});
-
-test("manifest contract matches a built dataset with a preserved file", async (t) => {
-  const config = require("../src/config");
-  const { DataProcessor } = require("../src/data-processor");
-  const directory = await fsp.mkdtemp(
-    path.join(os.tmpdir(), "geo-manifest-schema-"),
-  );
-  const savedInput = config.INPUT_DIR;
-  const savedOutput = config.OUTPUT_DIR;
-  t.after(async () => {
-    config.INPUT_DIR = savedInput;
-    config.OUTPUT_DIR = savedOutput;
-    await fsp.rm(directory, { recursive: true, force: true });
-  });
-  config.INPUT_DIR = path.join(directory, "db");
-  config.OUTPUT_DIR = path.join(directory, "api");
-  await fsp.mkdir(config.INPUT_DIR);
-  await fsp.mkdir(config.OUTPUT_DIR);
-  const fixtures = {
-    countries: [{ id: 1, name: "Example", iso2: "EX", iso3: "EXP" }],
-    states: [
-      {
-        id: 2,
-        name: "State",
-        iso2: "A",
-        iso3166_2: "EX-A",
-        country_id: 1,
-        country_code: "EX",
-        country_name: "Example",
-      },
-    ],
-    cities: [
-      {
-        id: 3,
-        name: "City",
-        state_id: 2,
-        state_name: "State",
-        country_id: 1,
-        country_name: "Example",
-      },
-    ],
-  };
-  for (const [kind, data] of Object.entries(fixtures)) {
-    await fsp.writeFile(
-      path.join(config.INPUT_DIR, `${kind}.json`),
+  for (const [name, data] of Object.entries({ countries, states, cities })) {
+    await fs.writeFile(
+      path.join(inputDir, `${name}.json`),
       JSON.stringify(data),
     );
   }
-  await fsp.writeFile(path.join(config.OUTPUT_DIR, "extra.txt"), "preserved");
-  const processor = new DataProcessor();
-  await processor.loadData();
-  await processor.generateAPI();
-  const manifest = readJSON(path.join(config.OUTPUT_DIR, "manifest.json"));
-  const contract =
-    readJSON(openapiFile).paths["/manifest.json"].get.responses["200"].content[
-      "application/json"
-    ].schema;
-  assert.ok(conforms(contract, manifest, openapiFile));
-  assert.equal(manifest.file_count, manifest.files.length + 1);
-  assert.equal(
-    manifest.files.find((file) => file.path === "extra.txt").generated,
-    false,
+  const ajv = new Ajv2020({ allErrors: true, strict: false });
+  ajv.addSchema(schema);
+  const validators = new Map(
+    getRoutes().map((route) => [
+      route.response,
+      ajv.compile({ $ref: `${schema.$id}#/$defs/${route.response}` }),
+    ]),
   );
-  assert.equal(
-    manifest.files.find((file) => file.path === "countries.json").generated,
-    true,
-  );
-});
-
-test("TypeScript declarations have valid syntax", (t) => {
-  assert.ok(fs.existsSync(declarationsFile), "Missing TypeScript declarations");
-  if (typeof require("node:module").stripTypeScriptTypes !== "function")
-    return t.skip("Node cannot parse TypeScript syntax on this version");
-  const script =
-    'require("node:module").stripTypeScriptTypes(require("node:fs").readFileSync(process.argv[1], "utf8"))';
-  const result = spawnSync(
-    process.execPath,
-    ["--no-warnings", "-e", script, declarationsFile],
-    { encoding: "utf8" },
-  );
-  assert.equal(result.status, 0, `${result.stdout}\n${result.stderr}`);
-});
-
-test("TypeScript declarations admit real nullable payloads and reject invalid data", async (t) => {
-  assert.ok(fs.existsSync(declarationsFile), "Missing TypeScript declarations");
-  let compiler = process.env.GEO_DATA_TYPESCRIPT_COMPILER;
-  if (!compiler) {
-    try {
-      compiler = require.resolve("typescript/lib/tsc.js", { paths: [root] });
-    } catch {
-      return t.skip("TypeScript compiler is not installed");
+  const routes = [...getRoutes()].sort((a, b) => {
+    const count = (route) => [...route.path.matchAll(/\{/g)].length;
+    return count(a) - count(b) || b.path.length - a.path.length;
+  });
+  const matchRoute = (name) =>
+    routes.find((route) => {
+      const pattern = route.path
+        .split(/(\{[^}]+\})/)
+        .map((part) =>
+          part.startsWith("{")
+            ? "[^/]+"
+            : part.replace(/[.*+?^${}()|[\]\\]/g, "\\$&"),
+        )
+        .join("");
+      return new RegExp(`^${pattern}$`).test(name);
+    });
+  async function walk(dir, prefix = "") {
+    const result = [];
+    for (const entry of await fs.readdir(dir, { withFileTypes: true })) {
+      const name = prefix ? `${prefix}/${entry.name}` : entry.name;
+      if (entry.isDirectory())
+        result.push(...(await walk(path.join(dir, entry.name), name)));
+      else if (name.endsWith(".json")) result.push(name);
     }
+    return result;
   }
-  const temp = await fsp.mkdtemp(path.join(os.tmpdir(), "geo-contract-types-"));
-  t.after(() => fsp.rm(temp, { recursive: true, force: true }));
-  const source = `import type { City, CityBatchResponse, CitySearchShardIndexResponse, Coordinate } from ${JSON.stringify(declarationsFile.replace(/\\/g, "/"))};\nconst coordinate: Coordinate = null;\nconst city: City = { id: 1, name: "A", latitude: "0", longitude: 0, wikiDataId: null };\ndeclare const batch: CityBatchResponse;\ndeclare const shards: CitySearchShardIndexResponse;\nconst item = batch.data["1"];\nif (item) { const key: number = item.id; }\nconst filename: string = shards.data[0].filename;\n// @ts-expect-error coordinate objects are invalid\nconst bad: Coordinate = {};\n// @ts-expect-error names must be strings\nconst invalid: City = { id: 1, name: 3 };\n`;
-  const file = path.join(temp, "check.ts");
-  await fsp.writeFile(file, source);
-  const result = spawnSync(
-    process.execPath,
-    [compiler, "--noEmit", "--strict", "--skipLibCheck", file],
-    { encoding: "utf8" },
-  );
-  assert.equal(result.status, 0, `${result.stdout}\n${result.stderr}`);
+  const snapshots = [];
+  for (const pretty of [false, true]) {
+    const outputDir = path.join(fixture, pretty ? "pretty" : "compact");
+    await new DataProcessor({
+      inputDir,
+      outputDir,
+      pretty,
+      countryShardSize: 1,
+    }).run();
+    const output = new Map();
+    for (const name of await walk(outputDir)) {
+      const route = matchRoute(name);
+      assert.ok(route, `No contract route for ${name}`);
+      const data = JSON.parse(
+        await fs.readFile(path.join(outputDir, name), "utf8"),
+      );
+      const validate = validators.get(route.response);
+      assert.ok(
+        validate(data),
+        `${name} (${route.response}): ${ajv.errorsText(validate.errors)}`,
+      );
+      output.set(name, data);
+    }
+    assert.deepEqual(output.get("countries/us/states.json").data, []);
+    assert.deepEqual(output.get("countries/us/cities/index.json").data, []);
+    assert.deepEqual(output.get("countries/in/states/em/cities.json").data, []);
+    const index = output.get("countries/in/cities/index.json");
+    assert.equal(index.meta.page_size, 1);
+    assert.equal(index.meta.total_cities, 2);
+    assert.deepEqual(
+      index.data.map((page) => output.get(page.filename).data[0].id),
+      [5, 6],
+    );
+    assert.equal(output.get("cities/5.json").data.state_path_key, "id-3");
+    assert.equal(output.get("cities/5.json").data.country_name, "India");
+    for (const kind of ["states", "cities"]) {
+      const timezoneIndex = output.get(`${kind}/timezones.json`).data;
+      assert.equal(timezoneIndex.length, 2);
+      assert.notEqual(timezoneIndex[0].endpoint, timezoneIndex[1].endpoint);
+      for (const entry of timezoneIndex)
+        assert.equal(output.get(entry.endpoint).meta.timezone, entry.timezone);
+    }
+    snapshots.push(output);
+  }
+  for (const name of [
+    "countries.json",
+    "countries/in/states.json",
+    "cities/5.json",
+    "countries/in/cities/index.json",
+  ]) {
+    assert.deepEqual(snapshots[0].get(name), snapshots[1].get(name));
+  }
+});
+
+test("schema rejects legacy fields and malformed v2 records", () => {
+  const ajv = new Ajv2020({ allErrors: true, strict: false });
+  ajv.addSchema(schema);
+  const validate = ajv.compile({ $ref: `${schema.$id}#/$defs/City` });
+  const city = {
+    id: 1,
+    name: "A",
+    name_normalized: "a",
+    state_id: 2,
+    state_code: "AA",
+    state_name: "A",
+    state_path_key: "aa",
+    country_id: 3,
+    country_code: "AA",
+    country_name: "A",
+    latitude: 0,
+    longitude: null,
+    timezone: null,
+    wikidata_id: null,
+  };
+  assert.equal(validate(city), true);
+  assert.equal(validate({ ...city, latitude: "0" }), false);
+  assert.equal(validate({ ...city, wikiDataId: "Q1" }), false);
+  const { state_path_key, ...withoutPath } = city;
+  assert.equal(validate(withoutPath), false);
 });

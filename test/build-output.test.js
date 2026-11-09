@@ -70,6 +70,23 @@ test("a newly generated path cannot overwrite a previously preserved file", asyn
   );
 });
 
+test("a preserved extra cannot claim an ungenerated API route", async (t) => {
+  const root = await fs.mkdtemp(path.join(os.tmpdir(), "geo-reserved-route-"));
+  t.after(() => fs.rm(root, { recursive: true, force: true }));
+  const output = path.join(root, "old");
+  const stage = path.join(root, "stage");
+  await fs.mkdir(path.join(output, "countries"), { recursive: true });
+  await fs.mkdir(stage);
+  const filename = path.join(output, "countries/zz.json");
+  await fs.writeFile(filename, '{"data":{}}');
+  await fs.writeFile(
+    path.join(output, "manifest.json"),
+    JSON.stringify({ files: [] }),
+  );
+  await assert.rejects(preserveExtras(output, stage, []), /reserved|route/i);
+  assert.equal(await fs.readFile(filename, "utf8"), '{"data":{}}');
+});
+
 test("a case-variant of a previously managed filename is not discarded", async (t) => {
   const root = await fs.mkdtemp(path.join(os.tmpdir(), "geo-preserved-case-"));
   t.after(() => fs.rm(root, { recursive: true, force: true }));

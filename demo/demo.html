@@ -306,7 +306,7 @@
           >
             <span class="h-1.5 w-1.5 rounded-full bg-[#3da56c]"></span>
             Interactive playground
-            <span class="mx-1 text-[#a2c7ad]">/</span> API v1
+            <span class="mx-1 text-[#a2c7ad]">/</span> API v2
           </div>
           <h1
             id="page-title"
@@ -791,7 +791,7 @@
                   <pre
                     class="code-scroll p-4 font-mono text-[11px] leading-6"
                   ><code id="address-code">const response = await fetch(
-  '../api/v1/countries.json'
+  '../api/v2/countries.json'
 );
 const { data } = await response.json();</code></pre>
                 </div>
@@ -833,7 +833,7 @@ const { data } = await response.json();</code></pre>
                   </h3>
                   <p class="mt-1 text-sm leading-6 text-[#5e7566]">
                     Search one country at a time using its lightweight search
-                    shard.
+                    pages.
                   </p>
                 </div>
               </div>
@@ -956,7 +956,7 @@ const { data } = await response.json();</code></pre>
                     class="flex items-center justify-between border-b border-white/10 px-4 py-3"
                   >
                     <span class="font-mono text-[10px] text-[#91c6a3]"
-                      >SEARCH A SHARD</span
+                      >SEARCH COUNTRY PAGES</span
                     ><button
                       type="button"
                       data-copy="search-code"
@@ -1129,7 +1129,7 @@ const { data } = await response.json();</code></pre>
                   ><code id="lookup-code">async function getCity(id) {
   if (!Number.isSafeInteger(id) || id &lt; 0)
     throw new Error('Invalid city ID');
-  const base = new URL('../api/v1/', location.href);
+  const base = new URL('../api/v2/', location.href);
   const res = await fetch(new URL(`cities/${id}.json`, base));
   if (res.status === 404) return null;
   if (!res.ok) throw new Error(`Request failed: ${res.status}`);

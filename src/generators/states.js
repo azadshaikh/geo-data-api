@@ -56,44 +56,16 @@ class StatesGenerator extends BaseGenerator {
   }
 
   async generateStatesByCountry() {
-    try {
-      const statesByCountry = DataUtils.groupBy(this.states, "country_id");
-
-      for (const [countryId, states] of Object.entries(statesByCountry)) {
-        try {
-          const country = this.countriesMap.get(parseInt(countryId));
-          if (!country?.iso2) {
-            this.logWarn(`Skipping country ${countryId}: missing iso2 code`);
-            continue;
-          }
-
-          await this.processCountryStates(country, states);
-        } catch (error) {
-          this.logError(
-            `Error processing country ${countryId}: ${error.message}`
-          );
-          if (config.GENERATION_OPTIONS.errorHandlingMode === "strict") {
-            throw error;
-          }
-          // Continue with next country
-        }
-      }
-    } catch (error) {
-      this.logError(
-        `Critical error in generateStatesByCountry: ${error.message}`
-      );
-      throw error;
+    const statesByCountry = DataUtils.groupBy(this.states, "country_id");
+    for (const country of this.countries) {
+      await this.processCountryStates(country, statesByCountry[String(country.id)] || []);
     }
   }
 
   async processCountryStates(country, states) {
     const sortedStates = DataUtils.sortBy(states, "name");
 
-    // Create optimized state data for listing
-    const optimizedStates = this.createOptimizedListData(
-      sortedStates,
-      config.STATE_FIELDS.list
-    );
+    const optimizedStates = sortedStates;
 
     // Always emit the full states list for the country (no pagination)
     const dataWithMeta = DataUtils.addMetadata(optimizedStates, "states", {
@@ -101,7 +73,7 @@ class StatesGenerator extends BaseGenerator {
       country_name: country?.name,
       country_iso2: country?.iso2,
       country_iso3: country?.iso3,
-      country_code: states[0].country_code,
+      country_code: country.iso2,
       total_states: optimizedStates.length,
       types: [...new Set(states.map((s) => s.type))].filter(Boolean),
       timezones: [...new Set(states.map((s) => s.timezone))].filter(Boolean),
@@ -112,7 +84,7 @@ class StatesGenerator extends BaseGenerator {
       country.id.toString()
     );
     const success = await this.safeWriteJSON(
-      `states/country/${safeCountryFileName}.json`,
+      `countries/${safeCountryFileName}/states.json`,
       dataWithMeta
     );
 
@@ -130,24 +102,15 @@ class StatesGenerator extends BaseGenerator {
 
     let generatedCount = 0;
 
-    // Use batch processing for large datasets
-    await this.processInBatches(this.states, async (batch) => {
-      const results = await Promise.allSettled(
-        batch.map((state) => this.generateSingleState(state))
-      );
-
-      results.forEach((result) => {
-        if (result.status === "fulfilled" && result.value) {
-          generatedCount++;
-        }
-      });
-    });
+    for (const state of this.states) {
+      await this.generateSingleState(state);
+      generatedCount++;
+    }
 
     this.logSuccess(`Generated ${generatedCount} individual state files`);
   }
 
   async generateSingleState(state) {
-    try {
       const country = this.countriesMap.get(state.country_id);
 
       // Include all fields for individual state view
@@ -159,20 +122,10 @@ class StatesGenerator extends BaseGenerator {
         has_timezone: !!state.timezone,
       });
 
-      const safeFileName = this.generateSafeFilename(
-        state.iso3166_2,
-        state.id.toString()
-      );
-      const success = await this.safeWriteJSON(
-        `states/${safeFileName}.json`,
+      await FileUtils.writeJSON(
+        `countries/${country.iso2.toLowerCase()}/states/${state.path_key}.json`,
         stateData
       );
-
-      return success;
-    } catch (error) {
-      this.logError(`Failed to generate state ${state.id}: ${error.message}`);
-      return false;
-    }
   }
 
   async generateStatesByType() {
@@ -205,18 +158,7 @@ class StatesGenerator extends BaseGenerator {
   async processStatesByType(type, states) {
     const sortedStates = DataUtils.sortBy(states, "name");
 
-    // Create optimized data for type listing
-    const optimizedStates = sortedStates.map((state) => ({
-      id: state.id,
-      name: state.name,
-      country_id: state.country_id,
-      country_code: state.country_code,
-      country_name: state.country_name,
-      iso2: state.iso2,
-      latitude: state.latitude,
-      longitude: state.longitude,
-      timezone: state.timezone,
-    }));
+    const optimizedStates = sortedStates;
 
     const dataWithMeta = DataUtils.addMetadata(
       optimizedStates,
@@ -275,7 +217,7 @@ class StatesGenerator extends BaseGenerator {
       const timezones = Object.keys(statesByTimezone).filter(
         (timezone) => timezone && timezone !== "undefined" && timezone !== "null"
       );
-      const { filenames, aliases } = planTimezoneFilenames(timezones);
+      const { filenames } = planTimezoneFilenames(timezones);
 
       for (const [timezone, states] of Object.entries(statesByTimezone)) {
         if (!timezone || timezone === "undefined" || timezone === "null")
@@ -293,11 +235,6 @@ class StatesGenerator extends BaseGenerator {
         }
       }
 
-      // An ambiguous old path remains an alias to a deterministic member.
-      for (const alias of aliases) {
-        await this.processStatesByTimezone(alias.timezone, statesByTimezone[alias.timezone], alias.legacy);
-      }
-
       // Generate timezones index
       await this.generateStateTimezonesIndex(statesByTimezone, filenames);
     } catch (error) {
@@ -311,16 +248,7 @@ class StatesGenerator extends BaseGenerator {
   async processStatesByTimezone(timezone, states, safeTimezoneName) {
     const sortedStates = DataUtils.sortBy(states, "name");
 
-    const optimizedStates = sortedStates.map((state) => ({
-      id: state.id,
-      name: state.name,
-      country_id: state.country_id,
-      country_code: state.country_code,
-      country_name: state.country_name,
-      type: state.type,
-      latitude: state.latitude,
-      longitude: state.longitude,
-    }));
+    const optimizedStates = sortedStates;
 
     const dataWithMeta = DataUtils.addMetadata(
       optimizedStates,
@@ -372,10 +300,7 @@ class StatesGenerator extends BaseGenerator {
   async generateAllStatesList() {
     try {
       // Generate a complete states list (optimized for listing)
-      const allStates = this.createOptimizedListData(
-        this.states,
-        config.STATE_FIELDS.list
-      );
+      const allStates = this.states;
       const sortedStates = DataUtils.sortBy(allStates, "name");
 
       // Always emit the full list of states (no pagination)

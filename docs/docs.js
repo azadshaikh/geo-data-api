@@ -1,4 +1,4 @@
-const docsApiBase = new URL("../api/v1/", window.location.href).href;
+const docsApiBase = new URL("../api/v2/", window.location.href).href;
 
 document.querySelectorAll("[data-api-base]").forEach((element) => {
   element.textContent = docsApiBase;

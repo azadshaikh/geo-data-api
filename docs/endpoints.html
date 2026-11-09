@@ -5,7 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <meta
       name="description"
-      content="A guide to the files available in API v1, from country lists to city search shards."
+      content="A guide to the files available in API v2, from country lists to paged city search."
     />
     <meta name="theme-color" content="#f5f7f2" />
     <title>Find the right endpoint. · Geo-Data API Docs</title>
@@ -222,13 +222,13 @@
             <p
               class="mt-4 max-w-2xl text-[15px] leading-7 text-[#607a69] sm:text-base"
             >
-              A guide to the files available in API v1, from country lists to
-              city search shards.
+              A guide to the files available in API v2, from country lists to
+              paged city search.
             </p>
             <div class="mt-5 flex flex-wrap gap-2">
               <span
                 class="rounded-full border border-[#d4e9d9] bg-[#eaf6eb] px-3 py-1 text-[10px] font-bold uppercase tracking-wider text-[#397958]"
-                >API v1</span
+                >API v2</span
               ><span
                 class="rounded-full border border-[#e0eae0] bg-white px-3 py-1 text-[10px] font-bold uppercase tracking-wider text-[#71877a]"
                 >Static JSON</span
@@ -242,7 +242,7 @@
               <strong class="text-[#28543a]">Base URL</strong><br /><code
                 class="mt-1 block break-all font-mono text-[12px] text-[#2c6944]"
                 data-api-base
-                >https://unpkg.com/geo-data-api@latest/dist/api/v1/</code
+                >https://example.com/api/v2/</code
               ><span class="mt-2 block"
                 >Paths below are relative to this URL. Use lowercase codes in
                 filenames.</span
@@ -283,10 +283,11 @@
                       >
                     </div>
                     <p class="text-[13px] leading-6 text-[#607769]">
-                      All countries with essential fields.
+                      All countries, with the same record shape as country
+                      details.
                       <a
                         class="whitespace-nowrap font-semibold"
-                        href="../api/v1/countries.json"
+                        href="../api/v2/countries.json"
                         >Open example ↗</a
                       >
                     </p>
@@ -307,7 +308,7 @@
                       Full details for a country.
                       <a
                         class="whitespace-nowrap font-semibold"
-                        href="../api/v1/countries/us.json"
+                        href="../api/v2/countries/us.json"
                         >Open example ↗</a
                       >
                     </p>
@@ -328,7 +329,7 @@
                       Index of regions and their endpoints.
                       <a
                         class="whitespace-nowrap font-semibold"
-                        href="../api/v1/countries/regions.json"
+                        href="../api/v2/countries/regions.json"
                         >Open example ↗</a
                       >
                     </p>
@@ -349,7 +350,7 @@
                       Countries in a region, such as asia.
                       <a
                         class="whitespace-nowrap font-semibold"
-                        href="../api/v1/countries/region/asia.json"
+                        href="../api/v2/countries/region/asia.json"
                         >Open example ↗</a
                       >
                     </p>
@@ -385,12 +386,12 @@
               <h2
                 class="mt-2 text-2xl font-extrabold tracking-[-.045em] text-[#17372a]"
               >
-                States & provinces
+                States &amp; provinces
               </h2>
               <div class="mt-3 text-[15px] leading-7 text-[#526d5c]">
                 <p>
-                  Use country ISO2 codes and ISO 3166-2 state codes in
-                  lowercase.
+                  Use a lowercase country ISO2 and the state record’s
+                  <code>path_key</code> for state paths.
                 </p>
                 <div
                   class="mt-5 overflow-hidden rounded-2xl border border-[#e0eae1] bg-white"
@@ -404,56 +405,58 @@
                         >GET</span
                       ><code
                         class="break-all text-[12px] font-semibold text-[#224f35]"
+                        >countries/{iso2}/states.json</code
+                      >
+                    </div>
+                    <p class="text-[13px] leading-6 text-[#607769]">
+                      All states in a country; an empty country returns an empty
+                      array.
+                      <a
+                        class="whitespace-nowrap font-semibold"
+                        href="../api/v2/countries/us/states.json"
+                        >Open example ↗</a
+                      >
+                    </p>
+                  </div>
+                  <div
+                    class="grid gap-2 border-t border-[#edf2ed] px-5 py-4 sm:grid-cols-[minmax(0,1fr)_minmax(0,1fr)] sm:gap-5"
+                  >
+                    <div class="min-w-0">
+                      <span
+                        class="mr-2 text-[10px] font-extrabold tracking-wide text-[#33845a]"
+                        >GET</span
+                      ><code
+                        class="break-all text-[12px] font-semibold text-[#224f35]"
+                        >countries/{iso2}/states/{state}.json</code
+                      >
+                    </div>
+                    <p class="text-[13px] leading-6 text-[#607769]">
+                      One state. Use its published path_key, including id-*
+                      fallbacks.
+                      <a
+                        class="whitespace-nowrap font-semibold"
+                        href="../api/v2/countries/us/states/ca.json"
+                        >Open example ↗</a
+                      >
+                    </p>
+                  </div>
+                  <div
+                    class="grid gap-2 border-t border-[#edf2ed] px-5 py-4 sm:grid-cols-[minmax(0,1fr)_minmax(0,1fr)] sm:gap-5"
+                  >
+                    <div class="min-w-0">
+                      <span
+                        class="mr-2 text-[10px] font-extrabold tracking-wide text-[#33845a]"
+                        >GET</span
+                      ><code
+                        class="break-all text-[12px] font-semibold text-[#224f35]"
                         >states/all.json</code
                       >
                     </div>
                     <p class="text-[13px] leading-6 text-[#607769]">
-                      Complete list of states.
+                      All states.
                       <a
                         class="whitespace-nowrap font-semibold"
-                        href="../api/v1/states/all.json"
-                        >Open example ↗</a
-                      >
-                    </p>
-                  </div>
-                  <div
-                    class="grid gap-2 border-t border-[#edf2ed] px-5 py-4 sm:grid-cols-[minmax(0,1fr)_minmax(0,1fr)] sm:gap-5"
-                  >
-                    <div class="min-w-0">
-                      <span
-                        class="mr-2 text-[10px] font-extrabold tracking-wide text-[#33845a]"
-                        >GET</span
-                      ><code
-                        class="break-all text-[12px] font-semibold text-[#224f35]"
-                        >states/country/{iso2}.json</code
-                      >
-                    </div>
-                    <p class="text-[13px] leading-6 text-[#607769]">
-                      States in one country.
-                      <a
-                        class="whitespace-nowrap font-semibold"
-                        href="../api/v1/states/country/us.json"
-                        >Open example ↗</a
-                      >
-                    </p>
-                  </div>
-                  <div
-                    class="grid gap-2 border-t border-[#edf2ed] px-5 py-4 sm:grid-cols-[minmax(0,1fr)_minmax(0,1fr)] sm:gap-5"
-                  >
-                    <div class="min-w-0">
-                      <span
-                        class="mr-2 text-[10px] font-extrabold tracking-wide text-[#33845a]"
-                        >GET</span
-                      ><code
-                        class="break-all text-[12px] font-semibold text-[#224f35]"
-                        >states/{iso3166_2}.json</code
-                      >
-                    </div>
-                    <p class="text-[13px] leading-6 text-[#607769]">
-                      Full details for one state.
-                      <a
-                        class="whitespace-nowrap font-semibold"
-                        href="../api/v1/states/us-ca.json"
+                        href="../api/v2/states/all.json"
                         >Open example ↗</a
                       >
                     </p>
@@ -471,10 +474,10 @@
                       >
                     </div>
                     <p class="text-[13px] leading-6 text-[#607769]">
-                      Index of available administrative types.
+                      Index of administrative types.
                       <a
                         class="whitespace-nowrap font-semibold"
-                        href="../api/v1/states/types.json"
+                        href="../api/v2/states/types.json"
                         >Open example ↗</a
                       >
                     </p>
@@ -492,10 +495,10 @@
                       >
                     </div>
                     <p class="text-[13px] leading-6 text-[#607769]">
-                      States for an administrative type.
+                      States for a type, when available.
                       <a
                         class="whitespace-nowrap font-semibold"
-                        href="../api/v1/states/type/state.json"
+                        href="../api/v2/states/type/state.json"
                         >Open example ↗</a
                       >
                     </p>
@@ -513,10 +516,10 @@
                       >
                     </div>
                     <p class="text-[13px] leading-6 text-[#607769]">
-                      Index of state timezone endpoints.
+                      Index of state timezone files, where available.
                       <a
                         class="whitespace-nowrap font-semibold"
-                        href="../api/v1/states/timezones.json"
+                        href="../api/v2/states/timezones.json"
                         >Open example ↗</a
                       >
                     </p>
@@ -534,7 +537,8 @@
                       >
                     </div>
                     <p class="text-[13px] leading-6 text-[#607769]">
-                      States in a timezone. Use the index to discover filenames.
+                      States in a timezone. Discover its filename from the
+                      index.
                     </p>
                   </div>
                 </div>
@@ -556,8 +560,8 @@
               </h2>
               <div class="mt-3 text-[15px] leading-7 text-[#526d5c]">
                 <p>
-                  Use a state list for a picker, a direct ID for one city, or
-                  batch files for multiple details.
+                  Use a state list for a picker, country pages for searches, and
+                  a direct ID for full details.
                 </p>
                 <div
                   class="mt-5 overflow-hidden rounded-2xl border border-[#e0eae1] bg-white"
@@ -571,129 +575,82 @@
                         >GET</span
                       ><code
                         class="break-all text-[12px] font-semibold text-[#224f35]"
+                        >countries/{iso2}/states/{state}/cities.json</code
+                      >
+                    </div>
+                    <p class="text-[13px] leading-6 text-[#607769]">
+                      City summaries in one state, including an empty array when
+                      none exist.
+                      <a
+                        class="whitespace-nowrap font-semibold"
+                        href="../api/v2/countries/us/states/ca/cities.json"
+                        >Open example ↗</a
+                      >
+                    </p>
+                  </div>
+                  <div
+                    class="grid gap-2 border-t border-[#edf2ed] px-5 py-4 sm:grid-cols-[minmax(0,1fr)_minmax(0,1fr)] sm:gap-5"
+                  >
+                    <div class="min-w-0">
+                      <span
+                        class="mr-2 text-[10px] font-extrabold tracking-wide text-[#33845a]"
+                        >GET</span
+                      ><code
+                        class="break-all text-[12px] font-semibold text-[#224f35]"
+                        >countries/{iso2}/cities/index.json</code
+                      >
+                    </div>
+                    <p class="text-[13px] leading-6 text-[#607769]">
+                      Page index for every country, including empty countries.
+                      Entries contain API-relative filenames and counts.
+                      <a
+                        class="whitespace-nowrap font-semibold"
+                        href="../api/v2/countries/us/cities/index.json"
+                        >Open example ↗</a
+                      >
+                    </p>
+                  </div>
+                  <div
+                    class="grid gap-2 border-t border-[#edf2ed] px-5 py-4 sm:grid-cols-[minmax(0,1fr)_minmax(0,1fr)] sm:gap-5"
+                  >
+                    <div class="min-w-0">
+                      <span
+                        class="mr-2 text-[10px] font-extrabold tracking-wide text-[#33845a]"
+                        >GET</span
+                      ><code
+                        class="break-all text-[12px] font-semibold text-[#224f35]"
+                        >countries/{iso2}/cities/{page}.json</code
+                      >
+                    </div>
+                    <p class="text-[13px] leading-6 text-[#607769]">
+                      A numbered page of city summaries, starting at 1; follow
+                      filenames from the index.
+                      <a
+                        class="whitespace-nowrap font-semibold"
+                        href="../api/v2/countries/us/cities/1.json"
+                        >Open example ↗</a
+                      >
+                    </p>
+                  </div>
+                  <div
+                    class="grid gap-2 border-t border-[#edf2ed] px-5 py-4 sm:grid-cols-[minmax(0,1fr)_minmax(0,1fr)] sm:gap-5"
+                  >
+                    <div class="min-w-0">
+                      <span
+                        class="mr-2 text-[10px] font-extrabold tracking-wide text-[#33845a]"
+                        >GET</span
+                      ><code
+                        class="break-all text-[12px] font-semibold text-[#224f35]"
                         >cities/{id}.json</code
                       >
                     </div>
                     <p class="text-[13px] leading-6 text-[#607769]">
-                      Full details for one city by numeric ID.
+                      Full city details addressed by numeric source ID.
                       <a
                         class="whitespace-nowrap font-semibold"
-                        href="../api/v1/cities/57995.json"
+                        href="../api/v2/cities/57995.json"
                         >Open example ↗</a
                       >
-                    </p>
-                  </div>
-                  <div
-                    class="grid gap-2 border-t border-[#edf2ed] px-5 py-4 sm:grid-cols-[minmax(0,1fr)_minmax(0,1fr)] sm:gap-5"
-                  >
-                    <div class="min-w-0">
-                      <span
-                        class="mr-2 text-[10px] font-extrabold tracking-wide text-[#33845a]"
-                        >GET</span
-                      ><code
-                        class="break-all text-[12px] font-semibold text-[#224f35]"
-                        >cities/country/{iso2}.json</code
-                      >
-                    </div>
-                    <p class="text-[13px] leading-6 text-[#607769]">
-                      Complete city list for a country.
-                      <a
-                        class="whitespace-nowrap font-semibold"
-                        href="../api/v1/cities/country/us.json"
-                        >Open example ↗</a
-                      >
-                    </p>
-                  </div>
-                  <div
-                    class="grid gap-2 border-t border-[#edf2ed] px-5 py-4 sm:grid-cols-[minmax(0,1fr)_minmax(0,1fr)] sm:gap-5"
-                  >
-                    <div class="min-w-0">
-                      <span
-                        class="mr-2 text-[10px] font-extrabold tracking-wide text-[#33845a]"
-                        >GET</span
-                      ><code
-                        class="break-all text-[12px] font-semibold text-[#224f35]"
-                        >cities/country/{iso2}/index.json</code
-                      >
-                    </div>
-                    <p class="text-[13px] leading-6 text-[#607769]">
-                      Chunk index for large countries; omitted for smaller
-                      countries.
-                    </p>
-                  </div>
-                  <div
-                    class="grid gap-2 border-t border-[#edf2ed] px-5 py-4 sm:grid-cols-[minmax(0,1fr)_minmax(0,1fr)] sm:gap-5"
-                  >
-                    <div class="min-w-0">
-                      <span
-                        class="mr-2 text-[10px] font-extrabold tracking-wide text-[#33845a]"
-                        >GET</span
-                      ><code
-                        class="break-all text-[12px] font-semibold text-[#224f35]"
-                        >cities/country/{iso2}/{chunk}.json</code
-                      >
-                    </div>
-                    <p class="text-[13px] leading-6 text-[#607769]">
-                      A chunk listed by the country index.
-                    </p>
-                  </div>
-                  <div
-                    class="grid gap-2 border-t border-[#edf2ed] px-5 py-4 sm:grid-cols-[minmax(0,1fr)_minmax(0,1fr)] sm:gap-5"
-                  >
-                    <div class="min-w-0">
-                      <span
-                        class="mr-2 text-[10px] font-extrabold tracking-wide text-[#33845a]"
-                        >GET</span
-                      ><code
-                        class="break-all text-[12px] font-semibold text-[#224f35]"
-                        >cities/state/{iso3166_2}.json</code
-                      >
-                    </div>
-                    <p class="text-[13px] leading-6 text-[#607769]">
-                      Cities for one state.
-                      <a
-                        class="whitespace-nowrap font-semibold"
-                        href="../api/v1/cities/state/us-ca.json"
-                        >Open example ↗</a
-                      >
-                    </p>
-                  </div>
-                  <div
-                    class="grid gap-2 border-t border-[#edf2ed] px-5 py-4 sm:grid-cols-[minmax(0,1fr)_minmax(0,1fr)] sm:gap-5"
-                  >
-                    <div class="min-w-0">
-                      <span
-                        class="mr-2 text-[10px] font-extrabold tracking-wide text-[#33845a]"
-                        >GET</span
-                      ><code
-                        class="break-all text-[12px] font-semibold text-[#224f35]"
-                        >cities/batches.json</code
-                      >
-                    </div>
-                    <p class="text-[13px] leading-6 text-[#607769]">
-                      City ID ranges and API-relative batch filenames.
-                      <a
-                        class="whitespace-nowrap font-semibold"
-                        href="../api/v1/cities/batches.json"
-                        >Open example ↗</a
-                      >
-                    </p>
-                  </div>
-                  <div
-                    class="grid gap-2 border-t border-[#edf2ed] px-5 py-4 sm:grid-cols-[minmax(0,1fr)_minmax(0,1fr)] sm:gap-5"
-                  >
-                    <div class="min-w-0">
-                      <span
-                        class="mr-2 text-[10px] font-extrabold tracking-wide text-[#33845a]"
-                        >GET</span
-                      ><code
-                        class="break-all text-[12px] font-semibold text-[#224f35]"
-                        >cities/batch/{batch-filename}</code
-                      >
-                    </div>
-                    <p class="text-[13px] leading-6 text-[#607769]">
-                      Detailed city records keyed by ID. The batch index
-                      provides the full path relative to the API base.
                     </p>
                   </div>
                   <div
@@ -709,8 +666,8 @@
                       >
                     </div>
                     <p class="text-[13px] leading-6 text-[#607769]">
-                      City timezone index, present only when the dataset
-                      supplies city timezones.
+                      City timezone index, only when source city timezones
+                      exist.
                     </p>
                   </div>
                   <div
@@ -726,8 +683,8 @@
                       >
                     </div>
                     <p class="text-[13px] leading-6 text-[#607769]">
-                      City timezone files, when available. Use the index to
-                      discover filenames.
+                      City timezone groups, where available; use the index for
+                      filenames.
                     </p>
                   </div>
                 </div>
@@ -749,8 +706,8 @@
               </h2>
               <div class="mt-3 text-[15px] leading-7 text-[#526d5c]">
                 <p>
-                  These are static files: fetch an index and filter its records
-                  in your application.
+                  These are static files: load country pages or a state list and
+                  filter records in your application.
                 </p>
                 <div
                   class="mt-5 overflow-hidden rounded-2xl border border-[#e0eae1] bg-white"
@@ -768,10 +725,10 @@
                       >
                     </div>
                     <p class="text-[13px] leading-6 text-[#607769]">
-                      Searchable country records.
+                      Complete country search records.
                       <a
                         class="whitespace-nowrap font-semibold"
-                        href="../api/v1/search/countries.json"
+                        href="../api/v2/search/countries.json"
                         >Open example ↗</a
                       >
                     </p>
@@ -789,10 +746,10 @@
                       >
                     </div>
                     <p class="text-[13px] leading-6 text-[#607769]">
-                      Searchable state records.
+                      Complete state search records.
                       <a
                         class="whitespace-nowrap font-semibold"
-                        href="../api/v1/search/states.json"
+                        href="../api/v2/search/states.json"
                         >Open example ↗</a
                       >
                     </p>
@@ -810,89 +767,13 @@
                       >
                     </div>
                     <p class="text-[13px] leading-6 text-[#607769]">
-                      Available country city-search shards. The index metadata
-                      reports whether the global file is available.
+                      All country city-page indexes, with country codes,
+                      filenames and counts.
                       <a
                         class="whitespace-nowrap font-semibold"
-                        href="../api/v1/search/cities/index.json"
+                        href="../api/v2/search/cities/index.json"
                         >Open example ↗</a
                       >
-                    </p>
-                  </div>
-                  <div
-                    class="grid gap-2 border-t border-[#edf2ed] px-5 py-4 sm:grid-cols-[minmax(0,1fr)_minmax(0,1fr)] sm:gap-5"
-                  >
-                    <div class="min-w-0">
-                      <span
-                        class="mr-2 text-[10px] font-extrabold tracking-wide text-[#33845a]"
-                        >GET</span
-                      ><code
-                        class="break-all text-[12px] font-semibold text-[#224f35]"
-                        >search/cities/country/{iso2}.json</code
-                      >
-                    </div>
-                    <p class="text-[13px] leading-6 text-[#607769]">
-                      City search records for one country.
-                      <a
-                        class="whitespace-nowrap font-semibold"
-                        href="../api/v1/search/cities/country/br.json"
-                        >Open example ↗</a
-                      >
-                    </p>
-                  </div>
-                  <div
-                    class="grid gap-2 border-t border-[#edf2ed] px-5 py-4 sm:grid-cols-[minmax(0,1fr)_minmax(0,1fr)] sm:gap-5"
-                  >
-                    <div class="min-w-0">
-                      <span
-                        class="mr-2 text-[10px] font-extrabold tracking-wide text-[#33845a]"
-                        >GET</span
-                      ><code
-                        class="break-all text-[12px] font-semibold text-[#224f35]"
-                        >search/cities.json</code
-                      >
-                    </div>
-                    <p class="text-[13px] leading-6 text-[#607769]">
-                      Complete global city index for ordinary builds. Cloudflare
-                      Pages omits this large file; use all country shards for
-                      complete global search.
-                    </p>
-                  </div>
-                  <div
-                    class="grid gap-2 border-t border-[#edf2ed] px-5 py-4 sm:grid-cols-[minmax(0,1fr)_minmax(0,1fr)] sm:gap-5"
-                  >
-                    <div class="min-w-0">
-                      <span
-                        class="mr-2 text-[10px] font-extrabold tracking-wide text-[#33845a]"
-                        >GET</span
-                      ><code
-                        class="break-all text-[12px] font-semibold text-[#224f35]"
-                        >search/combined-sample.json</code
-                      >
-                    </div>
-                    <p class="text-[13px] leading-6 text-[#607769]">
-                      A sample, limited to 1,000 states and 5,000 cities.
-                      <a
-                        class="whitespace-nowrap font-semibold"
-                        href="../api/v1/search/combined-sample.json"
-                        >Open example ↗</a
-                      >
-                    </p>
-                  </div>
-                  <div
-                    class="grid gap-2 border-t border-[#edf2ed] px-5 py-4 sm:grid-cols-[minmax(0,1fr)_minmax(0,1fr)] sm:gap-5"
-                  >
-                    <div class="min-w-0">
-                      <span
-                        class="mr-2 text-[10px] font-extrabold tracking-wide text-[#33845a]"
-                        >GET</span
-                      ><code
-                        class="break-all text-[12px] font-semibold text-[#224f35]"
-                        >search/combined.json</code
-                      >
-                    </div>
-                    <p class="text-[13px] leading-6 text-[#607769]">
-                      Compatibility alias for the combined sample.
                     </p>
                   </div>
                 </div>
@@ -901,9 +782,9 @@
             <div
               class="rounded-xl bg-[#f4f8f3] px-5 py-4 text-sm leading-6 text-[#5d7665]"
             >
-              A country without cities may not have a search shard. Names in
-              search indexes include <code>name_normalized</code> for
-              case-insensitive, diacritic-folded matching.
+              Country indexes exist even when empty. Normalize queries to
+              lowercase NFD text without combining marks to match
+              <code>name_normalized</code>.
             </div>
             <section
               id="discovery"
@@ -943,7 +824,7 @@
                       Dataset statistics and endpoint index.
                       <a
                         class="whitespace-nowrap font-semibold"
-                        href="../api/v1/api-info.json"
+                        href="../api/v2/api-info.json"
                         >Open example ↗</a
                       >
                     </p>
@@ -964,7 +845,7 @@
                       Machine-readable endpoint descriptions.
                       <a
                         class="whitespace-nowrap font-semibold"
-                        href="../api/v1/documentation.json"
+                        href="../api/v2/documentation.json"
                         >Open example ↗</a
                       >
                     </p>
@@ -985,7 +866,7 @@
                       Dataset version, file inventory, and checksums.
                       <a
                         class="whitespace-nowrap font-semibold"
-                        href="../api/v1/manifest.json"
+                        href="../api/v2/manifest.json"
                         >Open example ↗</a
                       >
                     </p>
@@ -1006,7 +887,7 @@
                       Source validation and build report.
                       <a
                         class="whitespace-nowrap font-semibold"
-                        href="../api/v1/build-report.json"
+                        href="../api/v2/build-report.json"
                         >Open example ↗</a
                       >
                     </p>

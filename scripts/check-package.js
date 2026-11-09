@@ -11,6 +11,9 @@ const result = spawnSync(
 if (result.status !== 0) throw new Error(result.stderr || "npm pack failed");
 const [pack] = JSON.parse(result.stdout);
 const paths = new Set(pack.files.map((file) => file.path));
+if ([...paths].some((name) => /^dist\/api\/(?!v2\/)/i.test(name))) {
+  throw new Error("Package must contain only the v2 API output");
+}
 if (
   [...paths].some((name) => /^dist\/(?:[^/]+\/)*\.[^/]+-backup-/.test(name))
 ) {
@@ -18,22 +21,24 @@ if (
 }
 for (const required of [
   "dist/404.html",
-  "dist/api/v1/manifest.json",
+  "dist/api/v2/manifest.json",
   "src/data-processor.js",
   "src/config.js",
+  "src/api-contract.js",
+  "src/generated/validators.js",
+  "src/utils/v2-model.js",
   "src/utils/path-safety.js",
   "src/utils/build-fingerprint.js",
   "scripts/verify.js",
-  "scripts/check-cloudflare-assets.js",
   "types/index.d.ts",
   "schemas/geo-data.schema.json",
   "openapi.json",
 ]) {
   if (!paths.has(required)) throw new Error(`Package is missing ${required}`);
 }
-const manifest = require("../dist/api/v1/manifest.json");
+const manifest = require("../dist/api/v2/manifest.json");
 const cityFiles = [...paths].filter((name) =>
-  /^dist\/api\/v1\/cities\/\d+\.json$/.test(name),
+  /^dist\/api\/v2\/cities\/\d+\.json$/.test(name),
 );
 if (cityFiles.length !== manifest.counts.cities) {
   throw new Error(

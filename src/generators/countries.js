@@ -1,6 +1,5 @@
 const FileUtils = require("../utils/file-utils");
 const DataUtils = require("../utils/data-utils");
-const config = require("../config");
 const BaseGenerator = require("./base-generator");
 
 class CountriesGenerator extends BaseGenerator {
@@ -31,24 +30,9 @@ class CountriesGenerator extends BaseGenerator {
   }
 
   async generateCountriesList() {
-    // Basic countries list (optimized for listing)
-    const countriesList = this.countries.map((country) => {
-      const basicData = {};
-
-      // Include specified fields for list view
-      config.COUNTRY_FIELDS.list.forEach((field) => {
-        if (country[field] !== undefined) {
-          basicData[field] = country[field];
-        }
-      });
-
-      return basicData;
-    });
-
-    const sortedCountries = DataUtils.sortBy(countriesList, "name");
+    const sortedCountries = DataUtils.sortBy(this.countries, "name");
     const dataWithMeta = DataUtils.addMetadata(sortedCountries, "countries", {
       total_countries: sortedCountries.length,
-      fields_included: config.COUNTRY_FIELDS.list,
     });
 
     await FileUtils.writeJSON("countries.json", dataWithMeta);
@@ -89,25 +73,12 @@ class CountriesGenerator extends BaseGenerator {
   }
 
   async generateCountriesByRegion() {
-    const countriesByRegion = DataUtils.groupBy(this.countries, "region");
+    const countriesByRegion = DataUtils.groupBy(this.countries.filter((c) => c.region), "region");
 
     for (const [region, countries] of Object.entries(countriesByRegion)) {
       if (!region || region === "undefined") continue;
 
-      const regionCountries = countries.map((country) => ({
-        id: country.id,
-        name: country.name,
-        iso2: country.iso2,
-        iso3: country.iso3,
-        capital: country.capital,
-        currency: country.currency,
-        currency_symbol: country.currency_symbol,
-        subregion: country.subregion,
-        emoji: country.emoji,
-        emojiU: country.emojiU,
-      }));
-
-      const sortedCountries = DataUtils.sortBy(regionCountries, "name");
+      const sortedCountries = DataUtils.sortBy(countries, "name");
       const dataWithMeta = DataUtils.addMetadata(
         sortedCountries,
         "countries_by_region",
@@ -148,24 +119,12 @@ class CountriesGenerator extends BaseGenerator {
   }
 
   async generateCountriesBySubregion() {
-    const countriesBySubregion = DataUtils.groupBy(this.countries, "subregion");
+    const countriesBySubregion = DataUtils.groupBy(this.countries.filter((c) => c.subregion), "subregion");
 
     for (const [subregion, countries] of Object.entries(countriesBySubregion)) {
       if (!subregion || subregion === "undefined") continue;
 
-      const subregionCountries = countries.map((country) => ({
-        id: country.id,
-        name: country.name,
-        iso2: country.iso2,
-        iso3: country.iso3,
-        capital: country.capital,
-        currency: country.currency,
-        region: country.region,
-        emoji: country.emoji,
-        emojiU: country.emojiU,
-      }));
-
-      const sortedCountries = DataUtils.sortBy(subregionCountries, "name");
+      const sortedCountries = DataUtils.sortBy(countries, "name");
       const dataWithMeta = DataUtils.addMetadata(
         sortedCountries,
         "countries_by_subregion",

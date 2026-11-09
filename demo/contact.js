@@ -13,7 +13,7 @@ function validateForm() {
   return isValid;
 }
 
-const API_BASE_URL = new URL("../api/v1", window.location.href).href;
+const API_BASE_URL = new URL("../api/v2", window.location.href).href;
 
 let countries = [];
 let currentStates = [];
@@ -106,21 +106,9 @@ async function loadStates(countryId) {
     const selectedCountry = countries.find((c) => c.id == countryId);
     const isoCode = selectedCountry.iso2.toLowerCase();
     const response = await fetch(
-      `${API_BASE_URL}/states/country/${isoCode}.json`,
+      `${API_BASE_URL}/countries/${isoCode}/states.json`,
     );
     if (request !== stateRequest) return;
-    if (response.status === 404) {
-      // No states for this country
-      currentStates = [];
-      stateSelect.innerHTML = '<option value="">No states found</option>';
-      stateSelect.disabled = true;
-      // Clear cities
-      currentCities = [];
-      citySelect.innerHTML = "<option>Choose state first</option>";
-      citySelect.disabled = true;
-      return;
-    }
-
     if (response.status >= 400)
       throw new Error(`Request failed (${response.status})`);
 
@@ -165,21 +153,18 @@ async function loadCities(stateId) {
   const request = ++cityRequest;
   try {
     const selectedState = currentStates.find((s) => s.id == stateId);
-    const isoCode =
-      selectedState && selectedState.iso3166_2
-        ? selectedState.iso3166_2.toLowerCase().replace(/[^a-z0-9-]/g, "-")
-        : stateId;
-    const cityEndpoint = `${API_BASE_URL}/cities/state/${isoCode}.json`;
+    const selectedCountry = countries.find((c) => c.id == countrySelect.value);
+    const countryCode = selectedCountry?.iso2?.toLowerCase();
+    const stateKey = selectedState?.path_key;
+    if (
+      !/^[a-z]{2}$/.test(countryCode || "") ||
+      !/^[a-z0-9-]+$/.test(stateKey || "")
+    ) {
+      throw new Error("State path is unavailable");
+    }
+    const cityEndpoint = `${API_BASE_URL}/countries/${countryCode}/states/${stateKey}/cities.json`;
     const response = await fetch(cityEndpoint);
     if (request !== cityRequest) return;
-    if (response.status === 404) {
-      // No cities for this state
-      currentCities = [];
-      citySelect.innerHTML = '<option value="">No cities found</option>';
-      citySelect.disabled = true;
-      return;
-    }
-
     if (response.status >= 400)
       throw new Error(`Request failed (${response.status})`);
 

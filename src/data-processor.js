@@ -19,14 +19,11 @@ const { verifyOutput } = require("../scripts/verify");
 const { compressJsonFiles } = require("./utils/compression");
 const { assertSafeLocations } = require("./utils/path-safety");
 const { buildFingerprint } = require("./utils/build-fingerprint");
+const { normalizeDataset } = require("./utils/v2-model");
 
 class DataProcessor {
   constructor(options = {}) {
-    this.options = {
-      ...options,
-      omitGlobalCityIndex:
-        options.omitGlobalCityIndex ?? (process.env.CF_PAGES === "1"),
-    };
+    this.options = { ...options };
     this.countries = [];
     this.states = [];
     this.cities = [];
@@ -56,6 +53,7 @@ class DataProcessor {
 
       // Perform data analysis
       this.analyzeData();
+      Object.assign(this, normalizeDataset(this.countries, this.states, this.cities));
     } catch (error) {
       console.error("Error loading data:", error.message);
       console.error(
@@ -114,20 +112,15 @@ class DataProcessor {
         FileUtils.assertNoOutputCollisions();
       });
       await this.performanceMonitor.measure("search_generation", async () => {
-        await new SearchGenerator(this.countries, this.states, this.cities, {
-          includeGlobalCityIndex: !this.options.omitGlobalCityIndex,
-        }).generate();
+        await new SearchGenerator(this.countries, this.states, this.cities).generate();
         FileUtils.assertNoOutputCollisions();
       });
       await this.performanceMonitor.measure("api_documentation_generation", async () => {
-        const searchOptions = {
-          includeGlobalCityIndex: !this.options.omitGlobalCityIndex,
-        };
         await new APIInfoGenerator(
-          this.countries, this.states, this.cities, this.dataAnalysis, searchOptions,
+          this.countries, this.states, this.cities, this.dataAnalysis,
         ).generate();
         await new APIDocumentationGenerator(
-          this.countries, this.states, this.cities, this.dataAnalysis, searchOptions,
+          this.countries, this.states, this.cities, this.dataAnalysis,
         ).generate();
         FileUtils.assertNoOutputCollisions();
       });
@@ -183,7 +176,7 @@ class DataProcessor {
       if (this.options.outputDir) config.OUTPUT_DIR = this.options.outputDir;
       if (this.options.pretty) config.PRETTY_JSON = true;
       if (this.options.countryShardSize !== undefined) {
-        if (!Number.isSafeInteger(this.options.countryShardSize) || this.options.countryShardSize < 0) throw new Error("Country shard size must be a non-negative integer");
+        if (!Number.isSafeInteger(this.options.countryShardSize) || this.options.countryShardSize < 1) throw new Error("Country page size must be a positive integer");
         config.COUNTRY_CITY_SHARD_SIZE = this.options.countryShardSize;
       }
       await assertSafeLocations(config.INPUT_DIR, config.OUTPUT_DIR);
@@ -250,7 +243,7 @@ function parseArgs() {
       else if (arg === "--output") options.outputDir = value;
       else {
         const number = Number(value);
-        if (!Number.isSafeInteger(number) || number < 0) throw new Error(`${arg} requires a non-negative integer`);
+        if (!Number.isSafeInteger(number) || number < 0 || (arg === "--country-shard-size" && number === 0)) throw new Error(`${arg} requires ${arg === "--country-shard-size" ? "a positive" : "a non-negative"} integer`);
         if (arg === "--country-shard-size") options.countryShardSize = number;
         else options.compressionThreshold = number;
       }
@@ -262,11 +255,11 @@ Usage: geo-data-api [options]
 
 Options:
   --input <directory>   Source data directory (default: ./db)
-  --output <directory>  API output directory (default: ./dist/api/v1)
+  --output <directory>  API output directory (default: ./dist/api/v2)
   --pretty          Enable pretty JSON formatting for all files
   --compress        Create gzip and Brotli siblings for JSON files
   --compression-threshold <bytes>  Minimum JSON size to compress (default: 1024)
-  --country-shard-size <count>     Cities per country shard (default: 5000; 0 disables)
+  --country-shard-size <count>     Cities per country page (default: 5000)
   --help, -h        Show this help message
 
 Performance Notes:

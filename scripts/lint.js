@@ -16,9 +16,14 @@ function collect(directory) {
 }
 
 let failed = false;
-for (const file of ["src", "scripts", "test", "demo", "docs"].flatMap(
-  collect,
-)) {
+for (const file of [
+  "src",
+  "scripts",
+  "test",
+  "demo",
+  "docs",
+  "packages/client",
+].flatMap(collect)) {
   const result = spawnSync(process.execPath, ["--check", file], {
     encoding: "utf8",
   });
