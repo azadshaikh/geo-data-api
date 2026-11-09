@@ -19,6 +19,8 @@ test("npm packs only v2 while preserving an existing local v1 tree", (t) => {
     path.join(root, "dist/api/v2/manifest.json"),
     '{"api_version":"v2"}',
   );
+  fs.mkdirSync(path.join(root, "dist/playground"), { recursive: true });
+  fs.writeFileSync(path.join(root, "dist/playground/index.html"), "Playground");
   const npmCli =
     process.env.npm_execpath ||
     path.join(
@@ -39,6 +41,7 @@ test("npm packs only v2 while preserving an existing local v1 tree", (t) => {
   assert.equal(result.status, 0, result.stderr);
   const filenames = JSON.parse(result.stdout)[0].files.map((file) => file.path);
   assert.ok(filenames.includes("dist/api/v2/manifest.json"));
+  assert.ok(filenames.includes("dist/playground/index.html"));
   assert.ok(!filenames.some((name) => name.startsWith("dist/api/v1/")));
   assert.equal(
     fs.readFileSync(path.join(root, "dist/api/v1/old.json"), "utf8"),

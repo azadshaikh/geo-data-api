@@ -8,14 +8,14 @@ const { test } = require("node:test");
 const root = path.resolve(__dirname, "..");
 const pages = [
   ["index.html", "home"],
-  ["demo/demo.html", "playground"],
+  ["playground/index.html", "playground"],
   ["docs/index.html", "docs"],
   ["docs/endpoints.html", "docs"],
   ["docs/guides.html", "docs"],
 ];
 const destinations = {
   home: "https://example.test/project/",
-  playground: "https://example.test/project/demo/demo.html",
+  playground: "https://example.test/project/playground/index.html",
   docs: "https://example.test/project/docs/index.html",
   github: "https://github.com/azadshaikh/geo-data-api",
 };
@@ -47,7 +47,7 @@ for (const [file, active] of pages) {
 test("the website build includes the documentation pages and their assets", (t) => {
   const output = fs.mkdtempSync(path.join(os.tmpdir(), "geo-site-build-"));
   t.after(() => fs.rmSync(output, { recursive: true, force: true }));
-  for (const directory of ["src", "demo", "docs"]) {
+  for (const directory of ["src", "playground", "docs"]) {
     fs.cpSync(path.join(root, directory), path.join(output, directory), {
       recursive: true,
     });

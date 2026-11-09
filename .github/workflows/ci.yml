@@ -56,5 +56,5 @@ jobs:
           done
           city_id=$(node -p "require('./db/cities.json')[0].id")
           curl -fsS "http://127.0.0.1:39741/api/v2/cities/${city_id}.json" | node -e 'let s="";process.stdin.on("data",x=>s+=x);process.stdin.on("end",()=>{if(JSON.parse(s).data.id!==Number(process.argv[1]))process.exit(1)})' "$city_id"
-          curl -fsS http://127.0.0.1:39741/demo/demo.html >/dev/null
+          curl -fsS http://127.0.0.1:39741/playground/index.html >/dev/null
           curl -fsS http://127.0.0.1:39741/docs/index.html >/dev/null

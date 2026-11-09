@@ -9,7 +9,7 @@ COPY scripts/ ./scripts/
 COPY schemas/ ./schemas/
 COPY types/ ./types/
 COPY db/ ./db/
-COPY demo/ ./demo/
+COPY playground/ ./playground/
 COPY docs/ ./docs/
 
 RUN npm run build

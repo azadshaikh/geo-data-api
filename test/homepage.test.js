@@ -77,10 +77,13 @@ function runHome(page, response, options = {}) {
   return { elements, requests, copied };
 }
 
-test("the homepage uses the demo's Tailwind design and links to the playground", () => {
+test("the homepage uses Tailwind and links to the playground", () => {
   assert.match(html, /https:\/\/cdn\.tailwindcss\.com/);
   assert.doesNotMatch(html, /bootstrap@/i);
-  assert.match(html, /demo\/demo\.html/);
+  assert.ok(
+    /playground\/index\.html/.test(html),
+    "homepage links to the playground URL",
+  );
   assert.match(html, /quick start/i);
 });
 

@@ -20,7 +20,7 @@ for (const file of [
   "src",
   "scripts",
   "test",
-  "demo",
+  "playground",
   "docs",
   "packages/client",
 ].flatMap(collect)) {

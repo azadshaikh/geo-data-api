@@ -4,7 +4,7 @@ const fs = require("fs/promises");
 
 class DemoCopier {
   async copyDemoFiles() {
-    console.log("Starting demo files copy...");
+    console.log("Starting website files copy...");
 
     const projectRoot = path.resolve(__dirname, "../");
 
@@ -21,16 +21,18 @@ class DemoCopier {
       path.join(projectRoot, "dist", "_headers"),
     );
 
-    // Copy entire demo folder (if present) into dist/demo
-    const demoSourceDir = path.join(projectRoot, "demo");
-    const demoDestDir = path.join(projectRoot, "dist", "demo");
+    // Copy the playground page and its assets.
+    const playgroundSourceDir = path.join(projectRoot, "playground");
+    const playgroundDestDir = path.join(projectRoot, "dist", "playground");
 
     // Use FileUtils.copyDir to ensure proper copying without hard links
-    if (await FileUtils.pathExists(demoSourceDir)) {
-      await FileUtils.copyDir(demoSourceDir, demoDestDir);
-      console.log(`✓ Copied: demo -> ${demoDestDir}`);
+    if (await FileUtils.pathExists(playgroundSourceDir)) {
+      await FileUtils.copyDir(playgroundSourceDir, playgroundDestDir);
+      console.log(`✓ Copied: playground -> ${playgroundDestDir}`);
     } else {
-      console.warn(`⚠ Source demo folder not found: ${demoSourceDir}`);
+      console.warn(
+        `⚠ Source playground folder not found: ${playgroundSourceDir}`,
+      );
     }
 
     // Publish the website documentation, while leaving the Markdown sources
@@ -49,15 +51,15 @@ class DemoCopier {
       console.log("✓ Copied: website documentation -> dist/docs");
     }
 
-    console.log("✅ Demo files copy completed successfully!");
+    console.log("✅ Website files copy completed successfully!");
   }
 
   async run() {
     try {
-      console.log("🚀 Geo-Data API - Demo Copier");
+      console.log("🚀 Geo-Data API - Website Copier");
       console.log("━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━");
 
-      // Copy demo files
+      // Copy website files
       await this.copyDemoFiles();
 
       console.log("================================================");
@@ -66,7 +68,7 @@ class DemoCopier {
       console.log("Copied files:");
       console.log("• Index HTML (dist/index.html)");
       console.log("• Not-found page (dist/404.html)");
-      console.log("• Demo files (dist/demo/)");
+      console.log("• Playground files (dist/playground/)");
       console.log("• Website documentation (dist/docs/)");
 
       // Force exit the process cleanly

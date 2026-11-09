@@ -1,6 +1,6 @@
 # Deploy Geo-Data API with Dokploy
 
-This guide deploys the website, interactive demo, documentation and v2 API
+This guide deploys the website, interactive playground, documentation and v2 API
 from the GitHub repository using Dokploy's Docker Compose service. The build
 generates the static dataset inside the image; no database or persistent volume
 is required at runtime.
@@ -90,12 +90,12 @@ the default generated domain uses HTTP with HTTPS off and no certificate.
 2. Open these URLs, replacing `geo.example.com` with your domain:
 
    - `https://geo.example.com/` — home page
-   - `https://geo.example.com/demo/demo.html` — interactive demo
+   - `https://geo.example.com/playground/index.html` — interactive playground
    - `https://geo.example.com/docs/index.html` — API documentation
    - `https://geo.example.com/api/v2/countries.json` — country list
    - `https://geo.example.com/api/v2/cities/57995.json` — example city
 
-3. Try selecting a country and state in the demo, then load a city. You can
+3. Try selecting a country and state in the playground, then load a city. You can
    also check the API from a terminal:
 
    ```sh
@@ -134,7 +134,7 @@ the local preview.
 - **Certificate is not issued:** verify DNS points to the correct server and
   ports 80 and 443 are reachable. Check Traefik logs and Dokploy's certificate
   settings, then retry the domain configuration if needed.
-- **The demo loads but API requests fail:** make sure the whole image was
+- **The playground loads but API requests fail:** make sure the whole image was
   deployed, the domain path is `/`, and the URLs above work directly. Do not
   mount an empty directory over `/app/dist`.
 

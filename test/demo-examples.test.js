@@ -5,7 +5,10 @@ const os = require("node:os");
 const { spawnSync } = require("node:child_process");
 const { test } = require("node:test");
 
-const demo = fs.readFileSync(path.join(__dirname, "../demo/demo.html"), "utf8");
+const demo = fs.readFileSync(
+  path.join(__dirname, "../playground/index.html"),
+  "utf8",
+);
 
 test("the demo offers multiple examples and uses Tailwind v3's CDN", () => {
   assert.match(demo, /https:\/\/cdn\.tailwindcss\.com/);
@@ -16,15 +19,15 @@ test("the demo offers multiple examples and uses Tailwind v3's CDN", () => {
 });
 
 test("demo API paths resolve relative to the deployed project", () => {
-  const { apiBaseUrl } = require("../demo/examples");
+  const { apiBaseUrl } = require("../playground/examples");
   assert.equal(
-    apiBaseUrl("https://example.test/project/demo/demo.html"),
+    apiBaseUrl("https://example.test/project/playground/index.html"),
     "https://example.test/project/api/v2/",
   );
 });
 
 test("country-scoped search follows every page, folds accents, and caches requests", async () => {
-  const { createGeoClient } = require("../demo/examples");
+  const { createGeoClient } = require("../playground/examples");
   const base = "https://example.test/project/api/v2/";
   const fixtures = {
     [`${base}countries/br/cities/index.json`]: {
@@ -64,7 +67,7 @@ test("country-scoped search follows every page, folds accents, and caches reques
 });
 
 test("an empty country index returns no cities and a missing index reports 404", async () => {
-  const { createGeoClient } = require("../demo/examples");
+  const { createGeoClient } = require("../playground/examples");
   const empty = createGeoClient("https://example.test/api/v2/", async () => ({
     ok: true,
     status: 200,
@@ -79,7 +82,7 @@ test("an empty country index returns no cities and a missing index reports 404",
 });
 
 test("city search handles an empty page and reports a missing page", async () => {
-  const { createGeoClient } = require("../demo/examples");
+  const { createGeoClient } = require("../playground/examples");
   const client = createGeoClient(
     "https://example.test/api/v2/",
     async (url) => {
@@ -112,7 +115,7 @@ test("city search handles an empty page and reports a missing page", async () =>
 });
 
 test("a failed request can be retried", async () => {
-  const { createGeoClient } = require("../demo/examples");
+  const { createGeoClient } = require("../playground/examples");
   let attempts = 0;
   const client = createGeoClient("https://example.test/api/v2/", async () => {
     attempts++;
@@ -192,7 +195,7 @@ test("the search example exposes a retry after the country list fails", async (t
           : [],
   };
   global.window = {
-    location: { href: "https://example.test/project/demo/demo.html" },
+    location: { href: "https://example.test/project/playground/index.html" },
     fetch: async (url) => {
       if (url.endsWith("/countries.json")) {
         countryRequests++;
@@ -221,7 +224,7 @@ test("the search example exposes a retry after the country list fails", async (t
       };
     },
   };
-  require("../demo/examples").initDemo();
+  require("../playground/examples").initDemo();
   tabs[1].listeners.click();
   await new Promise((resolve) => setImmediate(resolve));
   assert.equal(elements["search-retry"].hidden, false);
@@ -234,7 +237,7 @@ test("the search example exposes a retry after the country list fails", async (t
 });
 
 test("city lookup fetches one detail file and handles missing IDs", async () => {
-  const { createGeoClient } = require("../demo/examples");
+  const { createGeoClient } = require("../playground/examples");
   const requests = [];
   const client = createGeoClient(
     "https://example.test/project/api/v2/",
@@ -259,7 +262,7 @@ test("city lookup fetches one detail file and handles missing IDs", async () => 
 });
 
 test("city lookup rejects path-like IDs before making a request", async () => {
-  const { createGeoClient } = require("../demo/examples");
+  const { createGeoClient } = require("../playground/examples");
   const client = createGeoClient(
     "https://example.test/project/api/v2/",
     async () => {
@@ -292,7 +295,7 @@ test("the displayed lookup example fetches the direct city file", async () => {
         json: async () => ({ data: { id: 12, name: "Example" } }),
       };
     },
-    { href: "https://example.test/project/demo/demo.html" },
+    { href: "https://example.test/project/playground/index.html" },
     URL,
   );
   assert.equal(result.name, "Example");
@@ -308,7 +311,7 @@ test("the demo build copies the page and its scripts", (t) => {
   fs.cpSync(path.join(project, "src"), path.join(output, "src"), {
     recursive: true,
   });
-  fs.cpSync(path.join(project, "demo"), path.join(output, "demo"), {
+  fs.cpSync(path.join(project, "playground"), path.join(output, "playground"), {
     recursive: true,
   });
   for (const name of ["index.html", "404.html", "_headers"])
@@ -322,10 +325,10 @@ test("the demo build copies the page and its scripts", (t) => {
     fs.readFileSync(path.join(output, "dist/index.html")),
     fs.readFileSync(path.join(project, "index.html")),
   );
-  for (const name of ["demo.html", "contact.js", "examples.js"]) {
+  for (const name of ["index.html", "contact.js", "examples.js"]) {
     assert.deepEqual(
-      fs.readFileSync(path.join(output, "dist/demo", name)),
-      fs.readFileSync(path.join(project, "demo", name)),
+      fs.readFileSync(path.join(output, "dist/playground", name)),
+      fs.readFileSync(path.join(project, "playground", name)),
     );
   }
 });

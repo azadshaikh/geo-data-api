@@ -14,7 +14,7 @@ npm test
 npm run serve
 ```
 
-Open `http://127.0.0.1:3000` for the site, `/demo/demo.html` for the cascading location picker and search playground, and `/docs/index.html` for the API guides. The site also works under a deployment subpath. `npm run build:docs` regenerates the checked-in Markdown documentation; an ordinary build leaves it alone. `npm run clean` removes the generated v2 tree only.
+Open `http://127.0.0.1:3000` for the site, `/playground/index.html` for the cascading location picker and search playground, and `/docs/index.html` for the API guides. The site also works under a deployment subpath. `npm run build:docs` regenerates the checked-in Markdown documentation; an ordinary build leaves it alone. `npm run clean` removes the generated v2 tree only.
 
 To deploy the data separately, upload the contents of `dist/api/v2/` beneath your host's `api/v2/` path. Configure the host's CORS, caching, and content types for your application. The included website expects the API at the same deployment root. Static hosts must support the large number of city files.
 

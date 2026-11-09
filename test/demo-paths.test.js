@@ -5,9 +5,15 @@ const vm = require("node:vm");
 const { test } = require("node:test");
 
 const root = path.resolve(__dirname, "..");
-const demoHtml = fs.readFileSync(path.join(root, "demo/demo.html"), "utf8");
+const demoHtml = fs.readFileSync(
+  path.join(root, "playground/index.html"),
+  "utf8",
+);
 const homepageHtml = fs.readFileSync(path.join(root, "index.html"), "utf8");
-const demoScript = fs.readFileSync(path.join(root, "demo/contact.js"), "utf8");
+const demoScript = fs.readFileSync(
+  path.join(root, "playground/contact.js"),
+  "utf8",
+);
 const quickStart = homepageHtml.match(
   /<pre[^>]*>\s*<code(?:\s[^>]*)?>([\s\S]*?)<\/code>\s*<\/pre>/,
 )[1];
@@ -143,7 +149,7 @@ test("the address form handles keyboard submission without navigation", async ()
     demoHtml,
     /id="submit-btn"[^>]*type="submit"[^>]*form="contact-form"/,
   );
-  const demo = runDemo("https://example.test/demo/demo.html");
+  const demo = runDemo("https://example.test/playground/index.html");
   demo.listeners.DOMContentLoaded();
   await settle();
   demo.elements["full-name"].value = "Alex";
@@ -160,7 +166,7 @@ test("the address form handles keyboard submission without navigation", async ()
 });
 
 test("invalid address fields receive native validation feedback", async () => {
-  const demo = runDemo("https://example.test/demo/demo.html");
+  const demo = runDemo("https://example.test/playground/index.html");
   demo.listeners.DOMContentLoaded();
   await settle();
   const form = demo.elements["contact-form"];
@@ -175,7 +181,7 @@ test("invalid address fields receive native validation feedback", async () => {
 });
 
 test("the phone selector uses country codes from the dataset", async () => {
-  const demo = runDemo("https://example.test/demo/demo.html");
+  const demo = runDemo("https://example.test/playground/index.html");
   demo.listeners.DOMContentLoaded();
   await settle();
   assert.equal(demo.elements["country-code-select"].children[0].value, "+999");
@@ -190,24 +196,28 @@ test("a slow country request cannot replace the latest state selection", async (
   const first = new Promise((resolve) => {
     finishFirst = resolve;
   });
-  const demo = runDemo("https://example.test/demo/demo.html", undefined, {
-    countries: [
-      { id: 1, name: "First", iso2: "EX" },
-      { id: 4, name: "Second", iso2: "EY" },
-    ],
-    fetch(url, fixtures) {
-      if (url.pathname.endsWith("/countries.json"))
+  const demo = runDemo(
+    "https://example.test/playground/index.html",
+    undefined,
+    {
+      countries: [
+        { id: 1, name: "First", iso2: "EX" },
+        { id: 4, name: "Second", iso2: "EY" },
+      ],
+      fetch(url, fixtures) {
+        if (url.pathname.endsWith("/countries.json"))
+          return {
+            status: 200,
+            json: async () => ({ data: fixtures["/countries.json"] }),
+          };
+        if (url.pathname.endsWith("/countries/ex/states.json")) return first;
         return {
           status: 200,
-          json: async () => ({ data: fixtures["/countries.json"] }),
+          json: async () => ({ data: [{ id: 8, name: "Second State" }] }),
         };
-      if (url.pathname.endsWith("/countries/ex/states.json")) return first;
-      return {
-        status: 200,
-        json: async () => ({ data: [{ id: 8, name: "Second State" }] }),
-      };
+      },
     },
-  });
+  );
   demo.listeners.DOMContentLoaded();
   await settle();
   const country = demo.elements["country-select"];
@@ -228,10 +238,14 @@ test("a slow country request cannot replace the latest state selection", async (
 });
 
 test("a failed country request leaves the required selector empty", async () => {
-  const demo = runDemo("https://example.test/demo/demo.html", undefined, {
-    allowErrors: true,
-    fetch: async () => ({ status: 503 }),
-  });
+  const demo = runDemo(
+    "https://example.test/playground/index.html",
+    undefined,
+    {
+      allowErrors: true,
+      fetch: async () => ({ status: 503 }),
+    },
+  );
   demo.listeners.DOMContentLoaded();
   await settle();
   assert.match(demo.elements["country-select"].innerHTML, /value=""/);
@@ -239,7 +253,7 @@ test("a failed country request leaves the required selector empty", async () => 
 });
 
 test("contact preview escapes user input and geographic names", async () => {
-  const demo = runDemo("https://example.test/demo/demo.html");
+  const demo = runDemo("https://example.test/playground/index.html");
   const { elements, listeners } = demo;
   listeners.DOMContentLoaded();
   await settle();
@@ -270,12 +284,12 @@ test("contact preview escapes user input and geographic names", async () => {
 for (const [name, page, expected] of [
   [
     "web root",
-    "https://example.test/demo/demo.html",
+    "https://example.test/playground/index.html",
     "https://example.test/api/v2/countries.json",
   ],
   [
     "subpath",
-    "https://example.test/project/demo/demo.html",
+    "https://example.test/project/playground/index.html",
     "https://example.test/project/api/v2/countries.json",
   ],
 ]) {
@@ -294,19 +308,19 @@ for (const [name, page, expected] of [
 for (const [name, page, state, expected] of [
   [
     "ISO code at the web root",
-    "https://example.test/demo/demo.html",
+    "https://example.test/playground/index.html",
     { id: 2, name: "Example State", iso3166_2: "EX-ES", path_key: "es" },
     "https://example.test/api/v2/countries/ex/states/es/cities.json",
   ],
   [
     "ISO code under a subpath",
-    "https://example.test/project/demo/demo.html",
+    "https://example.test/project/playground/index.html",
     { id: 2, name: "Example State", iso3166_2: "EX-ES", path_key: "es" },
     "https://example.test/project/api/v2/countries/ex/states/es/cities.json",
   ],
   [
     "numeric fallback",
-    "https://example.test/demo/demo.html",
+    "https://example.test/playground/index.html",
     { id: 2, name: "Example State", path_key: "id-2" },
     "https://example.test/api/v2/countries/ex/states/id-2/cities.json",
   ],
@@ -361,13 +375,13 @@ for (const [name, html, page, expected] of [
   [
     "demo at the web root",
     demoHtml,
-    "https://example.test/demo/demo.html",
+    "https://example.test/playground/index.html",
     "https://example.test/",
   ],
   [
     "demo under a subpath",
     demoHtml,
-    "https://example.test/project/demo/demo.html",
+    "https://example.test/project/playground/index.html",
     "https://example.test/project/",
   ],
 ]) {

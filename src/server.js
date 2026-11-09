@@ -137,7 +137,9 @@ server.listen(port, host, () => {
   console.log("");
   console.log("📖 Available URLs:");
   console.log(`   🏠 Homepage:      http://localhost:${port}`);
-  console.log(`   🎮 Demo:          http://localhost:${port}/demo/demo.html`);
+  console.log(
+    `   🎮 Playground:    http://localhost:${port}/playground/index.html`,
+  );
   console.log(
     `   🌍 Countries:     http://localhost:${port}/api/v2/countries.json`,
   );
@@ -157,7 +159,7 @@ server.listen(port, host, () => {
   console.log("💡 Tips:");
   console.log("   • Use Ctrl+C to stop the server");
   console.log("   • All API endpoints support CORS");
-  console.log("   • Try the interactive demo for API testing");
+  console.log("   • Try the interactive playground for API testing");
   console.log("━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━");
   console.log("");
 });
