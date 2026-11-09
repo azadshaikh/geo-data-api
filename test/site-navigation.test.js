@@ -52,7 +52,7 @@ test("the website build includes the documentation pages and their assets", (t) 
       recursive: true,
     });
   }
-  for (const name of ["index.html", "_headers"]) {
+  for (const name of ["index.html", "404.html", "_headers"]) {
     fs.copyFileSync(path.join(root, name), path.join(output, name));
   }
   const result = spawnSync(process.execPath, ["src/demo-copier.js"], {
@@ -60,6 +60,10 @@ test("the website build includes the documentation pages and their assets", (t) 
     encoding: "utf8",
   });
   assert.equal(result.status, 0, result.stderr);
+  assert.deepEqual(
+    fs.readFileSync(path.join(output, "dist/404.html")),
+    fs.readFileSync(path.join(root, "404.html")),
+  );
   for (const name of [
     "index.html",
     "endpoints.html",

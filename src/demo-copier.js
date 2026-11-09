@@ -13,6 +13,10 @@ class DemoCopier {
     const indexDestPath = path.join(projectRoot, "dist", "index.html");
     await FileUtils.copyFile(indexSourcePath, indexDestPath);
     await FileUtils.copyFile(
+      path.join(projectRoot, "404.html"),
+      path.join(projectRoot, "dist", "404.html"),
+    );
+    await FileUtils.copyFile(
       path.join(projectRoot, "_headers"),
       path.join(projectRoot, "dist", "_headers"),
     );
@@ -61,6 +65,7 @@ class DemoCopier {
       console.log("");
       console.log("Copied files:");
       console.log("• Index HTML (dist/index.html)");
+      console.log("• Not-found page (dist/404.html)");
       console.log("• Demo files (dist/demo/)");
       console.log("• Website documentation (dist/docs/)");
 

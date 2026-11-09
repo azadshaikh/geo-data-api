@@ -215,6 +215,7 @@ Performance tips:
 - For S3, `npm run deploy:s3 -- s3://BUCKET/api/v1` syncs JSON and optional encoded siblings with content metadata and no `--delete`. Configure bucket CORS and CDN content negotiation separately. S3 sync does not update metadata on unchanged objects automatically.
 - Use `/search/cities/country/{iso2}.json` for country-specific searches. Use the shard index to discover available files; fetch all shards for worldwide searches, or use `/search/cities.json` when the host provides it.
 - Cloudflare Pages automatically sets `CF_PAGES=1`, so its existing `npm run build` command produces the shard-only variant and checks every deployed asset against the 25 MiB limit. To check another output directory, run `node scripts/check-cloudflare-assets.js path/to/dist`.
+- The site build includes a top-level `404.html` so Cloudflare Pages returns a not-found status for missing API files instead of falling back to the homepage.
 
 ## Usage examples
 

@@ -17,6 +17,7 @@ if (
   throw new Error("Package must not include pre-manifest output backups");
 }
 for (const required of [
+  "dist/404.html",
   "dist/api/v1/manifest.json",
   "src/data-processor.js",
   "src/config.js",
