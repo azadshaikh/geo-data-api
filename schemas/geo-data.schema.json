@@ -1240,6 +1240,26 @@
       },
       "required": ["data", "meta"]
     },
+    "CityDetailResponse": {
+      "type": "object",
+      "properties": {
+        "data": { "$ref": "#/$defs/CityBatchItem" },
+        "meta": {
+          "allOf": [
+            { "$ref": "#/$defs/Meta" },
+            {
+              "type": "object",
+              "properties": {
+                "type": { "const": "city" },
+                "city_id": { "type": "integer", "minimum": 0 }
+              },
+              "required": ["city_id"]
+            }
+          ]
+        }
+      },
+      "required": ["data", "meta"]
+    },
     "CityBatchResponse": {
       "type": "object",
       "properties": {

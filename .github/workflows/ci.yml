@@ -22,7 +22,37 @@ jobs:
       - run: npm run build
       - run: npm run verify -- --max-search-shard-bytes 5000000
       - run: npm run check:package
-      - name: Build and verify Cloudflare Pages output
+
+  docker-smoke:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - name: Prepare a small dataset for the container smoke test
         run: |
-          CF_PAGES=1 npm run build
-          npm run verify -- --max-search-shard-bytes 5000000
+          node <<'NODE'
+          const fs = require('node:fs');
+          const read = name => JSON.parse(fs.readFileSync(`db/${name}.json`, 'utf8'));
+          const city = read('cities')[0];
+          const state = read('states').find(item => item.id === city.state_id);
+          const country = read('countries').find(item => item.id === city.country_id);
+          if (!state || !country) throw new Error('Fixture city has missing parents');
+          for (const [name, item] of Object.entries({ countries: country, states: state, cities: city }))
+            fs.writeFileSync(`db/${name}.json`, JSON.stringify([item]));
+          NODE
+      - run: docker compose config --quiet
+      - run: docker build -t geo-data-api:ci .
+      - name: Check the running container
+        run: |
+          docker run -d --name geo-data-api-smoke -p 127.0.0.1:39741:3000 geo-data-api:ci
+          trap 'docker logs geo-data-api-smoke; docker rm -f geo-data-api-smoke' EXIT
+          for attempt in $(seq 1 30); do
+            if curl -fsS http://127.0.0.1:39741/api/v1/api-info.json >/dev/null; then break; fi
+            sleep 1
+          done
+          city_id=$(node -p "require('./db/cities.json')[0].id")
+          curl -fsS "http://127.0.0.1:39741/api/v1/cities/${city_id}.json" | node -e 'let s="";process.stdin.on("data",x=>s+=x);process.stdin.on("end",()=>{if(JSON.parse(s).data.id!==Number(process.argv[1]))process.exit(1)})' "$city_id"
+          curl -fsS http://127.0.0.1:39741/demo/demo.html >/dev/null
+          curl -fsS http://127.0.0.1:39741/docs/index.html >/dev/null

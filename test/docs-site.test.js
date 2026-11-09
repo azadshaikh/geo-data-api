@@ -94,6 +94,7 @@ function exampleContext(fixtures) {
       const href = String(url);
       requests.push(href);
       assert.ok(Object.hasOwn(fixtures, href), `unexpected request ${href}`);
+      if (fixtures[href] === null) return { ok: false, status: 404 };
       return { ok: true, json: async () => fixtures[href] };
     },
     console: {
@@ -187,24 +188,17 @@ test("the city search example can retry a failed shard request", async () => {
   assert.equal(attempts, 2);
 });
 
-test("the city lookup example follows the index filename and handles ID gaps", async () => {
+test("the city lookup example fetches a direct file and handles missing IDs", async () => {
   const base = "https://example.test/project/api/v1/";
   const run = exampleContext({
-    [`${base}cities/batches.json`]: {
-      data: [
-        {
-          start_id: 57990,
-          end_id: 58000,
-          filename: "cities/batch/example.json",
-        },
-      ],
-    },
-    [`${base}cities/batch/example.json`]: {
-      data: { 57995: { name: "Bhopal" } },
-    },
+    [`${base}cities/57995.json`]: { data: { id: 57995, name: "Bhopal" } },
+    [`${base}cities/57996.json`]: null,
   });
   await vm.runInContext(example("guides.html", "lookup-code"), run.context);
   assert.equal(run.logged[0].name, "Bhopal");
   assert.equal(await vm.runInContext("getCity(57996)", run.context), null);
-  assert.ok(run.requests.includes(`${base}cities/batch/example.json`));
+  assert.deepEqual(run.requests, [
+    `${base}cities/57995.json`,
+    `${base}cities/57996.json`,
+  ]);
 });

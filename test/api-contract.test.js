@@ -127,6 +127,28 @@ test("finds a city using the batch index and its advertised filename", async () 
   assert.equal(details.data[99].name, "Kochi");
 });
 
+test("serves each city by ID with the same details as its batch", async () => {
+  const city = await readJSON("cities/52.json");
+  const batch = await readJSON("cities/batch/batch-52-99.json");
+  assert.deepEqual(city.data, batch.data[52]);
+  assert.equal(city.meta.type, "city");
+  assert.equal(city.meta.city_id, 52);
+  assert.equal(city.meta.api_version, "v1");
+  await assert.rejects(readJSON("cities/53.json"), { code: "ENOENT" });
+});
+
+test("rejects invalid and duplicate city IDs before generating city files", async () => {
+  for (const records of [
+    [{ ...cities[0], id: "../escape" }],
+    [cities[0], { ...cities[0] }],
+  ]) {
+    await assert.rejects(
+      new CitiesGenerator(records, states, countries).generateCityBatches(),
+      /invalid or duplicate city ID/i,
+    );
+  }
+});
+
 test("counts zero-valued coordinates in generated data and statistics", async () => {
   const state = await readJSON("states/in-kl.json");
   const stateCities = await readJSON("cities/state/in-kl.json");
@@ -238,7 +260,7 @@ test("machine-readable endpoint catalogs describe the generated city batch API",
     info.endpoints.cities.country_shards_index,
     "cities/country/{country_iso2}/index.json",
   );
-  assert.equal(info.endpoints.cities.individual, undefined);
+  assert.equal(info.endpoints.cities.individual, "cities/{id}.json");
   assert.equal(info.endpoints.cities.major, undefined);
   const documentation = await readJSON("documentation.json");
   assert.ok(documentation.endpoints.cities["GET /cities/batches.json"]);
@@ -252,10 +274,7 @@ test("machine-readable endpoint catalogs describe the generated city batch API",
     batchRoute.replace("GET /", "").replace("{filename}", filename),
     index.data[0].filename,
   );
-  assert.equal(
-    documentation.endpoints.cities["GET /cities/{id}.json"],
-    undefined,
-  );
+  assert.ok(documentation.endpoints.cities["GET /cities/{id}.json"]);
   assert.ok(documentation.endpoints.countries["GET /countries/{iso2}.json"]);
   assert.ok(
     documentation.endpoints.countries[
@@ -288,6 +307,36 @@ test("the generated city lookup example follows the batch index filename", async
   };
   assert.equal((await getExampleCity(fetchFile, 52)).name, "Adoor");
   await assert.rejects(getExampleCity(fetchFile, 53), /not found/i);
+});
+
+test("the machine-readable direct city example uses one file and handles 404", async () => {
+  const documentation = await readJSON("documentation.json");
+  const example =
+    documentation.client_examples.javascript.get_single_city.split(
+      "// Example:",
+    )[0];
+  const AsyncFunction = Object.getPrototypeOf(async function () {}).constructor;
+  const run = new AsyncFunction(
+    "fetch",
+    "cityId",
+    `${example}\nreturn getCityById(cityId);`,
+  );
+  const requests = [];
+  const fetchFile = async (url) => {
+    requests.push(url);
+    if (url.endsWith("/cities/53.json")) return { ok: false, status: 404 };
+    return {
+      ok: true,
+      status: 200,
+      json: () => readJSON(url.slice(config.CDN_BASE_URL.length + 1)),
+    };
+  };
+  assert.equal((await run(fetchFile, 52)).name, "Adoor");
+  assert.equal(await run(fetchFile, 53), null);
+  assert.deepEqual(requests, [
+    `${config.CDN_BASE_URL}/cities/52.json`,
+    `${config.CDN_BASE_URL}/cities/53.json`,
+  ]);
 });
 
 test("generated cached lookup examples reject missing IDs inside a batch", async () => {

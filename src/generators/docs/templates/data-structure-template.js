@@ -196,10 +196,19 @@ const citiesWithCoords = citiesData.data.filter(city =>
 );
 \`\`\`
 
-### Accessing Individual Cities (Batch API)
+### Accessing Individual Cities
 
 \`\`\`javascript
-// Method 1: Direct batch index lookup (recommended)
+const response = await fetch('${config.CDN_BASE_URL}/cities/57995.json');
+if (!response.ok) throw new Error(\`City request failed: \${response.status}\`);
+const { data: city } = await response.json();
+console.log(city.name);
+\`\`\`
+
+### Accessing City Batches
+
+\`\`\`javascript
+// Method 1: Batch index lookup
 const batchIndex = await fetch('${config.CDN_BASE_URL}/cities/batches.json');
 const batches = await batchIndex.json();
 

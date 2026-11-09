@@ -41,9 +41,31 @@ Run `npm run serve` to preview an existing build at `http://127.0.0.1:3000`. The
 
 Open `http://127.0.0.1:3000/demo/demo.html` to try the interactive playground: a cascading address form, country-scoped city search, and city lookup by ID. Visit `http://127.0.0.1:3000/docs/index.html` for the website documentation. Both use the Tailwind CSS v3 CDN and work under a deployment subpath.
 
+## Docker and Dokploy
+
+Build and run the site, playground, and complete API locally:
+
+```sh
+docker compose up --build -d
+```
+
+Open `http://127.0.0.1:3000`. Compose binds to localhost; set `GEO_DATA_HOST_PORT` to use another host port. Stop it with `docker compose down`. The image builds the dataset once and runs the static server as a non-root user; changing the source dataset requires rebuilding the image.
+
+For Dokploy, create an **Application** from this Git repository, select **Dockerfile** as the build type, use `Dockerfile` with context `.`, and configure the domain's **container port as 3000**. The image listens on `0.0.0.0:3000`; no host port mapping or persistent volume is required for the generated data. Configure HTTPS and the domain in Dokploy.
+
+## npm and UNPKG
+
+`npm run build` generates one `cities/{id}.json` file per city, plus the existing batch and search files. `npm run check:package` checks that the npm package includes every individual city. Publishing a new public npm version makes those files available on UNPKG; pin a released version in production, for example:
+
+```text
+https://unpkg.com/geo-data-api@1.1.0/dist/api/v1/cities/57995.json
+```
+
+That URL becomes available after version `1.1.0` is published. Run `npm pack --dry-run` to inspect the release before publishing. The npm package contains more than 160,000 files for the current dataset, so package creation and installation may take longer than for a typical library.
+
 ## What this generates
 
-The generator creates a small static API tree (example):
+The generator creates a static API tree (example):
 
 ```text
 dist/api/v1/
@@ -58,6 +80,7 @@ dist/api/v1/
 ├── cities/country/{iso2}.json    # cities by country (ISO2 code)
 ├── cities/country/{iso2}/        # indexed chunks for large country lists
 ├── cities/state/{iso3166_2}.json # cities by state (ISO 3166-2 code)
+├── cities/{id}.json              # full details for one city
 ├── cities/batches.json           # index of city batches by ID range
 ├── cities/batch/{filename}       # city details keyed by ID
 └── search/
@@ -93,6 +116,7 @@ dist/api/v1/
 
 ### Cities
 
+- GET /cities/{id}.json (individual city details)
 - GET /cities/country/{iso2}.json
 - GET /cities/country/{iso2}/index.json and its numbered chunks (only for large countries)
 - GET /cities/state/{iso3166_2}.json
@@ -100,7 +124,7 @@ dist/api/v1/
 - GET /cities/batch/{filename} (the filename supplied by the batch index)
 - GET /cities/batches.json
 
-City details are retrieved through `cities/batches.json` and its referenced batch files; individual `cities/{id}.json` files are not generated.
+City details can be fetched directly by ID. The same records remain available through `cities/batches.json` and its referenced batch files.
 
 ### Search
 
@@ -114,7 +138,7 @@ City details are retrieved through `cities/batches.json` and its referenced batc
 
 Search responses include `name_normalized`: lowercase Unicode NFD text with combining marks removed. Normalize the query in the same way for searches such as `Sao Paulo` matching `São Paulo`. This folds diacritics but does not transliterate every letter. The combined sample's `meta.counts` and `meta.complete` report what it contains; use the complete entity indexes or country shards when all results are required.
 
-Cloudflare Pages builds omit the large `search/cities.json` file to meet the 25 MiB per-file limit. All cities remain available through the country shards listed in `search/cities/index.json`; its `meta.global_index_available` field reports whether the full file is present. Ordinary builds continue to include the full index.
+Cloudflare Pages builds omit the large `search/cities.json` file to meet its per-file limit, but the individual city files exceed Pages' deployment file-count limits. Docker or another host that supports this number of files is recommended.
 
 ## Configuration
 
@@ -149,7 +173,7 @@ await new DataProcessor({ inputDir: "./db", outputDir: "./generated-api" }).run(
 - **[Data Structure Reference](docs/DATA_STRUCTURE.md)** - Complete field definitions and sample objects
 - **[OpenAPI 3.1](openapi.json)**, **[JSON Schema](schemas/geo-data.schema.json)**, and **[TypeScript types](types/index.d.ts)**
 - **[GitHub repository](https://github.com/azadshaikh/geo-data-api)** — source code, issues, and contributions
-- **[Published package on jsDelivr](https://www.jsdelivr.com/package/npm/geo-data-api)** — published versions may differ from this checkout
+- **[Published package on UNPKG](https://unpkg.com/geo-data-api@latest/)** — published versions may differ from this checkout
 
 ## Advanced Features
 
@@ -180,7 +204,7 @@ await new DataProcessor({ inputDir: "./db", outputDir: "./generated-api" }).run(
 
 - [ ] **Astro-powered Landing Page**: Replace current HTML with Astro for better performance and maintainability
 - [ ] **Interactive Demo Redesign**: Rebuild demo pages using Astro with improved UX and modern design
-- [ ] **Single City Endpoints**: Add option to generate individual city API endpoints for better granularity
+- [x] **Single City Endpoints**: Generate individual city API endpoints for better granularity
 
 ### 🔧 Phase 2: Developer Experience
 
@@ -223,7 +247,7 @@ Fetch all countries:
 
 ```javascript
 const resp = await fetch(
-  "https://cdn.jsdelivr.net/npm/geo-data-api@latest/dist/api/v1/countries.json"
+  "https://unpkg.com/geo-data-api@latest/dist/api/v1/countries.json"
 );
 const data = await resp.json();
 console.log(data);
@@ -233,7 +257,7 @@ Get states for a country (example: Afghanistan):
 
 ```javascript
 const resp = await fetch(
-  "https://cdn.jsdelivr.net/npm/geo-data-api@latest/dist/api/v1/states/country/af.json"
+  "https://unpkg.com/geo-data-api@latest/dist/api/v1/states/country/af.json"
 );
 const states = await resp.json();
 ```
@@ -242,7 +266,7 @@ Get cities for a state (example: Badakhshan province):
 
 ```javascript
 const resp = await fetch(
-  "https://cdn.jsdelivr.net/npm/geo-data-api@latest/dist/api/v1/cities/state/af-bds.json"
+  "https://unpkg.com/geo-data-api@latest/dist/api/v1/cities/state/af-bds.json"
 );
 const cities = await resp.json();
 ```
@@ -251,7 +275,7 @@ Search client-side (example):
 
 ```javascript
 const resp = await fetch(
-  "https://cdn.jsdelivr.net/npm/geo-data-api@latest/dist/api/v1/search/countries.json"
+  "https://unpkg.com/geo-data-api@latest/dist/api/v1/search/countries.json"
 );
 const index = await resp.json();
 const matches = index.data.filter((c) => c.name.toLowerCase().includes("ind"));
@@ -261,7 +285,7 @@ Search cities in one country:
 
 ```javascript
 const response = await fetch(
-  "https://cdn.jsdelivr.net/npm/geo-data-api@latest/dist/api/v1/search/cities/country/in.json"
+  "https://unpkg.com/geo-data-api@latest/dist/api/v1/search/cities/country/in.json"
 );
 if (!response.ok) throw new Error(`Search shard request failed: ${response.status}`);
 const { data } = await response.json();
@@ -285,7 +309,7 @@ React hook example (tiny helper):
 import { useState, useEffect } from "react";
 
 const API_BASE_URL =
-  "https://cdn.jsdelivr.net/npm/geo-data-api@latest/dist/api/v1";
+  "https://unpkg.com/geo-data-api@latest/dist/api/v1";
 
 export function useCountriesAPI() {
   const [countries, setCountries] = useState([]);

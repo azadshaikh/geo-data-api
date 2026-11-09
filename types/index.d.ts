@@ -344,6 +344,10 @@ export type CityBatchIndexResponse = DataResponse<
   BatchIndexItem[],
   CityBatchIndexMeta
 >;
+export type CityDetailResponse = DataResponse<
+  CityBatchItem,
+  ResponseMeta & { type: "city"; city_id: number }
+>;
 /** A batch range can contain gaps, so a lookup by ID can be undefined. */
 export type CityBatchResponse = DataResponse<
   Partial<Record<string, CityBatchItem>>,

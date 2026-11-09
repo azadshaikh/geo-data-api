@@ -9,7 +9,7 @@ No installation required! This is a static JSON API hosted on a CDN.
 ### 1. Get All Countries
 
 ```javascript
-const response = await fetch('https://cdn.jsdelivr.net/npm/geo-data-api@latest/dist/api/v1/countries.json');
+const response = await fetch('https://unpkg.com/geo-data-api@latest/dist/api/v1/countries.json');
 const countries = await response.json();
 
 console.log(`Found ${countries.meta.count} countries`);
@@ -22,7 +22,7 @@ countries.data.forEach(country => {
 
 ```javascript
 // Get detailed information for Afghanistan (ISO2: AF)
-const response = await fetch('https://cdn.jsdelivr.net/npm/geo-data-api@latest/dist/api/v1/countries/af.json');
+const response = await fetch('https://unpkg.com/geo-data-api@latest/dist/api/v1/countries/af.json');
 const country = await response.json();
 
 console.log(country.data.name); // "Afghanistan"
@@ -34,7 +34,7 @@ console.log(country.data.currency); // "AFN"
 
 ```javascript
 // Get all states for Afghanistan
-const response = await fetch('https://cdn.jsdelivr.net/npm/geo-data-api@latest/dist/api/v1/states/country/af.json');
+const response = await fetch('https://unpkg.com/geo-data-api@latest/dist/api/v1/states/country/af.json');
 const states = await response.json();
 
 states.data.forEach(state => {
@@ -46,7 +46,7 @@ states.data.forEach(state => {
 
 ```javascript
 // Get cities for Badakhshan province (AF-BDS)
-const response = await fetch('https://cdn.jsdelivr.net/npm/geo-data-api@latest/dist/api/v1/cities/state/af-bds.json');
+const response = await fetch('https://unpkg.com/geo-data-api@latest/dist/api/v1/cities/state/af-bds.json');
 const cities = await response.json();
 
 cities.data.forEach(city => {
@@ -58,7 +58,7 @@ cities.data.forEach(city => {
 
 ```javascript
 // Get detailed information for a specific state
-const response = await fetch('https://cdn.jsdelivr.net/npm/geo-data-api@latest/dist/api/v1/states/af-bds.json');
+const response = await fetch('https://unpkg.com/geo-data-api@latest/dist/api/v1/states/af-bds.json');
 const state = await response.json();
 
 console.log(state.data.name); // "Badakhshan"
@@ -70,10 +70,19 @@ console.log(`${state.data.latitude}, ${state.data.longitude}`);
 ### 6. Get a City by ID
 
 ```javascript
-// Method 1: Direct batch index lookup (recommended)
+const response = await fetch('https://unpkg.com/geo-data-api@latest/dist/api/v1/cities/57995.json');
+if (!response.ok) throw new Error(`City request failed: ${response.status}`);
+const { data: city } = await response.json();
+console.log(city.name); // "Bhopal"
+```
+
+Batch files are also available when retrieving several cities together:
+
+```javascript
+// Method 1: Batch index lookup
 async function getCity(cityId) {
   // Step 1: Load the batch index
-  const indexResponse = await fetch('https://cdn.jsdelivr.net/npm/geo-data-api@latest/dist/api/v1/cities/batches.json');
+  const indexResponse = await fetch('https://unpkg.com/geo-data-api@latest/dist/api/v1/cities/batches.json');
   const batchIndex = await indexResponse.json();
 
   // Step 2: Find which batch contains the city
@@ -84,7 +93,7 @@ async function getCity(cityId) {
   }
 
   // Step 3: Fetch the specific batch file
-  const batchResponse = await fetch(`https://cdn.jsdelivr.net/npm/geo-data-api@latest/dist/api/v1/${batch.filename}`);
+  const batchResponse = await fetch(`https://unpkg.com/geo-data-api@latest/dist/api/v1/${batch.filename}`);
   const batchData = await batchResponse.json();
 
   // Step 4: Extract the city data
@@ -180,7 +189,7 @@ class CityAPI {
 }
 
 // Usage:
-const cityAPI = new CityAPI('https://cdn.jsdelivr.net/npm/geo-data-api@latest/dist/api/v1');
+const cityAPI = new CityAPI('https://unpkg.com/geo-data-api@latest/dist/api/v1');
 
 // Get single city
 const kabul = await cityAPI.getCity(79);
@@ -196,7 +205,7 @@ console.log(cities[57995].name, cities[64500].name);
 ```javascript
 // Download only the US city-search shard for client-side filtering.
 // Use /search/cities/index.json to discover available country shards.
-const searchResponse = await fetch('https://cdn.jsdelivr.net/npm/geo-data-api@latest/dist/api/v1/search/cities/country/us.json');
+const searchResponse = await fetch('https://unpkg.com/geo-data-api@latest/dist/api/v1/search/cities/country/us.json');
 if (!searchResponse.ok) throw new Error(`Search shard request failed: ${searchResponse.status}`);
 const searchData = await searchResponse.json();
 
@@ -213,7 +222,7 @@ const newYorkCities = searchData.data.filter(city =>
 
 ```javascript
 // Get all Asian countries
-const response = await fetch('https://cdn.jsdelivr.net/npm/geo-data-api@latest/dist/api/v1/countries/region/asia.json');
+const response = await fetch('https://unpkg.com/geo-data-api@latest/dist/api/v1/countries/region/asia.json');
 const asianCountries = await response.json();
 
 asianCountries.data.forEach(country => {
@@ -225,7 +234,7 @@ asianCountries.data.forEach(country => {
 
 ```javascript
 // Get all provinces
-const response = await fetch('https://cdn.jsdelivr.net/npm/geo-data-api@latest/dist/api/v1/states/type/province.json');
+const response = await fetch('https://unpkg.com/geo-data-api@latest/dist/api/v1/states/type/province.json');
 const provinces = await response.json();
 
 console.log(`Found ${provinces.meta.count} provinces worldwide`);
@@ -235,7 +244,7 @@ console.log(`Found ${provinces.meta.count} provinces worldwide`);
 
 ```javascript
 // Get states in a specific timezone
-const response = await fetch('https://cdn.jsdelivr.net/npm/geo-data-api@latest/dist/api/v1/states/timezone/Asia-Kabul.json');
+const response = await fetch('https://unpkg.com/geo-data-api@latest/dist/api/v1/states/timezone/Asia-Kabul.json');
 const states = await response.json();
 
 states.data.forEach(state => {
@@ -248,7 +257,7 @@ states.data.forEach(state => {
 ```javascript
 async function fetchCountries() {
   try {
-    const response = await fetch('https://cdn.jsdelivr.net/npm/geo-data-api@latest/dist/api/v1/countries.json');
+    const response = await fetch('https://unpkg.com/geo-data-api@latest/dist/api/v1/countries.json');
 
     if (!response.ok) {
       throw new Error(`HTTP error! status: ${response.status}`);

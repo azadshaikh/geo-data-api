@@ -14,7 +14,9 @@ async function listFiles(root, prefix = "") {
   for (const entry of entries) {
     const relative = prefix ? `${prefix}/${entry.name}` : entry.name;
     if (entry.isSymbolicLink()) throw new Error(`Symbolic link in API output: ${relative}`);
-    if (entry.isDirectory()) files.push(...await listFiles(root, relative));
+    if (entry.isDirectory()) {
+      for (const child of await listFiles(root, relative)) files.push(child);
+    }
     else if (entry.isFile()) files.push(relative);
   }
   return files.sort();

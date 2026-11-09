@@ -133,6 +133,12 @@ Get index of all state timezones with counts.
 
 ## Cities
 
+### GET /cities/{id}.json
+
+Get full details for one city by its non-negative numeric ID. The response has a \`data\` object and city metadata.
+
+**Example**: \`${config.CDN_BASE_URL}/cities/57995.json\`
+
 ### GET /cities/country/{country_iso2}.json
 
 Get cities for a specific country.
@@ -236,7 +242,7 @@ Get cities by timezone when the source data contains city timezone values. A bui
 
 Fetch \`cities/timezones.json\` and use each entry's \`endpoint\` value. Some timezone names require disambiguating suffixes to avoid filename collisions. The index and files are omitted when the source has no city timezones. The same rule applies to \`states/timezones.json\` for states.
 
-Individual city detail files are not generated. Use \`cities/batches.json\` and the indicated batch file to look up a city by ID.
+Individual city files and batch files contain the same city details. Use batches when retrieving several nearby IDs.
 
 ---
 

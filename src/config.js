@@ -20,7 +20,7 @@ module.exports = {
   RELEASE_TIMESTAMP: "2025-09-12T09:30:16.000Z",
 
   // CDN settings (for reference)
-  CDN_BASE_URL: "https://cdn.jsdelivr.net/npm/geo-data-api@latest/dist/api/v1",
+  CDN_BASE_URL: "https://unpkg.com/geo-data-api@latest/dist/api/v1",
 
   // Suppress detailed per-file logs (pagination and other verbose file writes).
   // When true, FileUtils.writeJSON will skip routine generated file logs unless forceLog is set.

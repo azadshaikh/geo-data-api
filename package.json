@@ -1,6 +1,6 @@
 {
   "name": "geo-data-api",
-  "version": "1.0.3",
+  "version": "1.1.0",
   "description": "Generate a static JSON API for geographic data including countries, states, and cities that can be hosted on any CDN. Transform geographic datasets into a small, cacheable, CDN-ready API with search capabilities.",
   "main": "src/data-processor.js",
   "types": "types/index.d.ts",

@@ -263,6 +263,7 @@ test("contracts accept actual compact and pretty generator outputs", async (t) =
     ["/states/types.json", "states/types.json"],
     ["/states/type/{type}.json", "states/type/state.json"],
     ["/states/timezones.json", "states/timezones.json"],
+    ["/cities/{id}.json", "cities/21.json"],
     ["/cities/country/{country_iso2}.json", "cities/country/ex.json"],
     [
       "/cities/country/{country_iso2}/index.json",

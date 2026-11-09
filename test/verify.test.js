@@ -57,6 +57,7 @@ function fixture(t) {
       timezones_index: "states/timezones.json",
     },
     cities: {
+      individual: "cities/{id}.json",
       by_country: "cities/country/{country_iso2}.json",
       by_state: "cities/state/{state_iso3166_2}.json",
       batches: "cities/batches.json",
@@ -90,6 +91,7 @@ function fixture(t) {
       "GET /states/timezones.json",
     ],
     cities: [
+      "GET /cities/{id}.json",
       "GET /cities/country/{country_iso2}.json",
       "GET /cities/state/{state_iso3166_2}.json",
       "GET /cities/batches.json",
@@ -106,6 +108,10 @@ function fixture(t) {
     ],
   };
   const files = {
+    "cities/30.json": {
+      data: city,
+      meta: { type: "city", count: 1, city_id: 30 },
+    },
     "countries.json": list([country], "countries", { total_countries: 1 }),
     "countries/ex.json": {
       data: country,
@@ -262,6 +268,22 @@ test("accepts a complete output and exposes a callable verifier", (t) => {
   const report = verifyOutput(root);
   assert.deepEqual(report.errors, []);
   assert.ok(report.filesChecked > 0);
+});
+
+test("rejects a missing individual city file", (t) => {
+  const { root } = fixture(t);
+  fs.rmSync(path.join(root, "cities/30.json"));
+  rejects(root, /missing cities\/30\.json/i);
+});
+
+test("rejects an individual city whose details differ from its batch", (t) => {
+  const { root, files, write } = fixture(t);
+  files["cities/30.json"].data = {
+    ...files["cities/30.json"].data,
+    name: "Wrong city",
+  };
+  write("cities/30.json", files["cities/30.json"]);
+  rejects(root, /cities\/30\.json.*differ from.*batch/i);
 });
 
 test("enforces a configurable byte budget for city search shards", (t) => {
@@ -525,6 +547,8 @@ test("follows city timezone index paths instead of guessing legacy filenames", (
     timezone: "Etc/GMT+12",
   };
   files["cities/batch/batch-30-30.json"].data[30] = city;
+  files["cities/30.json"].data = city;
+  write("cities/30.json", files["cities/30.json"]);
   write(
     "cities/batch/batch-30-30.json",
     files["cities/batch/batch-30-30.json"],

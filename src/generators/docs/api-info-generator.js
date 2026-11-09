@@ -61,6 +61,7 @@ class APIInfoGenerator {
           timezones_index: "states/timezones.json",
         },
         cities: {
+          individual: "cities/{id}.json",
           by_country: "cities/country/{country_iso2}.json",
           country_shards_index: "cities/country/{country_iso2}/index.json",
           by_state: "cities/state/{state_iso3166_2}.json",

@@ -353,6 +353,34 @@
         ]
       }
     },
+    "/cities/{id}.json": {
+      "get": {
+        "operationId": "getCityById",
+        "summary": "Get a city by ID",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "description": "Non-negative numeric city ID.",
+            "schema": { "type": "integer", "minimum": 0 }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "City details",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "./schemas/geo-data.schema.json#/$defs/CityDetailResponse"
+                }
+              }
+            }
+          },
+          "404": { "description": "No city exists for this ID." }
+        }
+      }
+    },
     "/cities/country/{country_iso2}.json": {
       "get": {
         "operationId": "getCitiesByCountry",

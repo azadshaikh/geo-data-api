@@ -272,7 +272,7 @@
                   <pre
                     tabindex="0"
                     class="docs-code px-5 py-5 text-xs leading-6 sm:text-[13px]"
-                  ><code id="picker-code">const API_BASE = "<span data-api-base>https://cdn.jsdelivr.net/npm/geo-data-api@latest/dist/api/v1/</span>";
+                  ><code id="picker-code">const API_BASE = "<span data-api-base>https://unpkg.com/geo-data-api@latest/dist/api/v1/</span>";
 
 async function getJson(path) {
   const response = await fetch(new URL(path, API_BASE));
@@ -342,7 +342,7 @@ loadPickerData().then(console.log).catch(console.error);</code></pre>
                   <pre
                     tabindex="0"
                     class="docs-code px-5 py-5 text-xs leading-6 sm:text-[13px]"
-                  ><code id="search-code">const API_BASE = "<span data-api-base>https://cdn.jsdelivr.net/npm/geo-data-api@latest/dist/api/v1/</span>";
+                  ><code id="search-code">const API_BASE = "<span data-api-base>https://unpkg.com/geo-data-api@latest/dist/api/v1/</span>";
 
 async function getJson(path) {
   const response = await fetch(new URL(path, API_BASE));
@@ -397,9 +397,8 @@ searchBrazilianCities("Sao Paulo").then(console.log).catch(console.error);</code
               </h2>
               <div class="mt-3 text-[15px] leading-7 text-[#526d5c]">
                 <p>
-                  City details are stored in batches. Find the ID range in the
-                  index, request its <code>filename</code> relative to the API
-                  base, and look up the ID in the batch data.
+                  Each city has a JSON file named after its numeric ID. Fetch it
+                  directly, and handle a missing ID as a 404 response.
                 </p>
                 <div
                   class="mt-5 min-w-0 overflow-hidden rounded-2xl bg-[#152a22] text-[#d6e8d8] shadow-sm"
@@ -421,30 +420,23 @@ searchBrazilianCities("Sao Paulo").then(console.log).catch(console.error);</code
                   <pre
                     tabindex="0"
                     class="docs-code px-5 py-5 text-xs leading-6 sm:text-[13px]"
-                  ><code id="lookup-code">const API_BASE = "<span data-api-base>https://cdn.jsdelivr.net/npm/geo-data-api@latest/dist/api/v1/</span>";
-
-async function getJson(path) {
-  const response = await fetch(new URL(path, API_BASE));
-  if (!response.ok) throw new Error("Request failed: " + response.status);
-  return response.json();
-}
+                  ><code id="lookup-code">const API_BASE = "<span data-api-base>https://unpkg.com/geo-data-api@latest/dist/api/v1/</span>";
 
 async function getCity(cityId) {
-  const index = await getJson("cities/batches.json");
-  const batch = index.data.find(item =&gt;
-    cityId &gt;= item.start_id &amp;&amp; cityId &lt;= item.end_id
-  );
-  if (!batch) return null;
-  const result = await getJson(batch.filename);
-  return result.data[cityId] || null;
+  if (!Number.isSafeInteger(cityId) || cityId &lt; 0)
+    throw new Error("Invalid city ID");
+  const response = await fetch(new URL(`cities/${cityId}.json`, API_BASE));
+  if (response.status === 404) return null;
+  if (!response.ok) throw new Error("Request failed: " + response.status);
+  const result = await response.json();
+  return result.data;
 }
 
 getCity(57995).then(console.log).catch(console.error);</code></pre>
                 </div>
                 <p class="mt-4 text-[13px]">
-                  IDs can have gaps even within a batch range. A missing batch
-                  or ID returns <code>null</code>; cache the index and batch
-                  files when performing repeated lookups.
+                  Missing IDs return <code>null</code> in this example. Batch
+                  files remain available when you need several cities together.
                 </p>
               </div>
             </section>

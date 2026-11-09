@@ -3,11 +3,44 @@ const fs = require("node:fs/promises");
 const os = require("node:os");
 const path = require("node:path");
 const { test } = require("node:test");
-const { preserveExtras, publishStage } = require("../src/utils/build-output");
+const {
+  listFiles,
+  preserveExtras,
+  publishStage,
+} = require("../src/utils/build-output");
 const {
   canonicalPath,
   assertSafeLocations,
 } = require("../src/utils/path-safety");
+
+test("lists a directory with more than 150,000 city files", async () => {
+  const originalReaddir = fs.readdir;
+  const root = path.resolve("large-output-fixture");
+  const file = (name) => ({
+    name,
+    isSymbolicLink: () => false,
+    isDirectory: () => false,
+    isFile: () => true,
+  });
+  fs.readdir = async (directory) =>
+    directory === root
+      ? [
+          {
+            name: "cities",
+            isSymbolicLink: () => false,
+            isDirectory: () => true,
+          },
+        ]
+      : Array.from({ length: 151165 }, (_, id) => file(`${id}.json`));
+  try {
+    const files = await listFiles(root);
+    assert.equal(files.length, 151165);
+    assert.ok(files.includes("cities/0.json"));
+    assert.ok(files.includes("cities/151164.json"));
+  } finally {
+    fs.readdir = originalReaddir;
+  }
+});
 
 test("a newly generated path cannot overwrite a previously preserved file", async (t) => {
   const root = await fs.mkdtemp(

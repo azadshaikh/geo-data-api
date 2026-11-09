@@ -430,7 +430,7 @@ States are classified by administrative type:
 
 ```javascript
 // Get cities with coordinates
-const cities = await fetch('https://cdn.jsdelivr.net/npm/geo-data-api@latest/dist/api/v1/cities/country/us.json');
+const cities = await fetch('https://unpkg.com/geo-data-api@latest/dist/api/v1/cities/country/us.json');
 const citiesData = await cities.json();
 
 const citiesWithCoords = citiesData.data.filter(city =>
@@ -438,16 +438,25 @@ const citiesWithCoords = citiesData.data.filter(city =>
 );
 ```
 
-### Accessing Individual Cities (Batch API)
+### Accessing Individual Cities
 
 ```javascript
-// Method 1: Direct batch index lookup (recommended)
-const batchIndex = await fetch('https://cdn.jsdelivr.net/npm/geo-data-api@latest/dist/api/v1/cities/batches.json');
+const response = await fetch('https://unpkg.com/geo-data-api@latest/dist/api/v1/cities/57995.json');
+if (!response.ok) throw new Error(`City request failed: ${response.status}`);
+const { data: city } = await response.json();
+console.log(city.name);
+```
+
+### Accessing City Batches
+
+```javascript
+// Method 1: Batch index lookup
+const batchIndex = await fetch('https://unpkg.com/geo-data-api@latest/dist/api/v1/cities/batches.json');
 const batches = await batchIndex.json();
 
 const batch = batches.data.find(b => cityId >= b.start_id && cityId <= b.end_id);
 if (batch) {
-  const response = await fetch(`https://cdn.jsdelivr.net/npm/geo-data-api@latest/dist/api/v1/${batch.filename}`);
+  const response = await fetch(`https://unpkg.com/geo-data-api@latest/dist/api/v1/${batch.filename}`);
   const batchData = await response.json();
   const city = batchData.data[cityId];
 }
@@ -496,7 +505,7 @@ class CityAPI {
 }
 
 // Usage:
-const cityAPI = new CityAPI('https://cdn.jsdelivr.net/npm/geo-data-api@latest/dist/api/v1');
+const cityAPI = new CityAPI('https://unpkg.com/geo-data-api@latest/dist/api/v1');
 const bhopal = await cityAPI.getCity(57995);
 console.log(bhopal.name); // "Bhopal"
 ```

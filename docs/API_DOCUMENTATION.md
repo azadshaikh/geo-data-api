@@ -32,7 +32,7 @@ This is a comprehensive static JSON API providing detailed information about cou
 ## Base URL
 
 ```text
-https://cdn.jsdelivr.net/npm/geo-data-api@latest/dist/api/v1
+https://unpkg.com/geo-data-api@latest/dist/api/v1
 ```
 
 ## API Discovery
@@ -52,7 +52,7 @@ https://cdn.jsdelivr.net/npm/geo-data-api@latest/dist/api/v1
 ### Get All Countries
 
 ```javascript
-const response = await fetch('https://cdn.jsdelivr.net/npm/geo-data-api@latest/dist/api/v1/countries.json');
+const response = await fetch('https://unpkg.com/geo-data-api@latest/dist/api/v1/countries.json');
 const data = await response.json();
 console.log(data.data); // Array of countries
 ```
@@ -61,7 +61,7 @@ console.log(data.data); // Array of countries
 
 ```javascript
 // Get states for Afghanistan (country_id: 1)
-const response = await fetch('https://cdn.jsdelivr.net/npm/geo-data-api@latest/dist/api/v1/states/country/af.json');
+const response = await fetch('https://unpkg.com/geo-data-api@latest/dist/api/v1/states/country/af.json');
 const data = await response.json();
 console.log(data.data); // Array of states
 ```
@@ -70,9 +70,18 @@ console.log(data.data); // Array of states
 
 ```javascript
 // Get cities for Badakhshan (state_id: 3901, iso3166_2: AF-BDS)
-const response = await fetch('https://cdn.jsdelivr.net/npm/geo-data-api@latest/dist/api/v1/cities/state/af-bds.json');
+const response = await fetch('https://unpkg.com/geo-data-api@latest/dist/api/v1/cities/state/af-bds.json');
 const data = await response.json();
 console.log(data.data); // Array of cities
+```
+
+### Get City by ID
+
+```javascript
+const response = await fetch('https://unpkg.com/geo-data-api@latest/dist/api/v1/cities/57995.json');
+if (!response.ok) throw new Error(`City request failed: ${response.status}`);
+const { data: city } = await response.json();
+console.log(city.name); // "Bhopal"
 ```
 
 ### Get City by ID (Batch API)
@@ -81,7 +90,7 @@ console.log(data.data); // Array of cities
 // Get a specific city by ID using batch API
 async function getCity(cityId) {
   // First, get the batch index to find the correct batch file
-  const indexResponse = await fetch('https://cdn.jsdelivr.net/npm/geo-data-api@latest/dist/api/v1/cities/batches.json');
+  const indexResponse = await fetch('https://unpkg.com/geo-data-api@latest/dist/api/v1/cities/batches.json');
   const batchIndex = await indexResponse.json();
 
   // Find which batch contains the city
@@ -92,7 +101,7 @@ async function getCity(cityId) {
   }
 
   // Fetch the specific batch file
-  const batchResponse = await fetch(`https://cdn.jsdelivr.net/npm/geo-data-api@latest/dist/api/v1/${batch.filename}`);
+  const batchResponse = await fetch(`https://unpkg.com/geo-data-api@latest/dist/api/v1/${batch.filename}`);
   const batchData = await batchResponse.json();
 
   // Return the city data
@@ -109,7 +118,7 @@ console.log(bhopal.latitude, bhopal.longitude);
 ### Search Cities in One Country
 
 ```javascript
-const response = await fetch('https://cdn.jsdelivr.net/npm/geo-data-api@latest/dist/api/v1/search/cities/country/in.json');
+const response = await fetch('https://unpkg.com/geo-data-api@latest/dist/api/v1/search/cities/country/in.json');
 if (!response.ok) throw new Error(`Search shard request failed: ${response.status}`);
 const { data } = await response.json();
 const query = 'kochi'.toLowerCase().normalize('NFD').replace(/\p{M}/gu, '');
@@ -142,7 +151,7 @@ Most entity endpoints return JSON with this structure:
 2. **Search**: Use a country city-search shard when the country is known; use the full city index for global searches
 3. **Coordinates**: Check for latitude/longitude availability before using location features
 4. **WikiData**: Use WikiData IDs to fetch additional information from Wikipedia/Wikidata APIs
-5. **Batch API**: Use city batch files for efficient individual city lookups instead of downloading all cities
+5. **City details**: Fetch a direct city file for one ID, or use batch files when retrieving several cities
 6. **Batch Caching**: Cache batch files on client-side as each contains 100 cities
 
 ## Batch API Usage
@@ -154,7 +163,7 @@ The batch API provides efficient access to individual cities by organizing them 
 ```javascript
 async function getCity(cityId) {
   // Step 1: Load the batch index
-  const indexResponse = await fetch('https://cdn.jsdelivr.net/npm/geo-data-api@latest/dist/api/v1/cities/batches.json');
+  const indexResponse = await fetch('https://unpkg.com/geo-data-api@latest/dist/api/v1/cities/batches.json');
   const batchIndex = await indexResponse.json();
 
   // Step 2: Find which batch contains the city
@@ -165,7 +174,7 @@ async function getCity(cityId) {
   }
 
   // Step 3: Fetch the specific batch file
-  const batchResponse = await fetch(`https://cdn.jsdelivr.net/npm/geo-data-api@latest/dist/api/v1/${batch.filename}`);
+  const batchResponse = await fetch(`https://unpkg.com/geo-data-api@latest/dist/api/v1/${batch.filename}`);
   const batchData = await batchResponse.json();
 
   // Step 4: Extract the city data
@@ -263,7 +272,7 @@ class CityAPI {
 }
 
 // Usage:
-const cityAPI = new CityAPI('https://cdn.jsdelivr.net/npm/geo-data-api@latest/dist/api/v1');
+const cityAPI = new CityAPI('https://unpkg.com/geo-data-api@latest/dist/api/v1');
 
 // Get single city
 const bhopal = await cityAPI.getCity(57995);

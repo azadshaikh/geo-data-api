@@ -86,20 +86,13 @@
       const id = Number(text);
       if (!/^\d+$/.test(text) || !Number.isSafeInteger(id))
         throw new Error("Enter a valid city ID");
-      const indexPath = "cities/batches.json";
-      const index = await read(indexPath);
-      if (!Array.isArray(index?.data))
-        throw new Error("City batch index is unavailable");
-      const match = index.data.find(
-        (batch) => id >= batch.start_id && id <= batch.end_id,
-      );
-      if (!match) return { city: null, endpoint: endpoint(indexPath) };
-      if (!/^cities\/batch\/batch-\d+-\d+\.json$/.test(match.filename || ""))
-        throw new Error("Invalid API path in index");
-      const batch = await read(match.filename);
+      const relative = `cities/${id}.json`;
+      const payload = await read(relative, true);
+      if (payload !== null && payload?.data?.id !== id)
+        throw new Error("City data is unavailable");
       return {
-        city: batch?.data?.[id] || null,
-        endpoint: endpoint(match.filename),
+        city: payload?.data || null,
+        endpoint: endpoint(relative),
       };
     }
 

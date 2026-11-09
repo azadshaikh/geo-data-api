@@ -322,7 +322,7 @@
                   <pre
                     tabindex="0"
                     class="docs-code px-5 py-5 text-xs leading-6 sm:text-[13px]"
-                  ><code id="first-request-code">const API_BASE = "<span data-api-base>https://cdn.jsdelivr.net/npm/geo-data-api@latest/dist/api/v1/</span>";
+                  ><code id="first-request-code">const API_BASE = "<span data-api-base>https://unpkg.com/geo-data-api@latest/dist/api/v1/</span>";
 
 async function listCountries() {
   const response = await fetch(API_BASE + "countries.json");
@@ -359,8 +359,8 @@ listCountries().then(console.log).catch(console.error);</code></pre>
                 <p>
                   Most endpoints return a <code>data</code> value and a
                   <code>meta</code> object. Lists contain arrays; individual
-                  country and state endpoints contain an object. City batches
-                  use an object keyed by city ID.
+                  country, state, and city endpoints contain an object. City
+                  batches use an object keyed by city ID.
                 </p>
                 <div
                   class="mt-5 min-w-0 overflow-hidden rounded-2xl bg-[#152a22] text-[#d6e8d8] shadow-sm"

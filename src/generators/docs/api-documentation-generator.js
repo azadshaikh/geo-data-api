@@ -145,6 +145,11 @@ class APIDocumentationGenerator {
       },
 
       cities: {
+        "GET /cities/{id}.json": {
+          description: "Get detailed information for one city by its numeric ID",
+          parameters: { id: "Non-negative numeric city ID" },
+          example: `${config.CDN_BASE_URL}/cities/57995.json`,
+        },
         "GET /cities/country/{country_iso2}.json": {
           description:
             "Get cities for a specific country (full list, not paginated)",
@@ -297,8 +302,22 @@ const response = await fetch('${config.CDN_BASE_URL}/states/country/us.json');
 const data = await response.json();
 console.log(data.data); // Array of US states
         `,
+        get_single_city: `
+// Fetch a single city directly by numeric ID
+async function getCityById(cityId) {
+  if (!Number.isSafeInteger(cityId) || cityId < 0) throw new Error('Invalid city ID');
+  const response = await fetch(\`${config.CDN_BASE_URL}/cities/\${cityId}.json\`);
+  if (response.status === 404) return null;
+  if (!response.ok) throw new Error('City request failed: ' + response.status);
+  return (await response.json()).data;
+}
+
+// Example: Get Bhopal (ID: 57995)
+const bhopal = await getCityById(57995);
+console.log('Bhopal:', bhopal);
+        `,
         get_single_city_batch_system: `
-// Get single city using batch system (recommended approach)
+// Get a city using the batch index
 async function getCityById(cityId) {
   // Step 1: Get batch index to find correct batch
   const indexResponse = await fetch('${config.CDN_BASE_URL}/cities/batches.json');
@@ -350,7 +369,7 @@ const provinces = states.data.filter(state =>
       wikidata:
         "Use WikiData IDs to fetch additional information from Wikipedia/Wikidata APIs",
       cities_batch_system:
-        "For single city access, use the batch system (/cities/batches.json + /cities/batch/) instead of individual city files for better performance and reliability",
+        "Fetch /cities/{id}.json for one city, or use city batches when retrieving multiple nearby IDs",
     };
   }
 }

@@ -86,6 +86,15 @@ const data = await response.json();
 console.log(data.data); // Array of cities
 \`\`\`
 
+### Get City by ID
+
+\`\`\`javascript
+const response = await fetch('${config.CDN_BASE_URL}/cities/57995.json');
+if (!response.ok) throw new Error(\`City request failed: \${response.status}\`);
+const { data: city } = await response.json();
+console.log(city.name); // "Bhopal"
+\`\`\`
+
 ### Get City by ID (Batch API)
 
 \`\`\`javascript
@@ -153,7 +162,7 @@ Most entity endpoints return JSON with this structure:
 2. **Search**: Use a country city-search shard when the country is known; use the full city index for global searches
 3. **Coordinates**: Check for latitude/longitude availability before using location features
 4. **WikiData**: Use WikiData IDs to fetch additional information from Wikipedia/Wikidata APIs
-5. **Batch API**: Use city batch files for efficient individual city lookups instead of downloading all cities
+5. **City details**: Fetch a direct city file for one ID, or use batch files when retrieving several cities
 6. **Batch Caching**: Cache batch files on client-side as each contains 100 cities
 
 ## Batch API Usage

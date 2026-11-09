@@ -72,6 +72,7 @@ console.log(data); // Array of cities
 - `GET /cities/country/{country_iso2}.json` - Cities by country
 - `GET /cities/country/{country_iso2}/index.json` - Numbered chunks for large country lists
 - `GET /cities/state/{state_iso3166_2}.json` - Cities by state
+- `GET /cities/{id}.json` - Individual city details
 - `GET /cities/batches.json` - City batch index
 - `GET /cities/batch/{filename}` - City details keyed by ID
 

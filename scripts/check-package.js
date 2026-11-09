@@ -31,6 +31,15 @@ for (const required of [
 ]) {
   if (!paths.has(required)) throw new Error(`Package is missing ${required}`);
 }
+const manifest = require("../dist/api/v1/manifest.json");
+const cityFiles = [...paths].filter((name) =>
+  /^dist\/api\/v1\/cities\/\d+\.json$/.test(name),
+);
+if (cityFiles.length !== manifest.counts.cities) {
+  throw new Error(
+    `Package contains ${cityFiles.length} individual city files; expected ${manifest.counts.cities}`,
+  );
+}
 console.log(
   `Package includes ${paths.size} files (${pack.size} compressed bytes) and all required entry points.`,
 );

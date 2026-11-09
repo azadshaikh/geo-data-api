@@ -1005,7 +1005,7 @@ const { data } = await response.json();</code></pre>
                     Get the details behind an ID
                   </h3>
                   <p class="mt-1 text-sm leading-6 text-[#5e7566]">
-                    Find the right batch, then look up a city by its numeric ID.
+                    Fetch a city directly using its numeric ID.
                   </p>
                 </div>
               </div>
@@ -1084,11 +1084,11 @@ const { data } = await response.json();</code></pre>
                 <h4
                   class="mt-3 text-base font-extrabold tracking-[-.03em] text-[#244c38]"
                 >
-                  A quick trip through the index.
+                  One ID, one request.
                 </h4>
                 <p class="mt-2 text-sm leading-6 text-[#84978b]">
-                  The batch index tells us which small file contains an ID. The
-                  selected batch is then fetched and checked for that city.
+                  Each city has its own JSON file. Request the ID you need and
+                  handle a missing city with a 404 response.
                 </p>
                 <div
                   class="mt-6 rounded-xl border border-[#dcebdd] bg-white p-4"
@@ -1127,22 +1127,18 @@ const { data } = await response.json();</code></pre>
                   <pre
                     class="code-scroll p-4 font-mono text-[11px] leading-6"
                   ><code id="lookup-code">async function getCity(id) {
+  if (!Number.isSafeInteger(id) || id &lt; 0)
+    throw new Error('Invalid city ID');
   const base = new URL('../api/v1/', location.href);
-  const { data: batches } = await fetch(
-    new URL('cities/batches.json', base)
-  ).then(res =&gt; res.json());
-  const batch = batches.find(item =&gt;
-    id &gt;= item.start_id &amp;&amp; id &lt;= item.end_id
-  );
-  if (!batch) return null;
-  const { data } = await fetch(
-    new URL(batch.filename, base)
-  ).then(res =&gt; res.json());
-  return data[id] ?? null;
+  const res = await fetch(new URL(`cities/${id}.json`, base));
+  if (res.status === 404) return null;
+  if (!res.ok) throw new Error(`Request failed: ${res.status}`);
+  const { data } = await res.json();
+  return data;
 }</code></pre>
                 </div>
                 <p class="mt-4 text-xs leading-5 text-[#647a6d]">
-                  IDs can have gaps, even within a batch range.
+                  Some IDs do not exist; check for a 404 response.
                 </p>
               </aside>
             </div>

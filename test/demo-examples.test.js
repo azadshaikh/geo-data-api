@@ -186,52 +186,43 @@ test("the search example exposes a retry after the country list fails", async (t
   assert.match(elements["search-status"].textContent, /1 match/);
 });
 
-test("city lookup follows the batch index and handles gaps", async () => {
+test("city lookup fetches one detail file and handles missing IDs", async () => {
   const { createGeoClient } = require("../demo/examples");
   const requests = [];
-  const responses = {
-    "cities/batches.json": {
-      data: [
-        { start_id: 10, end_id: 20, filename: "cities/batch/batch-10-20.json" },
-      ],
-    },
-    "cities/batch/batch-10-20.json": {
-      data: { 12: { id: 12, name: "Example City" } },
-    },
-  };
   const client = createGeoClient(
     "https://example.test/project/api/v1/",
     async (url) => {
       requests.push(url);
-      const key = url.split("/api/v1/")[1];
-      return { ok: true, status: 200, json: async () => responses[key] };
+      return url.endsWith("/cities/12.json")
+        ? {
+            ok: true,
+            status: 200,
+            json: async () => ({ data: { id: 12, name: "Example City" } }),
+          }
+        : { ok: false, status: 404 };
     },
   );
   assert.equal((await client.lookupCity("12")).city.name, "Example City");
   assert.equal((await client.lookupCity("13")).city, null);
   assert.deepEqual(requests, [
-    "https://example.test/project/api/v1/cities/batches.json",
-    "https://example.test/project/api/v1/cities/batch/batch-10-20.json",
+    "https://example.test/project/api/v1/cities/12.json",
+    "https://example.test/project/api/v1/cities/13.json",
   ]);
   await assert.rejects(client.lookupCity("not-an-id"), /valid.*id/i);
 });
 
-test("city lookup refuses a batch filename that escapes the API root", async () => {
+test("city lookup rejects path-like IDs before making a request", async () => {
   const { createGeoClient } = require("../demo/examples");
   const client = createGeoClient(
     "https://example.test/project/api/v1/",
-    async () => ({
-      ok: true,
-      status: 200,
-      json: async () => ({
-        data: [{ start_id: 1, end_id: 2, filename: "../../private.json" }],
-      }),
-    }),
+    async () => {
+      throw new Error("Unexpected request");
+    },
   );
-  await assert.rejects(client.lookupCity("1"), /invalid.*path/i);
+  await assert.rejects(client.lookupCity("../../private"), /valid.*id/i);
 });
 
-test("the displayed lookup example runs using the batch index path", async () => {
+test("the displayed lookup example fetches the direct city file", async () => {
   const snippet = demo
     .match(/<code id="lookup-code">([\s\S]*?)<\/code>/)[1]
     .replace(/&gt;/g, ">")
@@ -248,24 +239,18 @@ test("the displayed lookup example runs using the batch index path", async () =>
   const result = await example(
     async (url) => {
       requested.push(url.href);
-      const data = url.pathname.endsWith("/cities/batches.json")
-        ? [
-            {
-              start_id: 10,
-              end_id: 20,
-              filename: "cities/batch/batch-10-20.json",
-            },
-          ]
-        : { 12: { id: 12, name: "Example" } };
-      return { json: async () => ({ data }) };
+      return {
+        ok: true,
+        status: 200,
+        json: async () => ({ data: { id: 12, name: "Example" } }),
+      };
     },
     { href: "https://example.test/project/demo/demo.html" },
     URL,
   );
   assert.equal(result.name, "Example");
   assert.deepEqual(requested, [
-    "https://example.test/project/api/v1/cities/batches.json",
-    "https://example.test/project/api/v1/cities/batch/batch-10-20.json",
+    "https://example.test/project/api/v1/cities/12.json",
   ]);
 });
 

@@ -234,7 +234,15 @@ class CitiesGenerator extends BaseGenerator {
 
   async generateCityBatches() {
     const CITIES_PER_BATCH = 100;
+    const CITY_WRITE_CONCURRENCY = 24;
     const sortedCities = DataUtils.sortBy(this.cities, "id");
+    const seenIds = new Set();
+    for (const city of sortedCities) {
+      if (!Number.isSafeInteger(city.id) || city.id < 0 || seenIds.has(city.id)) {
+        throw new Error(`Invalid or duplicate city ID: ${city.id}`);
+      }
+      seenIds.add(city.id);
+    }
 
     console.log(
       `Generating ${Math.ceil(sortedCities.length / CITIES_PER_BATCH)} city batch files`
@@ -266,6 +274,21 @@ class CitiesGenerator extends BaseGenerator {
           has_timezone: !!city.timezone,
         };
       });
+
+      // Keep individual details identical to the records in their batch while
+      // bounding concurrent writes. Wait for every write before propagating an
+      // error so the staged output can be cleaned up safely.
+      for (let offset = 0; offset < batch.length; offset += CITY_WRITE_CONCURRENCY) {
+        const group = batch.slice(offset, offset + CITY_WRITE_CONCURRENCY);
+        const results = await Promise.allSettled(group.map((city) =>
+          FileUtils.writeJSON(
+            `cities/${city.id}.json`,
+            DataUtils.addMetadata(cityLookup[city.id], "city", { city_id: city.id }),
+          ),
+        ));
+        const failed = results.find((result) => result.status === "rejected");
+        if (failed) throw failed.reason;
+      }
 
       const filename = `batch-${startId}-${endId}.json`;
       const filePath = `cities/batch/${filename}`;

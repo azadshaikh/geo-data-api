@@ -242,7 +242,7 @@
               <strong class="text-[#28543a]">Base URL</strong><br /><code
                 class="mt-1 block break-all font-mono text-[12px] text-[#2c6944]"
                 data-api-base
-                >https://cdn.jsdelivr.net/npm/geo-data-api@latest/dist/api/v1/</code
+                >https://unpkg.com/geo-data-api@latest/dist/api/v1/</code
               ><span class="mt-2 block"
                 >Paths below are relative to this URL. Use lowercase codes in
                 filenames.</span
@@ -556,12 +556,33 @@
               </h2>
               <div class="mt-3 text-[15px] leading-7 text-[#526d5c]">
                 <p>
-                  Use a state list for a picker, or the batch index to look up
-                  an individual city.
+                  Use a state list for a picker, a direct ID for one city, or
+                  batch files for multiple details.
                 </p>
                 <div
                   class="mt-5 overflow-hidden rounded-2xl border border-[#e0eae1] bg-white"
                 >
+                  <div
+                    class="grid gap-2 border-t border-[#edf2ed] px-5 py-4 sm:grid-cols-[minmax(0,1fr)_minmax(0,1fr)] sm:gap-5"
+                  >
+                    <div class="min-w-0">
+                      <span
+                        class="mr-2 text-[10px] font-extrabold tracking-wide text-[#33845a]"
+                        >GET</span
+                      ><code
+                        class="break-all text-[12px] font-semibold text-[#224f35]"
+                        >cities/{id}.json</code
+                      >
+                    </div>
+                    <p class="text-[13px] leading-6 text-[#607769]">
+                      Full details for one city by numeric ID.
+                      <a
+                        class="whitespace-nowrap font-semibold"
+                        href="../api/v1/cities/57995.json"
+                        >Open example ↗</a
+                      >
+                    </p>
+                  </div>
                   <div
                     class="grid gap-2 border-t border-[#edf2ed] px-5 py-4 sm:grid-cols-[minmax(0,1fr)_minmax(0,1fr)] sm:gap-5"
                   >

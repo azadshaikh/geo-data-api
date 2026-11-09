@@ -42,6 +42,7 @@ const INFO_ENDPOINTS = {
     timezones_index: "states/timezones.json",
   },
   cities: {
+    individual: "cities/{id}.json",
     by_country: "cities/country/{country_iso2}.json",
     by_state: "cities/state/{state_iso3166_2}.json",
     batches: "cities/batches.json",
@@ -76,6 +77,7 @@ const DOCUMENTATION_ENDPOINTS = {
     "GET /states/timezones.json",
   ],
   cities: [
+    "GET /cities/{id}.json",
     "GET /cities/country/{country_iso2}.json",
     "GET /cities/state/{state_iso3166_2}.json",
     "GET /cities/batches.json",
@@ -684,6 +686,20 @@ function verifyOutput(
     indexedCityCount,
     batchCities.size,
   );
+  for (const [id, city] of batchCities) {
+    const name = `cities/${id}.json`;
+    register(name, `city ${id}`, "City batch data");
+    const detail = read(name, `City ${id}`);
+    if (!detail) continue;
+    if (
+      detail.meta?.type !== "city" ||
+      detail.meta?.city_id !== id ||
+      detail.meta?.count !== 1
+    )
+      error(`${name}: invalid city metadata`);
+    if (!isDeepStrictEqual(detail.data, city))
+      error(`${name}: city details differ from its batch`);
+  }
   compareIds(
     citySearch,
     batchCities,

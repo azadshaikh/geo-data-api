@@ -74,7 +74,16 @@ console.log(\`\${state.data.latitude}, \${state.data.longitude}\`);
 ### 6. Get a City by ID
 
 \`\`\`javascript
-// Method 1: Direct batch index lookup (recommended)
+const response = await fetch('${config.CDN_BASE_URL}/cities/57995.json');
+if (!response.ok) throw new Error(\`City request failed: \${response.status}\`);
+const { data: city } = await response.json();
+console.log(city.name); // "Bhopal"
+\`\`\`
+
+Batch files are also available when retrieving several cities together:
+
+\`\`\`javascript
+// Method 1: Batch index lookup
 async function getCity(cityId) {
   // Step 1: Load the batch index
   const indexResponse = await fetch('${config.CDN_BASE_URL}/cities/batches.json');

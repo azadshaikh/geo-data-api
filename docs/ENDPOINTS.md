@@ -13,7 +13,7 @@ Get list of all countries with essential information.
 
 **Response Fields**: id, name, iso2, phonecode
 
-**Example**: `https://cdn.jsdelivr.net/npm/geo-data-api@latest/dist/api/v1/countries.json`
+**Example**: `https://unpkg.com/geo-data-api@latest/dist/api/v1/countries.json`
 
 ### GET /countries/{iso2}.json
 
@@ -25,7 +25,7 @@ Get detailed information for a specific country by ISO2 code.
 
 **Response Fields**: All available fields including timezones, translations, and geographic data
 
-**Example**: `https://cdn.jsdelivr.net/npm/geo-data-api@latest/dist/api/v1/countries/us.json`
+**Example**: `https://unpkg.com/geo-data-api@latest/dist/api/v1/countries/us.json`
 
 ### GET /countries/region/{region}.json
 
@@ -35,7 +35,7 @@ Get countries by region (e.g., Asia, Europe, Africa).
 
 - `region`: Region name (lowercase, hyphenated)
 
-**Example**: `https://cdn.jsdelivr.net/npm/geo-data-api@latest/dist/api/v1/countries/region/asia.json`
+**Example**: `https://unpkg.com/geo-data-api@latest/dist/api/v1/countries/region/asia.json`
 
 **Available Regions**:
 
@@ -64,7 +64,7 @@ Get all states (full list, not paginated in this release).
 
 **Note**: States are provided as a full list (no pagination)
 
-**Example**: `https://cdn.jsdelivr.net/npm/geo-data-api@latest/dist/api/v1/states/all.json`
+**Example**: `https://unpkg.com/geo-data-api@latest/dist/api/v1/states/all.json`
 
 ### GET /states/country/{country_iso2}.json
 
@@ -76,7 +76,7 @@ Get states for a specific country with administrative details.
 
 **List fields**: ID, name, ISO2 code, and ISO 3166-2 code. Use the individual state endpoint for additional details.
 
-**Example**: `https://cdn.jsdelivr.net/npm/geo-data-api@latest/dist/api/v1/states/country/af.json`
+**Example**: `https://unpkg.com/geo-data-api@latest/dist/api/v1/states/country/af.json`
 
 ### GET /states/type/{type}.json
 
@@ -86,7 +86,7 @@ Get states by administrative type (province, state, region, etc.).
 
 - `type`: Administrative type (lowercase, hyphenated)
 
-**Example**: `https://cdn.jsdelivr.net/npm/geo-data-api@latest/dist/api/v1/states/type/province.json`
+**Example**: `https://unpkg.com/geo-data-api@latest/dist/api/v1/states/type/province.json`
 
 **Available Types**:
 
@@ -194,7 +194,7 @@ Get detailed information for a specific state by ISO 3166-2 code.
 
 **Response Fields**: All available fields including geographic coordinates and timezone
 
-**Example**: `https://cdn.jsdelivr.net/npm/geo-data-api@latest/dist/api/v1/states/af-bds.json` (Badakhshan, Afghanistan)
+**Example**: `https://unpkg.com/geo-data-api@latest/dist/api/v1/states/af-bds.json` (Badakhshan, Afghanistan)
 
 ### GET /states/timezone/{timezone}.json
 
@@ -204,17 +204,23 @@ Get states by timezone.
 
 - `timezone`: Timezone name with non-alphanumeric characters replaced by hyphens
 
-**Example**: `https://cdn.jsdelivr.net/npm/geo-data-api@latest/dist/api/v1/states/timezone/Asia-Kabul.json`
+**Example**: `https://unpkg.com/geo-data-api@latest/dist/api/v1/states/timezone/Asia-Kabul.json`
 
 ### GET /states/timezones.json
 
 Get index of all state timezones with counts.
 
-**Example**: `https://cdn.jsdelivr.net/npm/geo-data-api@latest/dist/api/v1/states/timezones.json`
+**Example**: `https://unpkg.com/geo-data-api@latest/dist/api/v1/states/timezones.json`
 
 ---
 
 ## Cities
+
+### GET /cities/{id}.json
+
+Get full details for one city by its non-negative numeric ID. The response has a `data` object and city metadata.
+
+**Example**: `https://unpkg.com/geo-data-api@latest/dist/api/v1/cities/57995.json`
 
 ### GET /cities/country/{country_iso2}.json
 
@@ -224,7 +230,7 @@ Get cities for a specific country.
 
 - `country_iso2`: Lowercase country ISO2 code (for example, `af`)
 
-**Example**: `https://cdn.jsdelivr.net/npm/geo-data-api@latest/dist/api/v1/cities/country/af.json`
+**Example**: `https://unpkg.com/geo-data-api@latest/dist/api/v1/cities/country/af.json`
 
 ### GET /cities/country/{country_iso2}/index.json
 
@@ -238,7 +244,7 @@ Get cities for a specific state.
 
 - `state_iso3166_2`: State ISO 3166-2 code (format: {country_iso2}-{state_code})
 
-**Example**: `https://cdn.jsdelivr.net/npm/geo-data-api@latest/dist/api/v1/cities/state/af-bds.json`
+**Example**: `https://unpkg.com/geo-data-api@latest/dist/api/v1/cities/state/af-bds.json`
 
 
 
@@ -248,7 +254,7 @@ Get batch index for efficient individual city lookups.
 
 **Note**: Contains metadata about all city batch files with start/end ID ranges. This is the recommended way to find the correct batch file for any city ID.
 
-**Example**: `https://cdn.jsdelivr.net/npm/geo-data-api@latest/dist/api/v1/cities/batches.json`
+**Example**: `https://unpkg.com/geo-data-api@latest/dist/api/v1/cities/batches.json`
 
 **Response Structure**:
 ```json
@@ -287,7 +293,7 @@ Get a batch of cities for efficient individual city access.
 
 **Note**: Cities are accessible by ID as object keys in the `data` field. The batch index contains the complete path relative to the API base URL; append `batch.filename` directly to that base URL.
 
-**Example**: `https://cdn.jsdelivr.net/npm/geo-data-api@latest/dist/api/v1/cities/batch/batch-57900-58006.json`
+**Example**: `https://unpkg.com/geo-data-api@latest/dist/api/v1/cities/batch/batch-57900-58006.json`
 
 **Response Structure**:
 ```json
@@ -319,7 +325,7 @@ Get cities by timezone when the source data contains city timezone values. A bui
 
 Fetch `cities/timezones.json` and use each entry's `endpoint` value. Some timezone names require disambiguating suffixes to avoid filename collisions. The index and files are omitted when the source has no city timezones. The same rule applies to `states/timezones.json` for states.
 
-Individual city detail files are not generated. Use `cities/batches.json` and the indicated batch file to look up a city by ID.
+Individual city files and batch files contain the same city details. Use batches when retrieving several nearby IDs.
 
 ---
 
@@ -333,7 +339,7 @@ Searchable countries index for client-side filtering.
 
 **Usage**: Download once and filter client-side using any searchable field
 
-**Example**: `https://cdn.jsdelivr.net/npm/geo-data-api@latest/dist/api/v1/search/countries.json`
+**Example**: `https://unpkg.com/geo-data-api@latest/dist/api/v1/search/countries.json`
 
 ### GET /search/states.json
 
@@ -341,7 +347,7 @@ Searchable states index for client-side filtering.
 
 **Searchable Fields**: name, name_normalized, iso2, country_name, country_code, type, timezone
 
-**Example**: `https://cdn.jsdelivr.net/npm/geo-data-api@latest/dist/api/v1/search/states.json`
+**Example**: `https://unpkg.com/geo-data-api@latest/dist/api/v1/search/states.json`
 
 ### GET /search/cities.json
 
@@ -351,13 +357,13 @@ Complete global city search index for client-side filtering. Ordinary builds ret
 
 **Warning**: Large file - prefer a country shard when the country is known.
 
-**Example**: `https://cdn.jsdelivr.net/npm/geo-data-api@latest/dist/api/v1/search/cities.json`
+**Example**: `https://unpkg.com/geo-data-api@latest/dist/api/v1/search/cities.json`
 
 ### GET /search/cities/index.json
 
 Manifest of available city-search shards. Each entry includes a country code, record count, and `filename` relative to the API base URL. `meta.global_index_available` indicates whether `search/cities.json` is present.
 
-**Example**: `https://cdn.jsdelivr.net/npm/geo-data-api@latest/dist/api/v1/search/cities/index.json`
+**Example**: `https://unpkg.com/geo-data-api@latest/dist/api/v1/search/cities/index.json`
 
 ### GET /search/cities/country/{iso2}.json
 
@@ -365,7 +371,7 @@ Searchable city records for one country, with the same fields as the global city
 
 **Parameters**: `iso2` is the lowercase two-letter country code. Use the manifest to discover available shards; a country without cities has no shard. Records without a usable country code appear in `unknown.json` when present.
 
-**Example**: `https://cdn.jsdelivr.net/npm/geo-data-api@latest/dist/api/v1/search/cities/country/in.json`
+**Example**: `https://unpkg.com/geo-data-api@latest/dist/api/v1/search/cities/country/in.json`
 
 Search records include `name_normalized`, produced by lowercasing and removing Unicode combining marks. Normalize the query in the same way; this is diacritic folding rather than full transliteration.
 
@@ -377,7 +383,7 @@ Combined search index across all entity types (limited dataset).
 
 `meta.counts` and `meta.complete` describe the returned and total records. `search/combined.json` is a compatibility alias for the same sample.
 
-**Example**: `https://cdn.jsdelivr.net/npm/geo-data-api@latest/dist/api/v1/search/combined-sample.json`
+**Example**: `https://unpkg.com/geo-data-api@latest/dist/api/v1/search/combined-sample.json`
 
 ---
 
