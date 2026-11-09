@@ -36,47 +36,17 @@ class DocsUpdater {
       console.error(
         "Make sure countries.json, states.json, and cities.json exist in the db/ folder"
       );
-      process.exit(1);
+      throw error;
     }
   }
 
   validateDataStructure() {
-    // Suppress verbose logging for docs update
-    const originalConsoleLog = console.log;
-    const originalConsoleWarn = console.warn;
-    console.log = () => {};
-    console.warn = () => {};
-
-    try {
-      const validator = new DataValidator(
-        this.countries,
-        this.states,
-        this.cities
-      );
-      validator.validateDataStructure();
-    } finally {
-      // Restore console logging
-      console.log = originalConsoleLog;
-      console.warn = originalConsoleWarn;
-    }
+    new DataValidator(this.countries, this.states, this.cities).validateDataStructure();
   }
 
   analyzeData() {
-    // Suppress verbose logging for docs update
-    const originalConsoleLog = console.log;
-    console.log = () => {};
-
-    try {
-      const analyzer = new DataAnalyzer(
-        this.countries,
-        this.states,
-        this.cities
-      );
-      this.dataAnalysis = analyzer.analyzeData();
-    } finally {
-      // Restore console logging
-      console.log = originalConsoleLog;
-    }
+    const analyzer = new DataAnalyzer(this.countries, this.states, this.cities);
+    this.dataAnalysis = analyzer.analyzeData();
   }
 
   async updateDocs() {
@@ -118,14 +88,16 @@ class DocsUpdater {
       console.log("• API documentation (docs/*.md)");
 
       // Force exit the process cleanly
-      process.exit(0);
+      return this.dataAnalysis;
     } catch (error) {
       console.error("❌ Fatal error:", error.message);
       console.error(error.stack);
-      process.exit(1);
+      throw error;
     }
   }
 }
 
-const updater = new DocsUpdater();
-updater.run();
+module.exports = { DocsUpdater };
+if (require.main === module) {
+  new DocsUpdater().run().catch(() => { process.exitCode = 1; });
+}

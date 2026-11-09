@@ -1,33 +1,99 @@
-const fs = require("fs-extra");
+const fs = require("node:fs/promises");
 const path = require("path");
+const { createHash, randomBytes } = require("node:crypto");
 const config = require("../config");
 
 class FileUtils {
+  static beginOutputTracking() {
+    this.outputTracking = { paths: new Map(), files: new Map(), errors: [] };
+  }
+
+  static endOutputTracking() {
+    this.outputTracking = null;
+  }
+
+  static assertNoOutputCollisions() {
+    if (this.outputTracking?.errors.length) throw this.outputTracking.errors[0];
+  }
+
+  static getTrackedFiles() {
+    return this.outputTracking ? [...this.outputTracking.files.values()] : [];
+  }
+
+  static resolveOutputPath(filePath) {
+    const root = path.resolve(config.OUTPUT_DIR);
+    const target = path.resolve(root, filePath);
+    const relative = path.relative(root, target);
+    if (!relative || relative === ".." || relative.startsWith(`..${path.sep}`) || path.isAbsolute(relative)) {
+      const error = new Error(`Output path is outside the API directory: ${filePath}`);
+      error.code = "OUTPUT_PATH_OUTSIDE_ROOT";
+      throw error;
+    }
+    return { target, relative: relative.split(path.sep).join("/") };
+  }
+
+  static async writeIfChanged(fullPath, content) {
+    const bytes = Buffer.isBuffer(content) ? content : Buffer.from(content, "utf8");
+    try {
+      if ((await fs.readFile(fullPath)).equals(bytes)) return false;
+    } catch (error) {
+      if (error.code !== "ENOENT") throw error;
+    }
+    await this.ensureDir(path.dirname(fullPath));
+    const temporary = `${fullPath}.tmp-${process.pid}-${randomBytes(6).toString("hex")}`;
+    try {
+      await fs.writeFile(temporary, bytes, { flag: "wx" });
+      await fs.rename(temporary, fullPath);
+    } finally {
+      await fs.rm(temporary, { force: true });
+    }
+    return true;
+  }
+
   static async ensureDir(dirPath) {
-    await fs.ensureDir(dirPath);
+    await fs.mkdir(dirPath, { recursive: true });
+  }
+
+  static async writeOutput(filePath, content) {
+    const { target: fullPath, relative } = this.resolveOutputPath(filePath);
+    const bytes = Buffer.isBuffer(content) ? content : Buffer.from(content, "utf8");
+    const tracking = this.outputTracking;
+    const key = relative.normalize("NFC").toLowerCase();
+    if (tracking) {
+      if (tracking.paths.has(key)) {
+        const error = new Error(`Output filename collision: ${tracking.paths.get(key)} and ${relative}`);
+        error.code = "OUTPUT_PATH_COLLISION";
+        tracking.errors.push(error);
+        throw error;
+      }
+      tracking.paths.set(key, relative);
+    }
+    try {
+      const changed = await this.writeIfChanged(fullPath, bytes);
+      if (tracking) {
+        tracking.files.set(key, {
+          path: relative,
+          bytes: bytes.length,
+          sha256: createHash("sha256").update(bytes).digest("hex"),
+          changed,
+        });
+      }
+    } catch (error) {
+      if (tracking) tracking.errors.push(error);
+      throw error;
+    }
+  }
+
+  static async writeBinary(filePath, data) {
+    await this.writeOutput(filePath, data);
   }
 
   static async writeJSON(filePath, data, options = {}) {
-    const fullPath = path.join(config.OUTPUT_DIR, filePath);
-    await this.ensureDir(path.dirname(fullPath));
-
-    // Delete the file if it exists to break any hard link relationships
-    if (await fs.pathExists(fullPath)) {
-      await fs.unlink(fullPath);
-    }
-
-    // Determine if we should use pretty formatting
     const shouldPrettyPrint = this.shouldPrettyPrint(data, options);
-
-    let jsonData;
-    if (shouldPrettyPrint) {
-      jsonData = JSON.stringify(data, null, 2);
-    } else {
-      // Apply minification optimizations
-      jsonData = this.minifyJSON(data, options);
-    }
-
-    await fs.writeFile(fullPath, jsonData, "utf8");
+    const jsonData = shouldPrettyPrint
+      ? JSON.stringify(data, null, 2)
+      : this.minifyJSON(data, options);
+    await this.writeOutput(filePath, jsonData);
 
     // Only log important files or if explicitly requested.
     const suppressionEnabled = !!config.SUPPRESS_DETAILED_LOGS;
@@ -55,9 +121,6 @@ class FileUtils {
     if (options.pretty === true) return true;
     if (options.pretty === false) return false;
 
-    // Check command line flag
-    if (process.argv.includes("--pretty")) return true;
-
     // Use global config if available
     if (config.PRETTY_JSON === true) return true;
     if (config.PRETTY_JSON === false) {
@@ -77,7 +140,7 @@ class FileUtils {
 
   static minifyJSON(data, options = {}) {
     // Custom JSON stringifier with optimizations
-    const shouldOptimize = config.OPTIMIZE_JSON || options.optimize;
+    const shouldOptimize = options.optimize ?? config.OPTIMIZE_JSON;
     const optimizedData = shouldOptimize
       ? this.optimizeDataForMinification(data, options)
       : data;
@@ -103,8 +166,6 @@ class FileUtils {
   }
 
   static optimizeDataForMinification(data, options = {}) {
-    if (!options.optimize) return data;
-
     // Deep clone to avoid modifying original data
     const cloned = JSON.parse(JSON.stringify(data));
 
@@ -129,13 +190,9 @@ class FileUtils {
   }
 
   static isImportantFile(filePath) {
-    // Define patterns for files that should NOT be logged (pagination files)
+    // Avoid logging each city search shard.
     const suppressPatterns = [
-      /^cities\/country\/.*-page-\d+\.json$/, // Cities by country pagination
-      /^cities\/state\/.*-page-\d+\.json$/, // Cities by state pagination
-      /^cities\/.*-page-\d+\.json$/, // Other cities pagination files
-      /^states\/.*-page-\d+\.json$/, // States pagination files
-      /^countries\/.*-page-\d+\.json$/, // Countries pagination files
+      /^search\/cities\/country\/.*\.json$/, // City search shards
     ];
 
     // If it matches a suppress pattern, don't log it
@@ -168,7 +225,7 @@ class FileUtils {
     const fullPath = path.join(projectRoot, filePath);
     await this.ensureDir(path.dirname(fullPath));
 
-    await fs.writeFile(fullPath, content, "utf8");
+    await this.writeIfChanged(fullPath, content);
     console.log(`✓ Generated: ${path.basename(filePath)}`);
   }
 
@@ -177,72 +234,25 @@ class FileUtils {
     return JSON.parse(data);
   }
 
-  static async cleanOutput() {
-    // Remove the entire dist folder (project root /dist) instead of only the API output dir
-    const projectRoot = path.resolve(__dirname, "../../");
-    const distDir = path.join(projectRoot, "dist");
-    await fs.remove(distDir);
-    console.log("✓ Cleaned dist folder");
-  }
-
-  static createPaginatedData(data, pageSize, baseName) {
-    const pages = [];
-    const totalPages = Math.ceil(data.length / pageSize);
-
-    for (let i = 0; i < totalPages; i++) {
-      const start = i * pageSize;
-      const end = start + pageSize;
-      const pageData = data.slice(start, end);
-
-      const pagination = {
-        page: i + 1,
-        total_pages: totalPages,
-        total_records: data.length,
-        has_next: i + 1 < totalPages,
-        has_previous: i > 0,
-        next_page: i + 1 < totalPages ? `${baseName}-page-${i + 2}.json` : null,
-        previous_page: i > 0 ? `${baseName}-page-${i}.json` : null,
-      };
-
-      pages.push({
-        filename: `${baseName}-page-${i + 1}.json`,
-        data: {
-          data: pageData,
-          pagination,
-          meta: {
-            generated_at: new Date().toISOString(),
-            api_version: config.API_VERSION,
-          },
-        },
-      });
-    }
-
-    return pages;
+  static async pathExists(filePath) {
+    try { await fs.access(filePath); return true; }
+    catch (error) { if (error.code === "ENOENT") return false; throw error; }
   }
 
   static async copyFile(sourcePath, destPath) {
     // Ensure the source file exists
-    if (!(await fs.pathExists(sourcePath))) {
+    if (!(await this.pathExists(sourcePath))) {
       console.warn(`⚠ Source file not found: ${sourcePath}`);
       return;
     }
 
-    // Create destination directory if it doesn't exist
-    await this.ensureDir(path.dirname(destPath));
-
-    // Delete the destination file if it exists to break any hard link relationships
-    if (await fs.pathExists(destPath)) {
-      await fs.unlink(destPath);
-    }
-
-    // Copy the file using copyFile to ensure it's a proper copy, not a hard link
-    await fs.copyFile(sourcePath, destPath);
+    await this.writeIfChanged(destPath, await fs.readFile(sourcePath));
     console.log(`✓ Copied: ${path.basename(sourcePath)} -> ${destPath}`);
   }
 
   static async copyDir(sourceDir, destDir) {
     // Ensure the source directory exists
-    if (!(await fs.pathExists(sourceDir))) {
+    if (!(await this.pathExists(sourceDir))) {
       console.warn(`⚠ Source directory not found: ${sourceDir}`);
       return;
     }
@@ -263,12 +273,7 @@ class FileUtils {
         // Recursively copy directory
         await this.copyDir(sourcePath, destPath);
       } else {
-        // Delete the destination file if it exists to break any hard link relationships
-        if (await fs.pathExists(destPath)) {
-          await fs.unlink(destPath);
-        }
-        // Copy file using copyFile to ensure it's a proper copy, not a hard link
-        await fs.copyFile(sourcePath, destPath);
+        await this.writeIfChanged(destPath, await fs.readFile(sourcePath));
       }
     }
 

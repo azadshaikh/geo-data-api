@@ -15,7 +15,7 @@ A comprehensive static JSON API providing detailed geographic data for countries
 - **No authentication required** - public API
 - **CDN-cached responses** for optimal performance
 - **Geographic coordinates** for precise mapping
-- **Timezone information** for accurate time calculations
+- **Timezone information** when supplied by the source dataset
 
 ## 🚀 Quick Start
 
@@ -30,9 +30,9 @@ console.log(data.data); // Array of countries
 ### Get States for a Country
 
 ```javascript
-// Get all states for Afghanistan (ID: 1)
+// Get all states for Afghanistan (ISO2: AF)
 const response = await fetch(
-  "https://cdn.example.com/api/v1/states/country/1.json"
+  "https://cdn.example.com/api/v1/states/country/af.json"
 );
 const { data, meta } = await response.json();
 console.log(`Found ${meta.count} states in ${meta.country_name}`);
@@ -41,9 +41,9 @@ console.log(`Found ${meta.count} states in ${meta.country_name}`);
 ### Get Cities in a State
 
 ```javascript
-// Get cities in Badakhshan province (ID: 3901)
+// Get cities in Badakhshan province (ISO 3166-2: AF-BDS)
 const response = await fetch(
-  "https://cdn.example.com/api/v1/cities/state/3901.json"
+  "https://cdn.example.com/api/v1/cities/state/af-bds.json"
 );
 const { data } = await response.json();
 console.log(data); // Array of cities
@@ -54,36 +54,41 @@ console.log(data); // Array of cities
 ### Countries
 
 - `GET /countries.json` - All countries list
-- `GET /countries/{id}.json` - Specific country details
+- `GET /countries/{iso2}.json` - Specific country details
 - `GET /countries/region/{region}.json` - Countries by region
 - `GET /countries/regions.json` - Available regions index
 
 ### States/Provinces
 
 - `GET /states/all.json` - All states/provinces
-- `GET /states/country/{country_id}.json` - States by country
+- `GET /states/country/{country_iso2}.json` - States by country
 - `GET /states/type/{type}.json` - States by administrative type
 - `GET /states/timezone/{timezone}.json` - States by timezone
-- `GET /states/{id}.json` - Specific state details
+- `GET /states/{iso3166_2}.json` - Specific state details
 - `GET /states/types.json` - Available state types index
 
 ### Cities
 
-- `GET /cities/major.json` - Major cities (curated list)
-- `GET /cities/country/{country_id}.json` - Cities by country
-- `GET /cities/state/{state_id}.json` - Cities by state
-- `GET /cities/{id}.json` - Specific city details
+- `GET /cities/country/{country_iso2}.json` - Cities by country
+- `GET /cities/country/{country_iso2}/index.json` - Numbered chunks for large country lists
+- `GET /cities/state/{state_iso3166_2}.json` - Cities by state
+- `GET /cities/batches.json` - City batch index
+- `GET /cities/batch/{filename}` - City details keyed by ID
 
 ### Search
 
 - `GET /search/countries.json` - Searchable countries index
 - `GET /search/states.json` - Searchable states index
-- `GET /search/cities.json` - Searchable cities index
-- `GET /search/combined.json` - Combined search index
+- `GET /search/cities.json` - Complete global city-search index
+- `GET /search/cities/index.json` - Country shard manifest
+- `GET /search/cities/country/{iso2}.json` - City-search data for one country
+- `GET /search/combined-sample.json` - Sample limited to the first 1,000 states and 5,000 cities; `/search/combined.json` is an identical compatibility alias
+
+Search records expose `name_normalized` for lowercase, diacritic-folded matching. Inspect the sample's `meta.counts` and `meta.complete` before relying on its coverage.
 
 ## 📊 Response Format
 
-All responses follow a consistent structure:
+Most entity responses follow this structure:
 
 ```javascript
 {
@@ -91,7 +96,7 @@ All responses follow a consistent structure:
   "meta": {
     "type": "countries", // Type of data
     "count": 250, // Number of items (for arrays)
-    "generated_at": "2025-09-11T18:30:45.123Z",
+    "generated_at": "2025-09-12T09:30:16.000Z",
     "api_version": "v1"
   }
 }
@@ -142,11 +147,11 @@ const provinces = await response.json();
 ```javascript
 // Get cities with coordinates for mapping
 const response = await fetch(
-  "https://cdn.example.com/api/v1/cities/country/1.json"
+  "https://cdn.example.com/api/v1/cities/country/af.json"
 );
 const { data } = await response.json();
 
-const citiesWithCoords = data.filter((city) => city.latitude && city.longitude);
+const citiesWithCoords = data.filter((city) => city.latitude != null && city.latitude !== '' && city.longitude != null && city.longitude !== '');
 
 // Use with mapping libraries
 citiesWithCoords.forEach((city) => {
@@ -161,12 +166,12 @@ citiesWithCoords.forEach((city) => {
 const response = await fetch(
   "https://cdn.example.com/api/v1/states/timezone/Asia-Kabul.json"
 );
-const { data } = await response.json();
+const { data, meta } = await response.json();
 
 // Calculate local time
 data.forEach((state) => {
   const localTime = new Date().toLocaleString("en-US", {
-    timeZone: state.timezone,
+    timeZone: meta.timezone,
   });
   console.log(`${state.name}: ${localTime}`);
 });
@@ -174,15 +179,12 @@ data.forEach((state) => {
 
 ## 💾 Data Quality
 
-- **Geographic Coverage**: 95.3% of states and 87.2% of cities have coordinates
-- **WikiData Integration**: 45.7% of cities have WikiData references
-- **Timezone Coverage**: 127 unique state timezones available
-- **Multi-language**: Country names in 15+ languages
+- Coverage depends on the source dataset. See the generated API documentation for current coordinate, WikiData, and timezone statistics.
 
 ## ⚡ Performance Tips
 
 1. **Implement Caching**: Data doesn't change frequently, cache responses client-side
-2. **Use Search Endpoints**: Download search indices for client-side filtering instead of fetching all data
+2. **Use Search Shards**: Download a country city-search shard when the country is known
 3. **Check Coordinates**: Verify latitude/longitude existence before using location features
 4. **Leverage CDN**: Responses are cached globally for fast access
 
@@ -218,13 +220,9 @@ geo-data-api/
 │   ├── utils/                   # Utility functions
 │   │   ├── data-utils.js
 │   │   ├── file-utils.js
-│   │   ├── parallel-file-utils.js
-│   │   ├── performance-monitor.js
-│   │   └── worker-pool.js
-│   ├── validators/              # Data validation
-│   │   └── data-validator.js
-│   └── workers/                 # Worker processes
-│       └── file-generator-worker.js
+│   │   └── performance-monitor.js
+│   └── validators/              # Data validation
+│       └── data-validator.js
 ├── docs/                        # Generated documentation
 │   ├── API_DOCUMENTATION.md
 │   ├── QUICK_START.md

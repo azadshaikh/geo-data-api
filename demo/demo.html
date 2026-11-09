@@ -1,630 +1,1189 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta
+      name="description"
+      content="Explore practical examples using the Geo-Data API, from address forms to city search and ID lookups."
+    />
+    <meta name="theme-color" content="#f5f7f2" />
+    <title>API Playground · Geo-Data API</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=Manrope:wght@400;500;600;700;800&display=swap"
+      rel="stylesheet"
+    />
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="./contact.js" defer></script>
+    <script src="./examples.js" defer></script>
+    <style>
+      [hidden] {
+        display: none !important;
+      }
+      body {
+        font-family: "DM Sans", sans-serif;
+      }
+      h1,
+      h2,
+      h3,
+      .display-font {
+        font-family: "Manrope", sans-serif;
+      }
+      .navbar-brand {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.7rem;
+      }
+      summary::-webkit-details-marker {
+        display: none;
+      }
+      .example-tab {
+        border: 1px solid transparent;
+      }
+      .example-tab[aria-selected="true"] {
+        border-color: #c9e8d5;
+        background: #edf8f0;
+        color: #164e35;
+      }
+      .example-tab[aria-selected="true"] .tab-number {
+        background: #1d6a47;
+        color: white;
+      }
+      .field {
+        width: 100%;
+        min-height: 2.9rem;
+        border: 1px solid #dce5df;
+        border-radius: 0.75rem;
+        background-color: white;
+        padding: 0.7rem 0.85rem;
+        color: #183127;
+        font-size: 0.875rem;
+        outline: none;
+        transition:
+          border-color 0.15s,
+          box-shadow 0.15s;
+      }
+      .field:focus {
+        border-color: #3f9f6f;
+        box-shadow: 0 0 0 3px #dcf3e4;
+      }
+      .field:disabled {
+        background: #f5f7f5;
+        color: #93a39a;
+        cursor: not-allowed;
+      }
+      .field::placeholder {
+        color: #a2afa8;
+      }
+      .was-validated .field:invalid {
+        border-color: #dc7777;
+      }
+      .code-scroll {
+        overflow-x: auto;
+        scrollbar-width: thin;
+      }
+      button:focus-visible,
+      a:focus-visible,
+      summary:focus-visible {
+        outline: 3px solid #6bc592;
+        outline-offset: 3px;
+      }
+      .grid-glow {
+        background-image:
+          radial-gradient(
+            circle at 75% 20%,
+            rgba(163, 226, 183, 0.6),
+            transparent 37%
+          ),
+          linear-gradient(rgba(25, 85, 56, 0.045) 1px, transparent 1px),
+          linear-gradient(90deg, rgba(25, 85, 56, 0.045) 1px, transparent 1px);
+        background-size:
+          auto,
+          32px 32px,
+          32px 32px;
+      }
+    </style>
+  </head>
+  <body class="min-h-screen bg-[#f5f7f2] text-[#173229] antialiased">
+    <svg xmlns="http://www.w3.org/2000/svg" class="hidden" aria-hidden="true">
+      <symbol id="icon-globe" viewBox="0 0 24 24">
+        <circle
+          cx="12"
+          cy="12"
+          r="9"
+          fill="none"
+          stroke="currentColor"
+          stroke-width="1.5"
+        />
+        <path
+          d="M3.5 12h17M12 3c2.2 2.3 3.3 5.3 3.3 9s-1.1 6.7-3.3 9c-2.2-2.3-3.3-5.3-3.3-9S9.8 5.3 12 3Z"
+          fill="none"
+          stroke="currentColor"
+          stroke-width="1.5"
+        />
+      </symbol>
+      <symbol id="icon-arrow" viewBox="0 0 24 24">
+        <path
+          d="M5 12h14M13 6l6 6-6 6"
+          fill="none"
+          stroke="currentColor"
+          stroke-width="1.7"
+          stroke-linecap="round"
+          stroke-linejoin="round"
+        />
+      </symbol>
+      <symbol id="icon-pin" viewBox="0 0 24 24">
+        <path
+          d="M19 10c0 5-7 10-7 10s-7-5-7-10a7 7 0 1 1 14 0Z"
+          fill="none"
+          stroke="currentColor"
+          stroke-width="1.6"
+        />
+        <circle
+          cx="12"
+          cy="10"
+          r="2.3"
+          fill="none"
+          stroke="currentColor"
+          stroke-width="1.6"
+        />
+      </symbol>
+      <symbol id="icon-search" viewBox="0 0 24 24">
+        <circle
+          cx="10.8"
+          cy="10.8"
+          r="6"
+          fill="none"
+          stroke="currentColor"
+          stroke-width="1.6"
+        />
+        <path
+          d="m15.2 15.2 4 4"
+          fill="none"
+          stroke="currentColor"
+          stroke-width="1.6"
+          stroke-linecap="round"
+        />
+      </symbol>
+      <symbol id="icon-code" viewBox="0 0 24 24">
+        <path
+          d="m8 8-4 4 4 4m8-8 4 4-4 4m-3-10-2 12"
+          fill="none"
+          stroke="currentColor"
+          stroke-width="1.6"
+          stroke-linecap="round"
+          stroke-linejoin="round"
+        />
+      </symbol>
+      <symbol id="icon-copy" viewBox="0 0 24 24">
+        <rect
+          x="8"
+          y="8"
+          width="10"
+          height="11"
+          rx="2"
+          fill="none"
+          stroke="currentColor"
+          stroke-width="1.5"
+        />
+        <path
+          d="M15 8V6a2 2 0 0 0-2-2H6a2 2 0 0 0-2 2v8a2 2 0 0 0 2 2h2"
+          fill="none"
+          stroke="currentColor"
+          stroke-width="1.5"
+        />
+      </symbol>
+    </svg>
 
-<head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Contact Form Demo - Geo-Data API</title>
-  <meta name="description"
-    content="Contact form demo using Geo-Data API. Complete contact details with address fields and phone number with country code selector.">
-  <meta name="author" content="Astero Digital">
-  <meta name="robots" content="index, follow">
-
-  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.8/dist/css/bootstrap.min.css" rel="stylesheet">
-  <link href="https://fonts.googleapis.com/css2?family=Noto+Color+Emoji" rel="stylesheet">
-  <style>
-    html,
-    body {
-      min-height: 100vh;
-      margin: 0;
-      padding: 0;
-      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif, 'Noto Color Emoji';
-    }
-
-    body {
-      display: flex;
-      flex-direction: column;
-    }
-
-    .content-wrapper {
-      flex: 1;
-    }
-
-    footer {
-      margin-top: auto;
-    }
-
-    /* Ensure all select options also use the emoji font */
-    select option {
-      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif, 'Noto Color Emoji';
-    }
-  </style>
-</head>
-
-<body>
-  <nav class="navbar navbar-expand-lg navbar-dark bg-dark">
-    <div class="container">
-      <a class="navbar-brand" href="/">🌍 Geo-Data API</a>
-      <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav"
-        aria-controls="navbarNav" aria-expanded="false" aria-label="Toggle navigation">
-        <span class="navbar-toggler-icon"></span>
-      </button>
-      <div class="collapse navbar-collapse" id="navbarNav">
-        <div class="navbar-nav ms-auto">
-          <a class="nav-link" href="../">Home</a>
-          <a class="nav-link active" href="#">Demo</a>
-          <a class="nav-link" href="https://github.com/asterodigital/geo-data-api" target="_blank"
-            rel="noopener noreferrer">
-            🐙 GitHub
-          </a>
+    <header class="relative z-50 border-b border-[#e5ebe4] bg-white/90">
+      <nav
+        class="mx-auto flex h-[72px] max-w-7xl items-center justify-between px-5 sm:px-8 lg:px-10"
+        aria-label="Main navigation"
+      >
+        <a class="navbar-brand" href="../">
+          <span
+            class="grid h-9 w-9 place-items-center rounded-xl bg-[#1b6847] text-white"
+            ><svg class="h-5 w-5" aria-hidden="true">
+              <use href="#icon-globe" /></svg
+          ></span>
+          <span
+            class="display-font text-[15px] font-extrabold tracking-tight text-[#16372b]"
+            >geo<span class="text-[#50a274]">.</span>data
+            <span
+              class="ml-1 text-[10px] font-bold uppercase tracking-[.16em] text-[#80948a]"
+              >API</span
+            ></span
+          >
+        </a>
+        <div class="hidden items-center gap-8 text-sm font-semibold md:flex">
+          <a
+            data-nav="home"
+            href="../"
+            class="text-slate-500 hover:text-[#1b6847] transition"
+            >Home</a
+          >
+          <a
+            data-nav="playground"
+            href="../demo/demo.html"
+            aria-current="page"
+            class="text-[#216c47] transition"
+            >Playground</a
+          >
+          <a
+            data-nav="docs"
+            href="../docs/index.html"
+            class="text-slate-500 hover:text-[#1b6847] transition"
+            >Documentation</a
+          >
+          <a
+            data-nav="github"
+            href="https://github.com/azadshaikh/geo-data-api"
+            class="inline-flex items-center gap-2 rounded-full border border-[#d7e5db] bg-white px-4 py-2.5 text-xs font-bold text-[#214b37] transition hover:border-[#85caa1] hover:bg-[#f4fbf5]"
+            >GitHub <span aria-hidden="true">↗</span></a
+          >
         </div>
-      </div>
-    </div>
-  </nav>
-
-  <div class="content-wrapper">
-    <div class="container py-5">
-      <div class="text-center mb-5">
-        <h1 class="display-4 display-5">📋 Contact Form Demo</h1>
-        <p class="lead">Complete contact details with address and phone information</p>
-      </div>
-
-      <form id="contact-form" class="needs-validation" novalidate>
-        <!-- Contact Information -->
-        <div class="row mb-4">
-          <div class="col-12 col-md-6 mb-3">
-            <label for="full-name" class="form-label fw-bold">Full Name: <span class="text-danger">*</span></label>
-            <input type="text" id="full-name" class="form-control" placeholder="Enter your full name" required>
-            <div class="invalid-feedback">
-              Please provide your full name.
-            </div>
+        <details class="relative md:hidden">
+          <summary
+            class="flex cursor-pointer list-none items-center gap-2 rounded-full border border-[#d7e5db] bg-white px-4 py-2.5 text-xs font-bold text-[#214b37] hover:bg-[#f4fbf5]"
+          >
+            Menu
+            <svg
+              class="h-4 w-4"
+              aria-hidden="true"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              stroke-width="1.7"
+            >
+              <path d="M4 7h16M4 12h16M4 17h16" stroke-linecap="round" />
+            </svg>
+          </summary>
+          <div
+            class="absolute right-0 top-full z-50 mt-2 w-56 rounded-2xl border border-[#dfeae0] bg-white p-2 text-sm font-semibold shadow-xl"
+          >
+            <a
+              data-nav="home"
+              href="../"
+              class="block rounded-lg px-3 py-2.5 text-[#496357] hover:bg-[#f3f8f3] hover:text-[#1b6847]"
+              >Home</a
+            >
+            <a
+              data-nav="playground"
+              href="../demo/demo.html"
+              aria-current="page"
+              class="block rounded-lg px-3 py-2.5 bg-[#edf8f0] text-[#1b6847]"
+              >Playground</a
+            >
+            <a
+              data-nav="docs"
+              href="../docs/index.html"
+              class="block rounded-lg px-3 py-2.5 text-[#496357] hover:bg-[#f3f8f3] hover:text-[#1b6847]"
+              >Documentation</a
+            >
+            <a
+              data-nav="github"
+              href="https://github.com/azadshaikh/geo-data-api"
+              class="block rounded-lg px-3 py-2.5 text-[#496357] hover:bg-[#f3f8f3] hover:text-[#1b6847]"
+              >GitHub</a
+            >
           </div>
-          <div class="col-12 col-md-6 mb-3">
-            <label for="email" class="form-label fw-bold">Email Address: <span class="text-danger">*</span></label>
-            <input type="email" id="email" class="form-control" placeholder="Enter your email address" required>
-            <div class="invalid-feedback">
-              Please provide a valid email address.
-            </div>
+        </details>
+      </nav>
+    </header>
+
+    <main
+      class="mx-auto max-w-7xl px-5 pb-20 pt-10 sm:px-8 sm:pt-14 lg:px-10 lg:pt-16"
+    >
+      <section
+        class="grid items-center gap-8 lg:grid-cols-[1fr_330px] lg:gap-16"
+        aria-labelledby="page-title"
+      >
+        <div class="max-w-3xl">
+          <div
+            class="mb-6 inline-flex items-center gap-2 rounded-full border border-[#d4e9d9] bg-[#eaf6eb] px-3 py-1.5 text-[10px] font-bold uppercase tracking-[.17em] text-[#397958]"
+          >
+            <span class="h-1.5 w-1.5 rounded-full bg-[#3da56c]"></span>
+            Interactive playground
+            <span class="mx-1 text-[#a2c7ad]">/</span> API v1
+          </div>
+          <h1
+            id="page-title"
+            class="max-w-3xl text-[2.55rem] font-extrabold leading-[1.08] tracking-[-.065em] text-[#17372a] sm:text-6xl"
+          >
+            A little geography.<br /><span class="text-[#439d6a]"
+              >A lot of possibilities.</span
+            >
+          </h1>
+          <p
+            class="mt-5 max-w-xl text-[15px] leading-7 text-[#5e7566] sm:text-base"
+          >
+            See how simple location data can make your next idea feel right at
+            home. Pick an example below and try it with real API data.
+          </p>
+          <div
+            class="mt-7 flex flex-wrap items-center gap-x-5 gap-y-2 text-xs font-semibold text-[#769083]"
+          >
+            <span class="inline-flex items-center gap-2"
+              ><span
+                class="grid h-5 w-5 place-items-center rounded-full bg-[#e1f2e5] text-[#419363]"
+                >✓</span
+              >
+              No API key</span
+            ><span class="inline-flex items-center gap-2"
+              ><span
+                class="grid h-5 w-5 place-items-center rounded-full bg-[#e1f2e5] text-[#419363]"
+                >✓</span
+              >
+              Ready-to-use JSON</span
+            ><span class="inline-flex items-center gap-2"
+              ><span
+                class="grid h-5 w-5 place-items-center rounded-full bg-[#e1f2e5] text-[#419363]"
+                >✓</span
+              >
+              Free &amp; open source</span
+            >
           </div>
         </div>
-
-        <!-- Phone Number -->
-        <div class="row mb-4">
-          <div class="col-12">
-            <label for="phone-number" class="form-label fw-bold">Phone Number:</label>
-            <div class="input-group">
-              <select id="country-code-select" class="form-select" style="flex: 0 0 auto; min-width: 140px;">
-                <option value="">Loading...</option>
-              </select>
-              <input type="tel" id="phone-number" class="form-control" placeholder="Enter phone number">
-            </div>
-            <div class="form-text">Country code and phone number are optional</div>
+        <div
+          class="grid-glow relative hidden h-[220px] overflow-hidden rounded-[28px] border border-[#dcebe0] lg:block"
+          aria-hidden="true"
+        >
+          <div
+            class="absolute left-6 top-6 rounded-full border border-[#c6e3cd] bg-white/70 px-3 py-1.5 text-[10px] font-bold uppercase tracking-[.16em] text-[#5a9270]"
+          >
+            Made for everywhere
+          </div>
+          <svg
+            viewBox="0 0 260 220"
+            class="absolute -bottom-11 -right-5 h-[250px] w-[295px] text-[#4b9c6c]"
+            fill="none"
+          >
+            <circle
+              cx="130"
+              cy="110"
+              r="88"
+              stroke="currentColor"
+              stroke-width="1.2"
+              opacity=".5"
+            />
+            <ellipse
+              cx="130"
+              cy="110"
+              rx="48"
+              ry="88"
+              stroke="currentColor"
+              stroke-width="1.2"
+              opacity=".5"
+            />
+            <ellipse
+              cx="130"
+              cy="110"
+              rx="88"
+              ry="35"
+              stroke="currentColor"
+              stroke-width="1.2"
+              opacity=".5"
+            />
+            <path
+              d="M42 110h176M130 22v176"
+              stroke="currentColor"
+              stroke-width="1.2"
+              opacity=".5"
+            />
+            <circle
+              cx="193"
+              cy="69"
+              r="7"
+              fill="#247a4f"
+              stroke="#e9f7eb"
+              stroke-width="4"
+            />
+            <circle
+              cx="79"
+              cy="125"
+              r="6"
+              fill="#247a4f"
+              stroke="#e9f7eb"
+              stroke-width="3"
+            />
+            <circle
+              cx="146"
+              cy="153"
+              r="5"
+              fill="#247a4f"
+              stroke="#e9f7eb"
+              stroke-width="3"
+            />
+          </svg>
+          <div
+            class="absolute bottom-5 left-6 text-[11px] font-semibold leading-5 text-[#6c9e7d]"
+          >
+            Countries, states, cities.<br />One simple API.
           </div>
         </div>
+      </section>
 
-        <!-- Address Section -->
-        <div class="card mb-4">
-          <div class="card-header">
-            <h5 class="mb-0">📍 Address Information</h5>
+      <section class="mt-14 sm:mt-16" aria-labelledby="examples-heading">
+        <div class="mb-5 flex flex-wrap items-end justify-between gap-3">
+          <div>
+            <p
+              class="mb-2 text-[10px] font-bold uppercase tracking-[.2em] text-[#6a9a7a]"
+            >
+              The playground
+            </p>
+            <h2
+              id="examples-heading"
+              class="text-xl font-extrabold tracking-[-.04em] text-[#1a3c2d] sm:text-2xl"
+            >
+              Pick an example to explore
+            </h2>
           </div>
-          <div class="card-body">
-            <div class="row mb-3">
-              <div class="col-12">
-                <label for="street-address" class="form-label fw-bold">Street Address: <span
-                    class="text-danger">*</span></label>
-                <input type="text" id="street-address" class="form-control" placeholder="Enter street address" required>
-                <div class="invalid-feedback">
-                  Please provide your street address.
-                </div>
-              </div>
-            </div>
-            <div class="row mb-3">
-              <div class="col-12 col-md-4 mb-3">
-                <label for="country-select" class="form-label fw-bold">Country: <span
-                    class="text-danger">*</span></label>
-                <select id="country-select" class="form-select" required>
-                  <option value="">Loading...</option>
-                </select>
-                <div class="invalid-feedback">
-                  Please select your country.
-                </div>
-              </div>
-              <div class="col-12 col-md-4 mb-3">
-                <label for="state-select" class="form-label fw-bold">State/Province:</label>
-                <select id="state-select" class="form-select" disabled>
-                  <option value="">Choose country first</option>
-                </select>
-              </div>
-              <div class="col-12 col-md-4 mb-3">
-                <label for="city-select" class="form-label fw-bold">City:</label>
-                <select id="city-select" class="form-select" disabled>
-                  <option value="">Choose state first</option>
-                </select>
-              </div>
-            </div>
-            <div class="row">
-              <div class="col-12 col-md-6 mb-3">
-                <label for="postal-code" class="form-label fw-bold">Postal/Zip Code:</label>
-                <input type="text" id="postal-code" class="form-control" placeholder="Enter postal code">
-              </div>
-            </div>
-          </div>
+          <p class="text-xs text-[#647a6d]">
+            Three useful patterns, ready to try.
+          </p>
         </div>
-      </form> <!-- Result Display -->
-      <div id="result" class="row mb-4" style="display: none;">
-        <div class="col-12">
-          <div class="card">
-            <div class="card-header bg-success text-white">
-              <h5 class="card-title mb-0">✅ Contact Information Summary</h5>
-            </div>
-            <div class="card-body">
-              <div id="contact-info"></div>
-              <hr>
-              <p class="mb-0"><strong id="api-endpoint"></strong></p>
-            </div>
-          </div>
-        </div>
-      </div>
 
-      <!-- Submit Button -->
-      <div class="row">
-        <div class="col-12 text-center">
-          <button type="button" id="submit-btn" class="btn btn-primary btn-lg">
-            📋 Generate Contact Summary
+        <div
+          class="grid gap-2 rounded-[20px] border border-[#e0e9e1] bg-white p-2 shadow-[0_12px_35px_rgba(29,66,43,0.04)] sm:grid-cols-3"
+          role="tablist"
+          aria-label="API examples"
+        >
+          <button
+            id="tab-address"
+            class="example-tab flex items-center gap-3 rounded-[14px] px-4 py-3.5 text-left transition hover:bg-[#f5faf5]"
+            type="button"
+            role="tab"
+            aria-selected="true"
+            aria-controls="panel-address"
+            data-example-tab="address"
+          >
+            <span
+              class="tab-number grid h-9 w-9 shrink-0 place-items-center rounded-xl bg-[#f1f5f1] text-xs font-bold text-[#81958a]"
+              >01</span
+            ><span
+              ><span class="block text-sm font-bold">Location picker</span
+              ><span class="mt-0.5 block text-xs font-normal text-[#647a6d]"
+                >A smarter address form</span
+              ></span
+            >
+          </button>
+          <button
+            id="tab-search"
+            class="example-tab flex items-center gap-3 rounded-[14px] px-4 py-3.5 text-left text-[#596e62] transition hover:bg-[#f5faf5]"
+            type="button"
+            role="tab"
+            aria-selected="false"
+            aria-controls="panel-search"
+            tabindex="-1"
+            data-example-tab="search"
+          >
+            <span
+              class="tab-number grid h-9 w-9 shrink-0 place-items-center rounded-xl bg-[#f1f5f1] text-xs font-bold text-[#81958a]"
+              >02</span
+            ><span
+              ><span class="block text-sm font-bold">City search</span
+              ><span class="mt-0.5 block text-xs font-normal text-[#647a6d]"
+                >Find a place by name</span
+              ></span
+            >
+          </button>
+          <button
+            id="tab-lookup"
+            class="example-tab flex items-center gap-3 rounded-[14px] px-4 py-3.5 text-left text-[#596e62] transition hover:bg-[#f5faf5]"
+            type="button"
+            role="tab"
+            aria-selected="false"
+            aria-controls="panel-lookup"
+            tabindex="-1"
+            data-example-tab="lookup"
+          >
+            <span
+              class="tab-number grid h-9 w-9 shrink-0 place-items-center rounded-xl bg-[#f1f5f1] text-xs font-bold text-[#81958a]"
+              >03</span
+            ><span
+              ><span class="block text-sm font-bold">City lookup</span
+              ><span class="mt-0.5 block text-xs font-normal text-[#647a6d]"
+                >Get a city by its ID</span
+              ></span
+            >
           </button>
         </div>
+
+        <div
+          class="mt-4 overflow-hidden rounded-[24px] border border-[#e1e9e2] bg-white shadow-[0_18px_50px_rgba(31,70,45,0.055)] sm:rounded-[28px]"
+        >
+          <section
+            id="panel-address"
+            role="tabpanel"
+            aria-labelledby="tab-address"
+            data-example-panel="address"
+          >
+            <div class="border-b border-[#edf1ed] px-5 py-6 sm:px-8">
+              <div class="flex items-start gap-4">
+                <span
+                  class="grid h-11 w-11 shrink-0 place-items-center rounded-2xl bg-[#eaf7ed] text-[#34885a]"
+                  ><svg class="h-5 w-5" aria-hidden="true">
+                    <use href="#icon-pin" /></svg
+                ></span>
+                <div>
+                  <p
+                    class="text-[10px] font-bold uppercase tracking-[.17em] text-[#587660]"
+                  >
+                    Example 01 / Location picker
+                  </p>
+                  <h3
+                    class="mt-1 text-lg font-extrabold tracking-[-.035em] text-[#173b2b]"
+                  >
+                    An address form that knows the way
+                  </h3>
+                  <p class="mt-1 text-sm leading-6 text-[#5e7566]">
+                    Select a country, then let the API fill in the states and
+                    cities.
+                  </p>
+                </div>
+              </div>
+            </div>
+            <div class="grid lg:grid-cols-[minmax(0,1.2fr)_minmax(300px,.8fr)]">
+              <div class="p-5 sm:p-8">
+                <div class="mb-6 flex items-center justify-between">
+                  <div>
+                    <h4 class="text-sm font-bold text-[#244c38]">
+                      Contact details
+                    </h4>
+                    <p class="mt-1 text-xs text-[#647a6d]">
+                      Fields marked * are required
+                    </p>
+                  </div>
+                  <span
+                    class="rounded-full bg-[#f1f7f1] px-3 py-1.5 text-[10px] font-bold uppercase tracking-[.1em] text-[#6d9c7a]"
+                    >Form example</span
+                  >
+                </div>
+                <form id="contact-form" novalidate>
+                  <div class="grid gap-4 sm:grid-cols-2">
+                    <div>
+                      <label
+                        class="mb-2 block text-xs font-bold text-[#405e4b]"
+                        for="full-name"
+                        >Full name <span class="text-[#c96e64]">*</span></label
+                      ><input
+                        id="full-name"
+                        class="field"
+                        autocomplete="name"
+                        placeholder="e.g. Alex Morgan"
+                        required
+                      />
+                    </div>
+                    <div>
+                      <label
+                        class="mb-2 block text-xs font-bold text-[#405e4b]"
+                        for="email"
+                        >Email address
+                        <span class="text-[#c96e64]">*</span></label
+                      ><input
+                        id="email"
+                        class="field"
+                        type="email"
+                        autocomplete="email"
+                        placeholder="alex@example.com"
+                        required
+                      />
+                    </div>
+                    <div class="sm:col-span-2">
+                      <label
+                        class="mb-2 block text-xs font-bold text-[#405e4b]"
+                        for="street-address"
+                        >Street address
+                        <span class="text-[#c96e64]">*</span></label
+                      ><input
+                        id="street-address"
+                        class="field"
+                        autocomplete="street-address"
+                        placeholder="Street and number"
+                        required
+                      />
+                    </div>
+                    <div>
+                      <label
+                        class="mb-2 block text-xs font-bold text-[#405e4b]"
+                        for="country-select"
+                        >Country <span class="text-[#c96e64]">*</span></label
+                      ><select
+                        id="country-select"
+                        class="field"
+                        autocomplete="country"
+                        required
+                      >
+                        <option value="">Loading countries…</option>
+                      </select>
+                    </div>
+                    <div>
+                      <label
+                        class="mb-2 block text-xs font-bold text-[#405e4b]"
+                        for="state-select"
+                        >State / Province</label
+                      ><select
+                        id="state-select"
+                        class="field"
+                        autocomplete="address-level1"
+                        disabled
+                      >
+                        <option value="">Choose a country first</option>
+                      </select>
+                    </div>
+                    <div>
+                      <label
+                        class="mb-2 block text-xs font-bold text-[#405e4b]"
+                        for="city-select"
+                        >City</label
+                      ><select
+                        id="city-select"
+                        class="field"
+                        autocomplete="address-level2"
+                        disabled
+                      >
+                        <option value="">Choose a state first</option>
+                      </select>
+                    </div>
+                    <div>
+                      <label
+                        class="mb-2 block text-xs font-bold text-[#405e4b]"
+                        for="postal-code"
+                        >Postal code</label
+                      ><input
+                        id="postal-code"
+                        class="field"
+                        autocomplete="postal-code"
+                        placeholder="Postal / ZIP code"
+                      />
+                    </div>
+                    <div class="sm:col-span-2">
+                      <label
+                        class="mb-2 block text-xs font-bold text-[#405e4b]"
+                        for="phone-number"
+                        >Phone number
+                        <span class="font-normal text-[#647a6d]"
+                          >(optional)</span
+                        ></label
+                      >
+                      <div class="flex gap-2">
+                        <select
+                          id="country-code-select"
+                          class="field max-w-[145px]"
+                          aria-label="Phone country code"
+                        >
+                          <option value="">Country code</option></select
+                        ><input
+                          id="phone-number"
+                          class="field"
+                          type="tel"
+                          autocomplete="tel-national"
+                          placeholder="Phone number"
+                        />
+                      </div>
+                    </div>
+                  </div>
+                </form>
+                <div class="mt-6 flex flex-wrap items-center gap-4">
+                  <button
+                    id="submit-btn"
+                    type="submit"
+                    form="contact-form"
+                    class="inline-flex items-center justify-center gap-2 rounded-xl bg-[#216c47] px-5 py-3 text-sm font-bold text-white shadow-sm transition hover:bg-[#175537]"
+                  >
+                    Generate summary
+                    <svg class="h-4 w-4" aria-hidden="true">
+                      <use href="#icon-arrow" />
+                    </svg></button
+                  ><span class="text-xs text-[#647a6d]"
+                    >Your details stay in this browser.</span
+                  >
+                </div>
+                <div
+                  id="result"
+                  class="mt-6 rounded-2xl border border-[#d8ebdc] bg-[#f5fbf5] p-5"
+                  style="display: none"
+                  aria-live="polite"
+                >
+                  <p
+                    class="mb-3 text-xs font-bold uppercase tracking-[.12em] text-[#4c9065]"
+                  >
+                    Contact summary
+                  </p>
+                  <div
+                    id="contact-info"
+                    class="space-y-2 text-sm text-[#345444]"
+                  ></div>
+                  <p
+                    id="api-endpoint"
+                    class="mt-4 break-all border-t border-[#dcecdf] pt-3 font-mono text-[10px] leading-5 text-[#6f947b]"
+                  ></p>
+                </div>
+              </div>
+              <aside
+                class="border-t border-[#edf1ed] bg-[#fafcf9] p-5 sm:p-8 lg:border-l lg:border-t-0"
+              >
+                <div
+                  class="flex items-center gap-2 text-[10px] font-bold uppercase tracking-[.17em] text-[#587660]"
+                >
+                  <span class="h-1.5 w-1.5 rounded-full bg-[#64b27d]"></span>
+                  Behind this example
+                </div>
+                <h4
+                  class="mt-3 text-base font-extrabold tracking-[-.03em] text-[#244c38]"
+                >
+                  Three steps. One smooth form.
+                </h4>
+                <p class="mt-2 text-sm leading-6 text-[#84978b]">
+                  Each selection loads only the next set of places. No giant
+                  download required.
+                </p>
+                <div class="mt-6 space-y-4">
+                  <div class="flex gap-3">
+                    <span
+                      class="grid h-7 w-7 shrink-0 place-items-center rounded-lg bg-[#e6f3e8] text-xs font-bold text-[#4e9468]"
+                      >1</span
+                    >
+                    <p class="pt-1 text-xs leading-5 text-[#6f8878]">
+                      Fetch the list of countries.
+                    </p>
+                  </div>
+                  <div class="flex gap-3">
+                    <span
+                      class="grid h-7 w-7 shrink-0 place-items-center rounded-lg bg-[#e6f3e8] text-xs font-bold text-[#4e9468]"
+                      >2</span
+                    >
+                    <p class="pt-1 text-xs leading-5 text-[#6f8878]">
+                      Use the country code to get its states.
+                    </p>
+                  </div>
+                  <div class="flex gap-3">
+                    <span
+                      class="grid h-7 w-7 shrink-0 place-items-center rounded-lg bg-[#e6f3e8] text-xs font-bold text-[#4e9468]"
+                      >3</span
+                    >
+                    <p class="pt-1 text-xs leading-5 text-[#6f8878]">
+                      Use the state code to get its cities.
+                    </p>
+                  </div>
+                </div>
+                <div
+                  class="mt-7 overflow-hidden rounded-2xl bg-[#18392b] text-[#d8eee0]"
+                >
+                  <div
+                    class="flex items-center justify-between border-b border-white/10 px-4 py-3"
+                  >
+                    <span class="font-mono text-[10px] text-[#91c6a3]"
+                      >FETCH COUNTRIES</span
+                    ><button
+                      type="button"
+                      data-copy="address-code"
+                      class="inline-flex items-center gap-1.5 text-[10px] font-semibold text-[#a6cab0] hover:text-white"
+                    >
+                      <svg class="h-3.5 w-3.5" aria-hidden="true">
+                        <use href="#icon-copy" />
+                      </svg>
+                      Copy
+                    </button>
+                  </div>
+                  <pre
+                    class="code-scroll p-4 font-mono text-[11px] leading-6"
+                  ><code id="address-code">const response = await fetch(
+  '../api/v1/countries.json'
+);
+const { data } = await response.json();</code></pre>
+                </div>
+                <a
+                  href="../docs/endpoints.html"
+                  class="mt-5 inline-flex items-center gap-2 text-xs font-bold text-[#3e9161] hover:text-[#216c47]"
+                  >Explore the endpoints
+                  <svg class="h-3.5 w-3.5" aria-hidden="true">
+                    <use href="#icon-arrow" /></svg
+                ></a>
+              </aside>
+            </div>
+          </section>
+
+          <section
+            id="panel-search"
+            role="tabpanel"
+            aria-labelledby="tab-search"
+            data-example-panel="search"
+            hidden
+          >
+            <div class="border-b border-[#edf1ed] px-5 py-6 sm:px-8">
+              <div class="flex items-start gap-4">
+                <span
+                  class="grid h-11 w-11 shrink-0 place-items-center rounded-2xl bg-[#eaf7ed] text-[#34885a]"
+                  ><svg class="h-5 w-5" aria-hidden="true">
+                    <use href="#icon-search" /></svg
+                ></span>
+                <div>
+                  <p
+                    class="text-[10px] font-bold uppercase tracking-[.17em] text-[#587660]"
+                  >
+                    Example 02 / City search
+                  </p>
+                  <h3
+                    class="mt-1 text-lg font-extrabold tracking-[-.035em] text-[#173b2b]"
+                  >
+                    Find a city, even without the accents
+                  </h3>
+                  <p class="mt-1 text-sm leading-6 text-[#5e7566]">
+                    Search one country at a time using its lightweight search
+                    shard.
+                  </p>
+                </div>
+              </div>
+            </div>
+            <div class="grid lg:grid-cols-[minmax(0,1.2fr)_minmax(300px,.8fr)]">
+              <div class="p-5 sm:p-8">
+                <div class="mb-6">
+                  <h4 class="text-sm font-bold text-[#244c38]">
+                    Search for a place
+                  </h4>
+                  <p class="mt-1 text-xs leading-5 text-[#647a6d]">
+                    Try
+                    <strong class="font-bold text-[#6d9279]">Sao Paulo</strong>
+                    in Brazil to find São Paulo.
+                  </p>
+                </div>
+                <form id="search-form" class="grid gap-4 sm:grid-cols-2">
+                  <div>
+                    <label
+                      class="mb-2 block text-xs font-bold text-[#405e4b]"
+                      for="search-country"
+                      >Country</label
+                    ><select id="search-country" class="field" disabled>
+                      <option>Loading countries…</option>
+                    </select>
+                  </div>
+                  <div>
+                    <label
+                      class="mb-2 block text-xs font-bold text-[#405e4b]"
+                      for="search-query"
+                      >City name</label
+                    ><input
+                      id="search-query"
+                      class="field"
+                      value="Sao Paulo"
+                      minlength="2"
+                      placeholder="At least 2 characters"
+                      required
+                    />
+                  </div>
+                  <div class="sm:col-span-2">
+                    <button
+                      id="search-button"
+                      class="inline-flex items-center gap-2 rounded-xl bg-[#216c47] px-5 py-3 text-sm font-bold text-white transition hover:bg-[#175537] disabled:cursor-not-allowed disabled:opacity-50"
+                      type="submit"
+                      disabled
+                    >
+                      Search cities
+                      <svg class="h-4 w-4" aria-hidden="true">
+                        <use href="#icon-arrow" />
+                      </svg>
+                    </button>
+                  </div>
+                </form>
+                <div
+                  class="mt-7 rounded-2xl border border-[#e7eee8] bg-[#fcfdfb] p-4 sm:p-5"
+                >
+                  <div class="flex items-center justify-between gap-3">
+                    <p
+                      class="text-xs font-bold uppercase tracking-[.12em] text-[#587660]"
+                    >
+                      Results
+                    </p>
+                    <p
+                      id="search-status"
+                      class="text-right text-xs text-[#647a6d]"
+                      aria-live="polite"
+                    >
+                      Open this example to load a country.
+                    </p>
+                  </div>
+                  <button
+                    id="search-retry"
+                    type="button"
+                    hidden
+                    class="mt-3 text-xs font-bold text-[#216c47] underline underline-offset-2 hover:text-[#173b2b]"
+                  >
+                    Retry loading countries
+                  </button>
+                  <ul id="search-results" class="mt-3"></ul>
+                </div>
+              </div>
+              <aside
+                class="border-t border-[#edf1ed] bg-[#fafcf9] p-5 sm:p-8 lg:border-l lg:border-t-0"
+              >
+                <p
+                  class="text-[10px] font-bold uppercase tracking-[.17em] text-[#587660]"
+                >
+                  Behind this example
+                </p>
+                <h4
+                  class="mt-3 text-base font-extrabold tracking-[-.03em] text-[#244c38]"
+                >
+                  Smaller download, better matches.
+                </h4>
+                <p class="mt-2 text-sm leading-6 text-[#84978b]">
+                  The example downloads only the selected country. Both the
+                  query and city names are lowercased and diacritic-folded
+                  before matching.
+                </p>
+                <div
+                  class="mt-6 rounded-xl border border-[#dcebdd] bg-white p-4"
+                >
+                  <p
+                    class="text-[10px] font-bold uppercase tracking-[.12em] text-[#587660]"
+                  >
+                    Last endpoint
+                  </p>
+                  <p
+                    id="search-endpoint"
+                    class="mt-2 break-all font-mono text-[11px] leading-5 text-[#487b5c]"
+                  >
+                    Search to see the request.
+                  </p>
+                </div>
+                <div
+                  class="mt-5 overflow-hidden rounded-2xl bg-[#18392b] text-[#d8eee0]"
+                >
+                  <div
+                    class="flex items-center justify-between border-b border-white/10 px-4 py-3"
+                  >
+                    <span class="font-mono text-[10px] text-[#91c6a3]"
+                      >SEARCH A SHARD</span
+                    ><button
+                      type="button"
+                      data-copy="search-code"
+                      class="inline-flex items-center gap-1.5 text-[10px] font-semibold text-[#a6cab0] hover:text-white"
+                    >
+                      <svg class="h-3.5 w-3.5" aria-hidden="true">
+                        <use href="#icon-copy" />
+                      </svg>
+                      Copy
+                    </button>
+                  </div>
+                  <pre
+                    class="code-scroll p-4 font-mono text-[11px] leading-6"
+                  ><code id="search-code">// Run a search to see the request.</code></pre>
+                </div>
+                <p class="mt-4 text-xs leading-5 text-[#647a6d]">
+                  Diacritic folding is not full transliteration.
+                </p>
+              </aside>
+            </div>
+          </section>
+
+          <section
+            id="panel-lookup"
+            role="tabpanel"
+            aria-labelledby="tab-lookup"
+            data-example-panel="lookup"
+            hidden
+          >
+            <div class="border-b border-[#edf1ed] px-5 py-6 sm:px-8">
+              <div class="flex items-start gap-4">
+                <span
+                  class="grid h-11 w-11 shrink-0 place-items-center rounded-2xl bg-[#eaf7ed] text-[#34885a]"
+                  ><svg class="h-5 w-5" aria-hidden="true">
+                    <use href="#icon-code" /></svg
+                ></span>
+                <div>
+                  <p
+                    class="text-[10px] font-bold uppercase tracking-[.17em] text-[#587660]"
+                  >
+                    Example 03 / City lookup
+                  </p>
+                  <h3
+                    class="mt-1 text-lg font-extrabold tracking-[-.035em] text-[#173b2b]"
+                  >
+                    Get the details behind an ID
+                  </h3>
+                  <p class="mt-1 text-sm leading-6 text-[#5e7566]">
+                    Find the right batch, then look up a city by its numeric ID.
+                  </p>
+                </div>
+              </div>
+            </div>
+            <div class="grid lg:grid-cols-[minmax(0,1.2fr)_minmax(300px,.8fr)]">
+              <div class="p-5 sm:p-8">
+                <div class="mb-6">
+                  <h4 class="text-sm font-bold text-[#244c38]">
+                    Look up a city
+                  </h4>
+                  <p class="mt-1 text-xs leading-5 text-[#647a6d]">
+                    Try city ID
+                    <strong class="font-bold text-[#6d9279]">57995</strong>, or
+                    use an ID from the city search.
+                  </p>
+                </div>
+                <form
+                  id="lookup-form"
+                  class="flex flex-col gap-3 sm:flex-row sm:items-end"
+                >
+                  <div class="grow">
+                    <label
+                      class="mb-2 block text-xs font-bold text-[#405e4b]"
+                      for="lookup-id"
+                      >City ID</label
+                    ><input
+                      id="lookup-id"
+                      class="field"
+                      type="number"
+                      min="0"
+                      step="1"
+                      inputmode="numeric"
+                      value="57995"
+                      required
+                    />
+                  </div>
+                  <button
+                    id="lookup-button"
+                    class="inline-flex min-h-[46px] items-center justify-center gap-2 rounded-xl bg-[#216c47] px-5 py-3 text-sm font-bold text-white transition hover:bg-[#175537] disabled:cursor-not-allowed disabled:opacity-50"
+                    type="submit"
+                  >
+                    Find city
+                    <svg class="h-4 w-4" aria-hidden="true">
+                      <use href="#icon-arrow" />
+                    </svg>
+                  </button>
+                </form>
+                <div
+                  class="mt-7 rounded-2xl border border-[#e7eee8] bg-[#fcfdfb] p-4 sm:p-5"
+                >
+                  <div class="flex items-center justify-between gap-3">
+                    <p
+                      class="text-xs font-bold uppercase tracking-[.12em] text-[#587660]"
+                    >
+                      City details
+                    </p>
+                    <p
+                      id="lookup-status"
+                      class="text-right text-xs text-[#647a6d]"
+                      aria-live="polite"
+                    >
+                      Open this example to look up a city.
+                    </p>
+                  </div>
+                  <dl id="lookup-result" class="mt-3"></dl>
+                </div>
+              </div>
+              <aside
+                class="border-t border-[#edf1ed] bg-[#fafcf9] p-5 sm:p-8 lg:border-l lg:border-t-0"
+              >
+                <p
+                  class="text-[10px] font-bold uppercase tracking-[.17em] text-[#587660]"
+                >
+                  Behind this example
+                </p>
+                <h4
+                  class="mt-3 text-base font-extrabold tracking-[-.03em] text-[#244c38]"
+                >
+                  A quick trip through the index.
+                </h4>
+                <p class="mt-2 text-sm leading-6 text-[#84978b]">
+                  The batch index tells us which small file contains an ID. The
+                  selected batch is then fetched and checked for that city.
+                </p>
+                <div
+                  class="mt-6 rounded-xl border border-[#dcebdd] bg-white p-4"
+                >
+                  <p
+                    class="text-[10px] font-bold uppercase tracking-[.12em] text-[#587660]"
+                  >
+                    Last endpoint
+                  </p>
+                  <p
+                    id="lookup-endpoint"
+                    class="mt-2 break-all font-mono text-[11px] leading-5 text-[#487b5c]"
+                  >
+                    Look up a city to see the request.
+                  </p>
+                </div>
+                <div
+                  class="mt-5 overflow-hidden rounded-2xl bg-[#18392b] text-[#d8eee0]"
+                >
+                  <div
+                    class="flex items-center justify-between border-b border-white/10 px-4 py-3"
+                  >
+                    <span class="font-mono text-[10px] text-[#91c6a3]"
+                      >FIND A CITY</span
+                    ><button
+                      type="button"
+                      data-copy="lookup-code"
+                      class="inline-flex items-center gap-1.5 text-[10px] font-semibold text-[#a6cab0] hover:text-white"
+                    >
+                      <svg class="h-3.5 w-3.5" aria-hidden="true">
+                        <use href="#icon-copy" />
+                      </svg>
+                      Copy
+                    </button>
+                  </div>
+                  <pre
+                    class="code-scroll p-4 font-mono text-[11px] leading-6"
+                  ><code id="lookup-code">async function getCity(id) {
+  const base = new URL('../api/v1/', location.href);
+  const { data: batches } = await fetch(
+    new URL('cities/batches.json', base)
+  ).then(res =&gt; res.json());
+  const batch = batches.find(item =&gt;
+    id &gt;= item.start_id &amp;&amp; id &lt;= item.end_id
+  );
+  if (!batch) return null;
+  const { data } = await fetch(
+    new URL(batch.filename, base)
+  ).then(res =&gt; res.json());
+  return data[id] ?? null;
+}</code></pre>
+                </div>
+                <p class="mt-4 text-xs leading-5 text-[#647a6d]">
+                  IDs can have gaps, even within a batch range.
+                </p>
+              </aside>
+            </div>
+          </section>
+        </div>
+        <div
+          class="mt-5 flex flex-wrap items-center justify-between gap-3 px-1 text-xs text-[#647a6d]"
+        >
+          <p>Made for the places your ideas will go.</p>
+          <p>
+            Data from
+            <span class="font-semibold text-[#6f8d7a]">Geo-Data API</span> ·
+            Open source
+          </p>
+        </div>
+      </section>
+    </main>
+    <footer class="border-t border-[#e2eae2] py-6">
+      <div
+        class="mx-auto flex max-w-7xl flex-wrap items-center justify-between gap-3 px-5 text-xs text-[#647a6d] sm:px-8 lg:px-10"
+      >
+        <p>
+          © Geo-Data API · Built by
+          <a
+            class="font-semibold text-[#72937b] hover:text-[#216c47]"
+            href="https://asterodigital.com"
+            >Astero Digital</a
+          >
+        </p>
+        <div class="flex gap-5">
+          <a
+            class="hover:text-[#216c47]"
+            href="https://github.com/azadshaikh/geo-data-api"
+            >GitHub</a
+          ><a
+            class="hover:text-[#216c47]"
+            href="https://opensource.org/licenses/MIT"
+            >MIT License</a
+          >
+        </div>
       </div>
-
-      <script>
-        // Form validation function
-        function validateForm() {
-          const form = document.getElementById('contact-form');
-          const isValid = form.checkValidity();
-
-          if (!isValid) {
-            form.classList.add('was-validated');
-            // Scroll to first invalid field
-            const firstInvalid = form.querySelector(':invalid');
-            if (firstInvalid) {
-              firstInvalid.scrollIntoView({ behavior: 'smooth', block: 'center' });
-              firstInvalid.focus();
-            }
-          } else {
-            form.classList.add('was-validated');
-          }
-
-          return isValid;
-        }
-
-        const API_BASE_URL = '/api/v1';
-
-        let countries = [];
-        let currentStates = [];
-        let currentCities = [];
-
-        // Phone country codes mapping
-        const phoneCountryCodes = {
-          'us': '+1',
-          'ca': '+1',
-          'gb': '+44',
-          'de': '+49',
-          'fr': '+33',
-          'it': '+39',
-          'es': '+34',
-          'au': '+61',
-          'jp': '+81',
-          'kr': '+82',
-          'cn': '+86',
-          'in': '+91',
-          'br': '+55',
-          'mx': '+52',
-          'ar': '+54',
-          'ru': '+7',
-          'za': '+27',
-          'eg': '+20',
-          'ng': '+234',
-          'ke': '+254',
-          'ae': '+971',
-          'sa': '+966',
-          'il': '+972',
-          'tr': '+90',
-          'nl': '+31',
-          'be': '+32',
-          'ch': '+41',
-          'at': '+43',
-          'dk': '+45',
-          'se': '+46',
-          'no': '+47',
-          'fi': '+358',
-          'pl': '+48',
-          'cz': '+420',
-          'hu': '+36',
-          'pt': '+351',
-          'gr': '+30',
-          'ro': '+40',
-          'bg': '+359',
-          'hr': '+385',
-          'si': '+386',
-          'sk': '+421',
-          'lt': '+370',
-          'lv': '+371',
-          'ee': '+372',
-          'ie': '+353',
-          'is': '+354',
-          'lu': '+352',
-          'mt': '+356',
-          'cy': '+357',
-          'th': '+66',
-          'vn': '+84',
-          'ph': '+63',
-          'my': '+60',
-          'sg': '+65',
-          'id': '+62',
-          'pk': '+92',
-          'bd': '+880',
-          'lk': '+94',
-          'np': '+977',
-          'nz': '+64'
-        };
-
-        // Helper function to convert ISO2 country code to flag emoji
-        function iso2ToFlag(iso2) {
-          if (!iso2 || iso2.length !== 2) return '🌍';
-          try {
-            // Convert ISO2 code to flag emoji
-            // Each letter is converted to its corresponding regional indicator symbol
-            const codePoints = iso2.toUpperCase().split('').map(char =>
-              0x1F1E6 + char.charCodeAt(0) - 65
-            );
-            return String.fromCodePoint(...codePoints);
-          } catch (e) {
-            console.warn('Failed to convert ISO2 to flag:', iso2, e);
-            return '🌍';
-          }
-        }
-
-        const countryCodeSelect = document.getElementById('country-code-select');
-        const countrySelect = document.getElementById('country-select');
-        const stateSelect = document.getElementById('state-select');
-        const citySelect = document.getElementById('city-select');
-        const result = document.getElementById('result');
-        const contactInfo = document.getElementById('contact-info');
-        const apiEndpoint = document.getElementById('api-endpoint');
-
-
-
-        // Load countries
-        async function loadCountries() {
-          try {
-            const response = await fetch(`${API_BASE_URL}/countries.json`);
-            const data = await response.json();
-            countries = data.data || data;
-
-            // Debug logging
-            console.log('First few countries:', countries.slice(0, 3));
-
-            // Populate address country dropdown
-            countrySelect.innerHTML = '<option value="">-- Select Country --</option>';
-            countries.forEach(country => {
-              const option = document.createElement('option');
-              option.value = country.id;
-
-              // Generate flag emoji from ISO2 code
-              const flagEmoji = iso2ToFlag(country.iso2);
-
-              console.log(`${country.name}: iso2="${country.iso2}" -> emoji="${flagEmoji}"`);
-
-              option.textContent = `${flagEmoji} ${country.name}`;
-              option.dataset.country = JSON.stringify(country);
-              countrySelect.appendChild(option);
-            });
-
-            // Populate phone country code dropdown
-            countryCodeSelect.innerHTML = '<option value="">-- Select Country Code --</option>';
-
-            // Create a sorted array of countries with phone codes
-            const countriesWithPhoneCodes = countries
-              .filter(country => phoneCountryCodes[country.iso2?.toLowerCase()])
-              .sort((a, b) => a.name.localeCompare(b.name));
-
-            countriesWithPhoneCodes.forEach(country => {
-              const option = document.createElement('option');
-              const phoneCode = phoneCountryCodes[country.iso2.toLowerCase()];
-              const flagEmoji = iso2ToFlag(country.iso2);
-
-              option.value = phoneCode;
-              option.textContent = `${flagEmoji} ${phoneCode}`;
-              option.dataset.countryName = country.name;
-              countryCodeSelect.appendChild(option);
-            });
-
-          } catch (error) {
-            console.error('Error loading countries:', error);
-            countrySelect.innerHTML = '<option>Error loading countries</option>';
-            countryCodeSelect.innerHTML = '<option>Error loading country codes</option>';
-          }
-        }
-
-        // Load states for selected country
-        async function loadStates(countryId) {
-          try {
-            const selectedCountry = countries.find(c => c.id == countryId);
-            const isoCode = selectedCountry.iso2.toLowerCase();
-            const response = await fetch(`${API_BASE_URL}/states/country/${isoCode}.json`);
-            if (response.status === 404) {
-              // No states for this country
-              currentStates = [];
-              stateSelect.innerHTML = '<option value="">No states found</option>';
-              stateSelect.disabled = true;
-              // Clear cities
-              currentCities = [];
-              citySelect.innerHTML = '<option>Choose state first</option>';
-              citySelect.disabled = true;
-              return;
-            }
-
-            const data = await response.json();
-            currentStates = data.data || data || [];
-
-            if (!currentStates || currentStates.length === 0) {
-              stateSelect.innerHTML = '<option value="">No states found</option>';
-              stateSelect.disabled = true;
-              currentCities = [];
-              citySelect.innerHTML = '<option>Choose state first</option>';
-              citySelect.disabled = true;
-              return;
-            }
-
-            stateSelect.innerHTML = '<option value="">-- Select State --</option>';
-            currentStates.forEach(state => {
-              const option = document.createElement('option');
-              option.value = state.id;
-              option.textContent = state.name;
-              option.dataset.state = JSON.stringify(state);
-              stateSelect.appendChild(option);
-            });
-            stateSelect.disabled = false;
-          } catch (error) {
-            console.error('Error loading states:', error);
-            stateSelect.innerHTML = '<option>Error loading states</option>';
-            stateSelect.disabled = true;
-            currentStates = [];
-            currentCities = [];
-            citySelect.innerHTML = '<option>Choose state first</option>';
-            citySelect.disabled = true;
-          }
-        }
-
-        // Load cities for selected state
-        async function loadCities(stateId) {
-          try {
-            const selectedState = currentStates.find(s => s.id == stateId);
-            const isoCode = selectedState && selectedState.iso3166_2 ? selectedState.iso3166_2.toLowerCase().replace(/[^a-z0-9-]/g, "-") : stateId;
-            const response = await fetch(`${API_BASE_URL}/cities/state/${isoCode}.json`);
-            if (response.status === 404) {
-              // No cities for this state
-              currentCities = [];
-              citySelect.innerHTML = '<option value="">No cities found</option>';
-              citySelect.disabled = true;
-              return;
-            }
-
-            const data = await response.json();
-            currentCities = data.data || data || [];
-
-            if (!currentCities || currentCities.length === 0) {
-              citySelect.innerHTML = '<option value="">No cities found</option>';
-              citySelect.disabled = true;
-              return;
-            }
-
-            citySelect.innerHTML = '<option value="">-- Select City --</option>';
-            currentCities.forEach(city => {
-              const option = document.createElement('option');
-              option.value = city.id;
-              option.textContent = city.name;
-              option.dataset.city = JSON.stringify(city);
-              citySelect.appendChild(option);
-            });
-            citySelect.disabled = false;
-          } catch (error) {
-            console.error('Error loading cities:', error);
-            citySelect.innerHTML = '<option>Error loading cities</option>';
-            citySelect.disabled = true;
-            currentCities = [];
-          }
-        }
-
-        // Display contact information
-        function displayContactInfo() {
-          // Validate form first
-          const form = document.querySelector('form') || document.body; // fallback if no form element
-
-          const fullName = document.getElementById('full-name').value.trim();
-          const email = document.getElementById('email').value.trim();
-          const countryCode = countryCodeSelect.value;
-          const phoneNumber = document.getElementById('phone-number').value.trim();
-          const streetAddress = document.getElementById('street-address').value.trim();
-          const postalCode = document.getElementById('postal-code').value.trim();
-
-          // Check if required fields are filled
-          const isValid = validateForm();
-          if (!isValid) {
-            return; // Stop execution if validation fails
-          }
-
-          const selectedCountry = countrySelect.selectedOptions[0];
-          const selectedState = stateSelect.selectedOptions[0];
-          const selectedCity = citySelect.selectedOptions[0];
-
-          // Build contact information display
-          let html = '';
-
-          if (fullName) {
-            html += `<div class="row mb-2">
-              <div class="col-md-3 fw-bold">Name:</div>
-              <div class="col-md-9">${fullName}</div>
-            </div>`;
-          }
-
-          if (email) {
-            html += `<div class="row mb-2">
-              <div class="col-md-3 fw-bold">Email:</div>
-              <div class="col-md-9"><a href="mailto:${email}">${email}</a></div>
-            </div>`;
-          }
-
-          if (countryCode && phoneNumber) {
-            const selectedCodeOption = countryCodeSelect.selectedOptions[0];
-            const countryName = selectedCodeOption ? selectedCodeOption.dataset.countryName : '';
-            html += `<div class="row mb-2">
-              <div class="col-md-3 fw-bold">Phone:</div>
-              <div class="col-md-9">${countryCode} ${phoneNumber} ${countryName ? `(${countryName})` : ''}</div>
-            </div>`;
-          }
-
-          // Address information
-          if (streetAddress || (selectedCountry && selectedCountry.value) || postalCode) {
-            html += `<div class="row mb-2">
-              <div class="col-md-3 fw-bold">Address:</div>
-              <div class="col-md-9">`;
-
-            if (streetAddress) html += `${streetAddress}<br>`;
-
-            let addressLine = [];
-            if (selectedCity && selectedCity.value && selectedCity.dataset.city) {
-              try {
-                const city = JSON.parse(selectedCity.dataset.city);
-                addressLine.push(city.name);
-              } catch (e) {
-                console.warn('Error parsing city data:', e);
-              }
-            }
-            if (selectedState && selectedState.value && selectedState.dataset.state) {
-              try {
-                const state = JSON.parse(selectedState.dataset.state);
-                addressLine.push(state.name);
-              } catch (e) {
-                console.warn('Error parsing state data:', e);
-              }
-            }
-            if (postalCode) addressLine.push(postalCode);
-
-            if (addressLine.length > 0) {
-              html += `${addressLine.join(', ')}<br>`;
-            }
-
-            if (selectedCountry && selectedCountry.value && selectedCountry.dataset.country) {
-              try {
-                const country = JSON.parse(selectedCountry.dataset.country);
-                html += `${country.name}`;
-              } catch (e) {
-                console.warn('Error parsing country data:', e);
-              }
-            }
-
-            html += `</div></div>`;
-          }
-
-          if (html) {
-            contactInfo.innerHTML = html;
-
-            // Show API endpoint used for city data if available
-            if (selectedCity && selectedCity.value && selectedCity.dataset.city) {
-              try {
-                const city = JSON.parse(selectedCity.dataset.city);
-                apiEndpoint.textContent = `API Endpoint: ${API_BASE_URL}/cities/${city.id}.json`;
-              } catch (e) {
-                console.warn('Error parsing city data for endpoint:', e);
-                apiEndpoint.textContent = '';
-              }
-            } else {
-              apiEndpoint.textContent = '';
-            }
-
-            result.style.display = 'block';
-            result.scrollIntoView({ behavior: 'smooth' });
-          } else {
-            result.style.display = 'none';
-          }
-        }
-
-        // Event listeners
-        document.getElementById('submit-btn').addEventListener('click', displayContactInfo);
-
-        countrySelect.addEventListener('change', (e) => {
-          if (e.target.value) {
-            loadStates(e.target.value);
-            stateSelect.innerHTML = '<option>Loading states...</option>';
-            citySelect.innerHTML = '<option>Choose state first</option>';
-            citySelect.disabled = true;
-          } else {
-            stateSelect.innerHTML = '<option>Choose country first</option>';
-            stateSelect.disabled = true;
-            citySelect.innerHTML = '<option>Choose state first</option>';
-            citySelect.disabled = true;
-          }
-        });
-
-        stateSelect.addEventListener('change', (e) => {
-          if (e.target.value) {
-            loadCities(e.target.value);
-            citySelect.innerHTML = '<option>Loading cities...</option>';
-          } else {
-            citySelect.innerHTML = '<option>Choose state first</option>';
-            citySelect.disabled = true;
-          }
-        });
-
-        // Load countries on page load
-        document.addEventListener('DOMContentLoaded', function () {
-          loadCountries();
-
-          // Add real-time validation feedback
-          const form = document.getElementById('contact-form');
-          const inputs = form.querySelectorAll('input[required], select[required]');
-
-          inputs.forEach(input => {
-            input.addEventListener('input', function () {
-              if (this.checkValidity()) {
-                this.classList.remove('is-invalid');
-                this.classList.add('is-valid');
-              } else {
-                this.classList.remove('is-valid');
-                if (form.classList.contains('was-validated')) {
-                  this.classList.add('is-invalid');
-                }
-              }
-            });
-
-            input.addEventListener('change', function () {
-              if (this.checkValidity()) {
-                this.classList.remove('is-invalid');
-                this.classList.add('is-valid');
-              } else {
-                this.classList.remove('is-valid');
-                if (form.classList.contains('was-validated')) {
-                  this.classList.add('is-invalid');
-                }
-              }
-            });
-          });
-        });
-      </script>
-    </div>
-  </div>
-
-  <footer class="text-center py-3 bg-light">
-    <p class="mb-2">&copy; 2025 Geo-Data API</p>
-    <p class="mb-0 small text-muted">
-      Built by <a href="https://asterodigital.com" target="_blank" rel="noopener noreferrer"
-        class="text-decoration-none">Astero Digital</a> |
-      Licensed under <a href="https://opensource.org/licenses/MIT" target="_blank" rel="noopener noreferrer"
-        class="text-decoration-none">MIT</a>
-    </p>
-  </footer>
-
-  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.8/dist/js/bootstrap.bundle.min.js"></script>
-</body>
-
+    </footer>
+  </body>
 </html>

@@ -2,6 +2,7 @@ const FileUtils = require("../utils/file-utils");
 const DataUtils = require("../utils/data-utils");
 const config = require("../config");
 const BaseGenerator = require("./base-generator");
+const { planTimezoneFilenames } = require("../utils/timezone-filenames");
 
 class StatesGenerator extends BaseGenerator {
   constructor(states, countries) {
@@ -24,8 +25,6 @@ class StatesGenerator extends BaseGenerator {
           "country_id",
           "country_code",
           "country_name",
-          "iso2",
-          "iso3166_2",
         ],
         { context: "States validation" }
       );
@@ -156,7 +155,7 @@ class StatesGenerator extends BaseGenerator {
         country_name: country?.name,
         country_iso2: country?.iso2,
         country_iso3: country?.iso3,
-        has_coordinates: !!(state.latitude && state.longitude),
+        has_coordinates: DataUtils.hasCoordinates(state),
         has_timezone: !!state.timezone,
       });
 
@@ -273,13 +272,17 @@ class StatesGenerator extends BaseGenerator {
         this.states.filter((s) => s.timezone),
         "timezone"
       );
+      const timezones = Object.keys(statesByTimezone).filter(
+        (timezone) => timezone && timezone !== "undefined" && timezone !== "null"
+      );
+      const { filenames, aliases } = planTimezoneFilenames(timezones);
 
       for (const [timezone, states] of Object.entries(statesByTimezone)) {
         if (!timezone || timezone === "undefined" || timezone === "null")
           continue;
 
         try {
-          await this.processStatesByTimezone(timezone, states);
+          await this.processStatesByTimezone(timezone, states, filenames.get(timezone));
         } catch (error) {
           this.logError(
             `Error processing timezone ${timezone}: ${error.message}`
@@ -290,8 +293,13 @@ class StatesGenerator extends BaseGenerator {
         }
       }
 
+      // An ambiguous old path remains an alias to a deterministic member.
+      for (const alias of aliases) {
+        await this.processStatesByTimezone(alias.timezone, statesByTimezone[alias.timezone], alias.legacy);
+      }
+
       // Generate timezones index
-      await this.generateStateTimezonesIndex(statesByTimezone);
+      await this.generateStateTimezonesIndex(statesByTimezone, filenames);
     } catch (error) {
       this.logError(
         `Critical error in generateStatesByTimezone: ${error.message}`
@@ -300,7 +308,7 @@ class StatesGenerator extends BaseGenerator {
     }
   }
 
-  async processStatesByTimezone(timezone, states) {
+  async processStatesByTimezone(timezone, states, safeTimezoneName) {
     const sortedStates = DataUtils.sortBy(states, "name");
 
     const optimizedStates = sortedStates.map((state) => ({
@@ -325,7 +333,6 @@ class StatesGenerator extends BaseGenerator {
       }
     );
 
-    const safeTimezoneName = timezone.replace(/[^a-zA-Z0-9]/g, "-");
     const success = await this.safeWriteJSON(
       `states/timezone/${safeTimezoneName}.json`,
       dataWithMeta
@@ -334,7 +341,7 @@ class StatesGenerator extends BaseGenerator {
     return success;
   }
 
-  async generateStateTimezonesIndex(statesByTimezone) {
+  async generateStateTimezonesIndex(statesByTimezone, filenames) {
     try {
       const timezonesIndex = Object.keys(statesByTimezone)
         .filter((tz) => tz && tz !== "undefined" && tz !== "null")
@@ -344,7 +351,7 @@ class StatesGenerator extends BaseGenerator {
             timezone: timezone,
             state_count: states.length,
             country_count: [...new Set(states.map((s) => s.country_id))].length,
-            endpoint: `states/timezone/${timezone.replace(/[^a-zA-Z0-9]/g, "-")}.json`,
+            endpoint: `states/timezone/${filenames.get(timezone)}.json`,
           };
         })
         .sort((a, b) => a.timezone.localeCompare(b.timezone));

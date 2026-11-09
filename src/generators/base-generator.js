@@ -131,38 +131,6 @@ class BaseGenerator {
   }
 
   /**
-   * Process items in parallel with concurrency control
-   */
-  async processInParallel(
-    items,
-    processFn,
-    concurrency = config.GENERATION_OPTIONS.maxConcurrentFiles
-  ) {
-    const results = [];
-    const chunks = this.chunkArray(items, concurrency);
-
-    for (const chunk of chunks) {
-      const chunkResults = await Promise.allSettled(
-        chunk.map((item) => processFn(item))
-      );
-
-      for (const result of chunkResults) {
-        if (result.status === "fulfilled") {
-          results.push(result.value);
-        } else {
-          this.errors.push({
-            error: result.reason.message,
-            timestamp: new Date().toISOString(),
-          });
-          this.logError(`Parallel processing error: ${result.reason.message}`);
-        }
-      }
-    }
-
-    return results;
-  }
-
-  /**
    * Enhanced data validation with recovery options
    */
   validateData(data, requiredFields, context = "") {
@@ -250,17 +218,6 @@ class BaseGenerator {
       .replace(/[^a-z0-9-]/g, "-")
       .replace(/-+/g, "-")
       .replace(/^-|-$/g, "");
-  }
-
-  /**
-   * Utility method to chunk arrays
-   */
-  chunkArray(array, size) {
-    const chunks = [];
-    for (let i = 0; i < array.length; i += size) {
-      chunks.push(array.slice(i, i + size));
-    }
-    return chunks;
   }
 
   /**

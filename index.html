@@ -1,221 +1,739 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta
+      name="description"
+      content="A simple static JSON API for countries, states, and cities. Explore geographic data with no API key or server required."
+    />
+    <meta name="author" content="Astero Digital" />
+    <meta name="theme-color" content="#f5f7f2" />
+    <title>Geo-Data API · Geography for your next idea</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=Manrope:wght@400;500;600;700;800&display=swap"
+      rel="stylesheet"
+    />
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+      body {
+        font-family: "DM Sans", sans-serif;
+      }
+      h1,
+      h2,
+      h3,
+      .display-font {
+        font-family: "Manrope", sans-serif;
+      }
+      .navbar-brand {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.7rem;
+      }
+      summary::-webkit-details-marker {
+        display: none;
+      }
+      .grid-glow {
+        background-image:
+          radial-gradient(
+            circle at 78% 16%,
+            rgba(163, 226, 183, 0.55),
+            transparent 34%
+          ),
+          linear-gradient(rgba(25, 85, 56, 0.045) 1px, transparent 1px),
+          linear-gradient(90deg, rgba(25, 85, 56, 0.045) 1px, transparent 1px);
+        background-size:
+          auto,
+          32px 32px,
+          32px 32px;
+      }
+      .code-scroll {
+        overflow-x: auto;
+        scrollbar-width: thin;
+      }
+      button:focus-visible,
+      a:focus-visible,
+      summary:focus-visible,
+      .code-scroll code:focus-visible {
+        outline: 3px solid #6bc592;
+        outline-offset: 3px;
+      }
+    </style>
+  </head>
+  <body class="min-h-screen bg-[#f5f7f2] text-[#173229] antialiased">
+    <svg xmlns="http://www.w3.org/2000/svg" class="hidden" aria-hidden="true">
+      <symbol id="icon-globe" viewBox="0 0 24 24">
+        <circle
+          cx="12"
+          cy="12"
+          r="9"
+          fill="none"
+          stroke="currentColor"
+          stroke-width="1.5"
+        />
+        <path
+          d="M3.5 12h17M12 3c2.2 2.3 3.3 5.3 3.3 9s-1.1 6.7-3.3 9c-2.2-2.3-3.3-5.3-3.3-9S9.8 5.3 12 3Z"
+          fill="none"
+          stroke="currentColor"
+          stroke-width="1.5"
+        />
+      </symbol>
+      <symbol id="icon-arrow" viewBox="0 0 24 24">
+        <path
+          d="M5 12h14M13 6l6 6-6 6"
+          fill="none"
+          stroke="currentColor"
+          stroke-width="1.7"
+          stroke-linecap="round"
+          stroke-linejoin="round"
+        />
+      </symbol>
+      <symbol id="icon-pin" viewBox="0 0 24 24">
+        <path
+          d="M19 10c0 5-7 10-7 10s-7-5-7-10a7 7 0 1 1 14 0Z"
+          fill="none"
+          stroke="currentColor"
+          stroke-width="1.6"
+        />
+        <circle
+          cx="12"
+          cy="10"
+          r="2.3"
+          fill="none"
+          stroke="currentColor"
+          stroke-width="1.6"
+        />
+      </symbol>
+      <symbol id="icon-search" viewBox="0 0 24 24">
+        <circle
+          cx="10.8"
+          cy="10.8"
+          r="6"
+          fill="none"
+          stroke="currentColor"
+          stroke-width="1.6"
+        />
+        <path
+          d="m15.2 15.2 4 4"
+          fill="none"
+          stroke="currentColor"
+          stroke-width="1.6"
+          stroke-linecap="round"
+        />
+      </symbol>
+      <symbol id="icon-layers" viewBox="0 0 24 24">
+        <path
+          d="m12 4 8 4.5-8 4.5-8-4.5L12 4Zm-8 8 8 4.5 8-4.5M4 15.5l8 4.5 8-4.5"
+          fill="none"
+          stroke="currentColor"
+          stroke-width="1.6"
+          stroke-linecap="round"
+          stroke-linejoin="round"
+        />
+      </symbol>
+      <symbol id="icon-copy" viewBox="0 0 24 24">
+        <rect
+          x="8"
+          y="8"
+          width="10"
+          height="11"
+          rx="2"
+          fill="none"
+          stroke="currentColor"
+          stroke-width="1.5"
+        />
+        <path
+          d="M15 8V6a2 2 0 0 0-2-2H6a2 2 0 0 0-2 2v8a2 2 0 0 0 2 2h2"
+          fill="none"
+          stroke="currentColor"
+          stroke-width="1.5"
+        />
+      </symbol>
+    </svg>
 
-<head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Geo-Data API - Static JSON API Generator</title>
-  <meta name="description"
-    content="Generate a static JSON API for geographic data including countries, states, and cities that can be hosted on any CDN. Transform geographic datasets into a small, cacheable, CDN-ready API with search capabilities.">
-
-  <meta name="author" content="Astero Digital">
-  <meta name="robots" content="index, follow">
-
-
-  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
-  <style>
-    html,
-    body {
-      min-height: 100vh;
-      margin: 0;
-      padding: 0;
-    }
-
-    body {
-      display: flex;
-      flex-direction: column;
-    }
-
-    .content-wrapper {
-      flex: 1;
-    }
-
-    footer {
-      margin-top: auto;
-    }
-  </style>
-</head>
-
-<body>
-  <nav class="navbar navbar-expand-lg navbar-dark bg-dark">
-    <div class="container">
-      <a class="navbar-brand" href="/">🌍 Geo-Data API</a>
-      <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav"
-        aria-controls="navbarNav" aria-expanded="false" aria-label="Toggle navigation">
-        <span class="navbar-toggler-icon"></span>
-      </button>
-      <div class="collapse navbar-collapse" id="navbarNav">
-        <div class="navbar-nav ms-auto">
-          <a class="nav-link active" href="./">Home</a>
-          <a class="nav-link" href="demo/demo.html">Demo</a>
-          <a class="nav-link" href="https://github.com/asterodigital/geo-data-api" target="_blank"
-            rel="noopener noreferrer">
-            🐙 GitHub
-          </a>
+    <header class="relative z-50 border-b border-[#e5ebe4] bg-white/90">
+      <nav
+        class="mx-auto flex h-[72px] max-w-7xl items-center justify-between px-5 sm:px-8 lg:px-10"
+        aria-label="Main navigation"
+      >
+        <a class="navbar-brand" href="./">
+          <span
+            class="grid h-9 w-9 place-items-center rounded-xl bg-[#1b6847] text-white"
+            ><svg class="h-5 w-5" aria-hidden="true">
+              <use href="#icon-globe" /></svg
+          ></span>
+          <span
+            class="display-font text-[15px] font-extrabold tracking-tight text-[#16372b]"
+            >geo<span class="text-[#50a274]">.</span>data
+            <span
+              class="ml-1 text-[10px] font-bold uppercase tracking-[.16em] text-[#80948a]"
+              >API</span
+            ></span
+          >
+        </a>
+        <div class="hidden items-center gap-8 text-sm font-semibold md:flex">
+          <a
+            data-nav="home"
+            href="./"
+            aria-current="page"
+            class="text-[#216c47] transition"
+            >Home</a
+          >
+          <a
+            data-nav="playground"
+            href="./demo/demo.html"
+            class="text-slate-500 hover:text-[#1b6847] transition"
+            >Playground</a
+          >
+          <a
+            data-nav="docs"
+            href="./docs/index.html"
+            class="text-slate-500 hover:text-[#1b6847] transition"
+            >Documentation</a
+          >
+          <a
+            data-nav="github"
+            href="https://github.com/azadshaikh/geo-data-api"
+            class="inline-flex items-center gap-2 rounded-full border border-[#d7e5db] bg-white px-4 py-2.5 text-xs font-bold text-[#214b37] transition hover:border-[#85caa1] hover:bg-[#f4fbf5]"
+            >GitHub <span aria-hidden="true">↗</span></a
+          >
         </div>
-      </div>
-    </div>
-  </nav>
+        <details class="relative md:hidden">
+          <summary
+            class="flex cursor-pointer list-none items-center gap-2 rounded-full border border-[#d7e5db] bg-white px-4 py-2.5 text-xs font-bold text-[#214b37] hover:bg-[#f4fbf5]"
+          >
+            Menu
+            <svg
+              class="h-4 w-4"
+              aria-hidden="true"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              stroke-width="1.7"
+            >
+              <path d="M4 7h16M4 12h16M4 17h16" stroke-linecap="round" />
+            </svg>
+          </summary>
+          <div
+            class="absolute right-0 top-full z-50 mt-2 w-56 rounded-2xl border border-[#dfeae0] bg-white p-2 text-sm font-semibold shadow-xl"
+          >
+            <a
+              data-nav="home"
+              href="./"
+              aria-current="page"
+              class="block rounded-lg px-3 py-2.5 bg-[#edf8f0] text-[#1b6847]"
+              >Home</a
+            >
+            <a
+              data-nav="playground"
+              href="./demo/demo.html"
+              class="block rounded-lg px-3 py-2.5 text-[#496357] hover:bg-[#f3f8f3] hover:text-[#1b6847]"
+              >Playground</a
+            >
+            <a
+              data-nav="docs"
+              href="./docs/index.html"
+              class="block rounded-lg px-3 py-2.5 text-[#496357] hover:bg-[#f3f8f3] hover:text-[#1b6847]"
+              >Documentation</a
+            >
+            <a
+              data-nav="github"
+              href="https://github.com/azadshaikh/geo-data-api"
+              class="block rounded-lg px-3 py-2.5 text-[#496357] hover:bg-[#f3f8f3] hover:text-[#1b6847]"
+              >GitHub</a
+            >
+          </div>
+        </details>
+      </nav>
+    </header>
 
-  <div class="content-wrapper">
-    <div class="container py-5">
-      <div class="text-center mb-5">
-        <h1 class="display-4 display-5">🌍 Geo-Data API</h1>
-        <p class="lead">Generate a static JSON API for geographic data including countries, states, and cities that can
-          be hosted on any CDN</p>
-        <p class="text-muted">Transform geographic datasets into a small, cacheable, CDN-ready API with search
-          capabilities</p>
-        <div class="mt-3">
-          <span class="badge bg-primary me-2">v1.0.0</span>
-          <span class="badge bg-success me-2">MIT License</span>
-          <span class="badge bg-info">CDN Ready</span>
-        </div>
-      </div>
-
-      <div class="row text-center mb-4">
-        <div class="col-6 col-md-4">
-          <h2 class="h1">195+</h2>
-          <p class="mb-0">Countries</p>
-        </div>
-        <div class="col-6 col-md-4">
-          <h2 class="h1">5000+</h2>
-          <p class="mb-0">States/Provinces</p>
-        </div>
-        <div class="col-12 col-md-4">
-          <h2 class="h1">100K+</h2>
-          <p class="mb-0">Cities</p>
-        </div>
-      </div>
-
-      <div class="text-center mb-4">
-        <h4 class="mb-3">🏷️ Keywords & Tags</h4>
-        <div class="d-flex flex-wrap justify-content-center gap-2 mb-3">
-          <span class="badge bg-secondary">api</span>
-          <span class="badge bg-secondary">json</span>
-          <span class="badge bg-secondary">psql</span>
-          <span class="badge bg-secondary">state</span>
-          <span class="badge bg-secondary">states</span>
-          <span class="badge bg-secondary">cities</span>
-          <span class="badge bg-secondary">region</span>
-          <span class="badge bg-secondary">country</span>
-          <span class="badge bg-secondary">regions</span>
-          <span class="badge bg-secondary">countries</span>
-          <span class="badge bg-secondary">generator</span>
-          <span class="badge bg-secondary">hacktoberfest</span>
-          <span class="badge bg-secondary">world-regions</span>
-          <span class="badge bg-secondary">geographical-data</span>
-          <span class="badge bg-secondary">country-state-city</span>
-          <span class="badge bg-secondary">countries-states-cities</span>
-        </div>
-      </div>
-
-      <div class="text-center mb-3">
-        <a href="demo/demo.html" class="btn btn-primary btn-lg me-3 mb-3">🚀 Try Interactive Demo</a>
-        <a href="https://github.com/asterodigital/geo-data-api" class="btn btn-secondary btn-lg me-3 mb-3">📖 View
-          on
-          GitHub</a>
-      </div>
-
-      <div class="row mb-4">
-        <div class="col-12 col-lg-6 mb-4 mb-lg-0">
-          <div class="card h-100">
-            <div class="card-header bg-primary text-white">
-              <h3 class="card-title mb-0 h5 h4-md">🚀 Quick Start</h3>
-            </div>
-            <div class="card-body">
-              <p class="card-text">Get started with our API in seconds:</p>
-              <pre class="bg-dark text-light p-3 rounded small"><code>// Get all countries
-fetch('/api/v1/countries.json')
-  .then(response => response.json())
-  .then(data => console.log(data));
-
-// Get country by ISO2
-fetch('/api/v1/countries/us.json')
-  .then(response => response.json())
-  .then(data => console.log(data));</code></pre>
-            </div>
+    <main class="mx-auto max-w-7xl px-5 pb-20 sm:px-8 lg:px-10">
+      <section
+        class="grid grid-cols-1 items-center gap-10 pb-12 pt-12 sm:pb-16 sm:pt-16 lg:grid-cols-[minmax(0,1.05fr)_minmax(0,.95fr)] lg:gap-16 lg:pb-20 lg:pt-20"
+        aria-labelledby="page-title"
+      >
+        <div class="min-w-0 max-w-2xl">
+          <div
+            class="mb-6 inline-flex items-center gap-2 rounded-full border border-[#d4e9d9] bg-[#eaf6eb] px-3 py-1.5 text-[10px] font-bold uppercase tracking-[.17em] text-[#397958]"
+          >
+            <span class="h-1.5 w-1.5 rounded-full bg-[#3da56c]"></span> Open
+            geographic data <span class="mx-1 text-[#a2c7ad]">/</span> API v1
+          </div>
+          <h1
+            id="page-title"
+            class="text-[2.65rem] font-extrabold leading-[1.08] tracking-[-.065em] text-[#17372a] sm:text-6xl xl:text-[4.25rem]"
+          >
+            The world, ready for
+            <span class="text-[#439d6a]">your next idea.</span>
+          </h1>
+          <p
+            class="mt-5 max-w-xl text-[15px] leading-7 text-[#5e7566] sm:text-base"
+          >
+            Countries, states, and cities in simple, ready-to-use JSON. Build
+            location-aware experiences without an API key or a backend to
+            manage.
+          </p>
+          <div class="mt-8 flex flex-wrap gap-3">
+            <a
+              href="demo/demo.html"
+              class="inline-flex min-h-[50px] items-center justify-center gap-2 rounded-xl bg-[#216c47] px-5 py-3 text-sm font-bold text-white shadow-sm transition hover:bg-[#175537]"
+              >Explore the playground
+              <svg class="h-4 w-4" aria-hidden="true">
+                <use href="#icon-arrow" /></svg></a
+            ><a
+              href="./docs/index.html"
+              class="inline-flex min-h-[50px] items-center justify-center rounded-xl border border-[#d6e5d9] bg-white px-5 py-3 text-sm font-bold text-[#315d43] transition hover:border-[#a3cdb0] hover:bg-[#f7fbf7]"
+              >Read the docs</a
+            >
+          </div>
+          <div
+            class="mt-7 flex flex-wrap items-center gap-x-5 gap-y-2 text-xs font-semibold text-[#5e7566]"
+          >
+            <span class="inline-flex items-center gap-2"
+              ><span
+                class="grid h-5 w-5 place-items-center rounded-full bg-[#e1f2e5] text-[#419363]"
+                >✓</span
+              >
+              No API key</span
+            ><span class="inline-flex items-center gap-2"
+              ><span
+                class="grid h-5 w-5 place-items-center rounded-full bg-[#e1f2e5] text-[#419363]"
+                >✓</span
+              >
+              Ready-to-use JSON</span
+            ><span class="inline-flex items-center gap-2"
+              ><span
+                class="grid h-5 w-5 place-items-center rounded-full bg-[#e1f2e5] text-[#419363]"
+                >✓</span
+              >
+              Free &amp; open source</span
+            >
           </div>
         </div>
-
-        <div class="col-12 col-lg-6">
-          <div class="card h-100">
-            <div class="card-header bg-success text-white">
-              <h3 class="card-title mb-0 h5 h4-md">📡 API Endpoints</h3>
-            </div>
-            <div class="card-body">
-              <h5 class="h6">Countries</h5>
-              <ul class="list-unstyled mb-3">
-                <li><code class="text-primary small">GET /api/v1/countries.json</code> - All countries</li>
-                <li><code class="text-primary small">GET /api/v1/countries/{iso2}.json</code> - Single country</li>
-              </ul>
-
-              <h5 class="h6">States</h5>
-              <ul class="list-unstyled mb-3">
-                <li><code class="text-primary small">GET /api/v1/states/{iso3166_2}.json</code> - Single state</li>
-                <li><code class="text-primary small">GET /api/v1/states/country/{iso2}.json</code> - States by country
-                </li>
-              </ul>
-
-              <h5 class="h6">Cities</h5>
-              <ul class="list-unstyled">
-                <li><code class="text-primary small">GET /api/v1/cities/batch/{batchId}.json</code> - Cities in batches
-                </li>
-                <li><code class="text-primary small">GET /api/v1/cities/country/{iso2}.json</code> - Cities by country
-                </li>
-                <li><code class="text-primary small">GET /api/v1/cities/state/{iso3166_2}.json</code> - Cities by state
-                </li>
-              </ul>
-            </div>
-          </div>
-        </div>
-      </div>
-
-      <div class="row mb-4">
-        <div class="col-12">
-          <div class="card">
-            <div class="card-header bg-info text-white">
-              <h3 class="card-title mb-0 h5">🔧 Built With</h3>
-            </div>
-            <div class="card-body">
-              <div class="row text-center">
-                <div class="col-md-4 mb-3">
-                  <h6 class="text-primary">Runtime</h6>
-                  <p class="mb-0">Node.js</p>
-                </div>
-                <div class="col-md-4 mb-3">
-                  <h6 class="text-primary">Dependencies</h6>
-                  <ul class="list-unstyled small mb-0">
-                    <li>fs-extra: ^11.3.1</li>
-                    <li>lodash: ^4.17.21</li>
-                  </ul>
-                </div>
-                <div class="col-md-4 mb-3">
-                  <h6 class="text-primary">Dev Dependencies</h6>
-                  <ul class="list-unstyled small mb-0">
-                    <li>prettier: ^3.6.2</li>
-                  </ul>
-                </div>
+        <div
+          class="grid-glow min-w-0 rounded-[28px] border border-[#dcebe0] p-3 sm:p-5 lg:rotate-[1deg]"
+        >
+          <div
+            class="overflow-hidden rounded-[20px] bg-[#18392b] text-[#d8eee0] shadow-[0_22px_55px_rgba(27,74,46,0.17)]"
+          >
+            <div
+              class="flex items-center justify-between gap-3 border-b border-white/10 px-5 py-4"
+            >
+              <div class="flex items-center gap-2">
+                <span class="h-2 w-2 rounded-full bg-[#7dbd8d]"></span
+                ><span class="h-2 w-2 rounded-full bg-[#618f6f]"></span
+                ><span class="h-2 w-2 rounded-full bg-[#426e51]"></span
+                ><span
+                  class="ml-2 font-mono text-[10px] uppercase tracking-[.13em] text-[#a2cbb0]"
+                  >Quick start / JavaScript</span
+                >
               </div>
+              <button
+                id="copy-quick-start"
+                type="button"
+                class="inline-flex shrink-0 items-center gap-1.5 rounded-lg border border-white/10 px-2.5 py-1.5 text-[10px] font-semibold text-[#c3dcc9] transition hover:bg-white/10"
+              >
+                <svg class="h-3.5 w-3.5" aria-hidden="true">
+                  <use href="#icon-copy" />
+                </svg>
+                Copy
+              </button>
+            </div>
+            <pre
+              class="code-scroll p-5 font-mono text-[11px] leading-6 sm:p-7 sm:text-xs"
+            ><code id="quick-start-code" tabindex="0">// Get all countries
+fetch('./api/v1/countries.json')
+  .then(function (response) { return response.json(); })
+  .then(function (data) { console.log(data); });
+
+// Get a country by ISO2
+fetch('./api/v1/countries/us.json')
+  .then(function (response) { return response.json(); })
+  .then(function (data) { console.log(data); });</code></pre>
+            <div
+              class="flex items-center justify-between gap-4 border-t border-white/10 px-5 py-4"
+            >
+              <span class="font-mono text-[10px] text-[#91bca0]"
+                >STATIC JSON · NO AUTH REQUIRED</span
+              ><span
+                class="rounded-full bg-[#2a6141] px-2.5 py-1 text-[10px] font-bold text-[#c9eed2]"
+                >Ready to use</span
+              >
             </div>
           </div>
         </div>
+      </section>
+
+      <section
+        aria-label="Dataset coverage"
+        class="rounded-[24px] border border-[#e0e9e1] bg-white px-5 py-6 shadow-[0_12px_35px_rgba(29,66,43,0.04)] sm:px-8 sm:py-7"
+      >
+        <div class="flex flex-wrap items-center justify-between gap-2">
+          <p
+            class="text-[10px] font-bold uppercase tracking-[.18em] text-[#587660]"
+          >
+            A world of places, in one dataset
+          </p>
+          <p
+            id="dataset-status"
+            class="text-xs text-[#5e7566]"
+            aria-live="polite"
+          >
+            Loading dataset statistics…
+          </p>
+        </div>
+        <div class="mt-5 grid grid-cols-3 divide-x divide-[#e9f0e9]">
+          <div class="pr-3 sm:pr-6">
+            <p
+              id="countries-total"
+              class="display-font text-2xl font-extrabold tracking-[-.05em] text-[#1c4e34] sm:text-3xl"
+            >
+              —
+            </p>
+            <p class="mt-1 text-xs font-semibold text-[#5e7566] sm:text-sm">
+              Countries
+            </p>
+          </div>
+          <div class="px-3 sm:px-7">
+            <p
+              id="states-total"
+              class="display-font text-2xl font-extrabold tracking-[-.05em] text-[#1c4e34] sm:text-3xl"
+            >
+              —
+            </p>
+            <p class="mt-1 text-xs font-semibold text-[#5e7566] sm:text-sm">
+              States &amp; provinces
+            </p>
+          </div>
+          <div class="pl-3 sm:pl-7">
+            <p
+              id="cities-total"
+              class="display-font text-2xl font-extrabold tracking-[-.05em] text-[#1c4e34] sm:text-3xl"
+            >
+              —
+            </p>
+            <p class="mt-1 text-xs font-semibold text-[#5e7566] sm:text-sm">
+              Cities
+            </p>
+          </div>
+        </div>
+      </section>
+
+      <section class="mt-16 sm:mt-20" aria-labelledby="features-heading">
+        <div class="max-w-2xl">
+          <p
+            class="mb-2 text-[10px] font-bold uppercase tracking-[.2em] text-[#397852]"
+          >
+            The essentials, made simple
+          </p>
+          <h2
+            id="features-heading"
+            class="text-2xl font-extrabold tracking-[-.045em] text-[#1a3c2d] sm:text-3xl"
+          >
+            Everything starts with a place.
+          </h2>
+          <p class="mt-3 text-sm leading-6 text-[#5e7566] sm:text-base">
+            From a better address form to a searchable city picker, get the data
+            you need without adding complexity.
+          </p>
+        </div>
+        <div class="mt-7 grid gap-4 md:grid-cols-3">
+          <article class="rounded-[22px] border border-[#e0e9e1] bg-white p-6">
+            <span
+              class="grid h-11 w-11 place-items-center rounded-2xl bg-[#eaf7ed] text-[#2b7750]"
+              ><svg class="h-5 w-5" aria-hidden="true">
+                <use href="#icon-pin" /></svg
+            ></span>
+            <h3
+              class="mt-5 text-base font-extrabold tracking-[-.03em] text-[#244c38]"
+            >
+              Places that fit together
+            </h3>
+            <p class="mt-2 text-sm leading-6 text-[#5e7566]">
+              Browse countries, their states and provinces, and the cities
+              within them.
+            </p>
+          </article>
+          <article class="rounded-[22px] border border-[#e0e9e1] bg-white p-6">
+            <span
+              class="grid h-11 w-11 place-items-center rounded-2xl bg-[#eaf7ed] text-[#2b7750]"
+              ><svg class="h-5 w-5" aria-hidden="true">
+                <use href="#icon-search" /></svg
+            ></span>
+            <h3
+              class="mt-5 text-base font-extrabold tracking-[-.03em] text-[#244c38]"
+            >
+              Search with less to load
+            </h3>
+            <p class="mt-2 text-sm leading-6 text-[#5e7566]">
+              Use country-specific search files and normalized names to find a
+              city quickly.
+            </p>
+          </article>
+          <article class="rounded-[22px] border border-[#e0e9e1] bg-white p-6">
+            <span
+              class="grid h-11 w-11 place-items-center rounded-2xl bg-[#eaf7ed] text-[#2b7750]"
+              ><svg class="h-5 w-5" aria-hidden="true">
+                <use href="#icon-layers" /></svg
+            ></span>
+            <h3
+              class="mt-5 text-base font-extrabold tracking-[-.03em] text-[#244c38]"
+            >
+              Simple to host anywhere
+            </h3>
+            <p class="mt-2 text-sm leading-6 text-[#5e7566]">
+              Serve the generated JSON files from your favorite static host or
+              CDN.
+            </p>
+          </article>
+        </div>
+      </section>
+
+      <section
+        class="mt-16 grid gap-8 sm:mt-20 lg:grid-cols-[.8fr_1.2fr] lg:gap-16"
+        aria-labelledby="endpoints-heading"
+      >
+        <div>
+          <p
+            class="mb-2 text-[10px] font-bold uppercase tracking-[.2em] text-[#397852]"
+          >
+            A few places to start
+          </p>
+          <h2
+            id="endpoints-heading"
+            class="text-2xl font-extrabold tracking-[-.045em] text-[#1a3c2d] sm:text-3xl"
+          >
+            A path for every place.
+          </h2>
+          <p
+            class="mt-3 max-w-md text-sm leading-6 text-[#5e7566] sm:text-base"
+          >
+            Each endpoint is a static file. Open one to see the data, or try the
+            examples in the playground.
+          </p>
+          <a
+            href="./docs/endpoints.html"
+            class="mt-5 inline-flex items-center gap-2 text-sm font-bold text-[#2b7750] hover:text-[#216c47]"
+            >See all endpoints
+            <svg class="h-4 w-4" aria-hidden="true">
+              <use href="#icon-arrow" /></svg
+          ></a>
+        </div>
+        <div
+          class="overflow-hidden rounded-[22px] border border-[#e0e9e1] bg-white"
+        >
+          <a
+            href="./api/v1/countries.json"
+            class="group flex items-center gap-3 border-b border-[#edf1ed] px-5 py-4 transition hover:bg-[#f7fbf7]"
+            ><span
+              class="rounded-md bg-[#eaf7ed] px-2 py-1 font-mono text-[10px] font-bold text-[#39875a]"
+              >GET</span
+            ><span class="min-w-0 grow"
+              ><span
+                class="block break-all font-mono text-xs font-semibold text-[#315d43]"
+                >countries.json</span
+              ><span class="mt-1 block text-xs text-[#5e7566]"
+                >List all countries</span
+              ></span
+            ><svg
+              class="h-4 w-4 shrink-0 text-[#9ab6a2] group-hover:text-[#2b7750]"
+              aria-hidden="true"
+            >
+              <use href="#icon-arrow" /></svg></a
+          ><a
+            href="./api/v1/states/all.json"
+            class="group flex items-center gap-3 border-b border-[#edf1ed] px-5 py-4 transition hover:bg-[#f7fbf7]"
+            ><span
+              class="rounded-md bg-[#eaf7ed] px-2 py-1 font-mono text-[10px] font-bold text-[#39875a]"
+              >GET</span
+            ><span class="min-w-0 grow"
+              ><span
+                class="block break-all font-mono text-xs font-semibold text-[#315d43]"
+                >states/all.json</span
+              ><span class="mt-1 block text-xs text-[#5e7566]"
+                >Explore states and provinces</span
+              ></span
+            ><svg
+              class="h-4 w-4 shrink-0 text-[#9ab6a2] group-hover:text-[#2b7750]"
+              aria-hidden="true"
+            >
+              <use href="#icon-arrow" /></svg></a
+          ><a
+            href="./api/v1/cities/batches.json"
+            class="group flex items-center gap-3 border-b border-[#edf1ed] px-5 py-4 transition hover:bg-[#f7fbf7]"
+            ><span
+              class="rounded-md bg-[#eaf7ed] px-2 py-1 font-mono text-[10px] font-bold text-[#39875a]"
+              >GET</span
+            ><span class="min-w-0 grow"
+              ><span
+                class="block break-all font-mono text-xs font-semibold text-[#315d43]"
+                >cities/batches.json</span
+              ><span class="mt-1 block text-xs text-[#5e7566]"
+                >Find a city by ID</span
+              ></span
+            ><svg
+              class="h-4 w-4 shrink-0 text-[#9ab6a2] group-hover:text-[#2b7750]"
+              aria-hidden="true"
+            >
+              <use href="#icon-arrow" /></svg></a
+          ><a
+            href="./api/v1/search/cities/index.json"
+            class="group flex items-center gap-3 px-5 py-4 transition hover:bg-[#f7fbf7]"
+            ><span
+              class="rounded-md bg-[#eaf7ed] px-2 py-1 font-mono text-[10px] font-bold text-[#39875a]"
+              >GET</span
+            ><span class="min-w-0 grow"
+              ><span
+                class="block break-all font-mono text-xs font-semibold text-[#315d43]"
+                >search/cities/index.json</span
+              ><span class="mt-1 block text-xs text-[#5e7566]"
+                >Discover country search files</span
+              ></span
+            ><svg
+              class="h-4 w-4 shrink-0 text-[#9ab6a2] group-hover:text-[#2b7750]"
+              aria-hidden="true"
+            >
+              <use href="#icon-arrow" /></svg
+          ></a>
+        </div>
+      </section>
+
+      <section
+        class="grid-glow mt-16 flex flex-wrap items-center justify-between gap-6 rounded-[26px] border border-[#dbeadc] px-6 py-8 sm:mt-20 sm:px-9 sm:py-9"
+      >
+        <div>
+          <p
+            class="text-[10px] font-bold uppercase tracking-[.18em] text-[#386d4c]"
+          >
+            See it in action
+          </p>
+          <h2
+            class="mt-2 text-xl font-extrabold tracking-[-.04em] text-[#1a4931] sm:text-2xl"
+          >
+            Ready to put places to work?
+          </h2>
+          <p class="mt-2 text-sm leading-6 text-[#5e7566]">
+            Try the address picker, city search, and ID lookup with real data.
+          </p>
+        </div>
+        <a
+          href="demo/demo.html"
+          class="inline-flex min-h-[48px] items-center justify-center gap-2 rounded-xl bg-[#216c47] px-5 py-3 text-sm font-bold text-white transition hover:bg-[#175537]"
+          >Open the playground
+          <svg class="h-4 w-4" aria-hidden="true">
+            <use href="#icon-arrow" /></svg
+        ></a>
+      </section>
+    </main>
+
+    <footer class="border-t border-[#e2eae2] py-6">
+      <div
+        class="mx-auto flex max-w-7xl flex-wrap items-center justify-between gap-3 px-5 text-xs text-[#5e7566] sm:px-8 lg:px-10"
+      >
+        <p>
+          © Geo-Data API · Built by
+          <a
+            class="font-semibold text-[#587660] hover:text-[#216c47]"
+            href="https://asterodigital.com"
+            >Astero Digital</a
+          >
+        </p>
+        <div class="flex gap-5">
+          <a
+            class="hover:text-[#216c47]"
+            href="https://github.com/azadshaikh/geo-data-api"
+            >GitHub</a
+          ><a
+            class="hover:text-[#216c47]"
+            href="https://opensource.org/licenses/MIT"
+            >MIT License</a
+          >
+        </div>
       </div>
+    </footer>
 
-    </div>
+    <script>
+      const apiBase = new URL("./api/v1/", window.location.href).href;
+      document.getElementById("quick-start-code").textContent = [
+        `const API_BASE = ${JSON.stringify(apiBase)};`,
+        "",
+        "// Get all countries",
+        "fetch(`${API_BASE}countries.json`)",
+        "  .then(function (response) { return response.json(); })",
+        "  .then(function (data) { console.log(data); });",
+        "",
+        "// Get a country by ISO2",
+        "fetch(`${API_BASE}countries/us.json`)",
+        "  .then(function (response) { return response.json(); })",
+        "  .then(function (data) { console.log(data); });",
+      ].join("\n");
 
-  </div>
+      (async function loadDatasetStats() {
+        const status = document.getElementById("dataset-status");
+        try {
+          const url = new URL("./api/v1/api-info.json", window.location.href);
+          const response = await fetch(url);
+          if (!response.ok) throw new Error("Dataset statistics unavailable");
+          const { statistics } = await response.json();
+          const fields = [
+            ["countries-total", "total_countries"],
+            ["states-total", "total_states"],
+            ["cities-total", "total_cities"],
+          ];
+          if (
+            !statistics ||
+            fields.some(
+              ([, key]) =>
+                !Number.isSafeInteger(statistics[key]) || statistics[key] < 0,
+            )
+          )
+            throw new Error("Dataset statistics unavailable");
+          fields.forEach(([id, key]) => {
+            document.getElementById(id).textContent =
+              statistics[key].toLocaleString("en-US");
+          });
+          status.textContent = "From the current dataset";
+        } catch {
+          status.textContent = "Dataset statistics unavailable";
+        }
+      })();
 
-  <footer class="text-center py-3 bg-light">
-    <p class="mb-2">&copy; 2025 Geo-Data API</p>
-    <p class="mb-0 small text-muted">
-      Built by <a href="https://asterodigital.com" target="_blank" rel="noopener noreferrer"
-        class="text-decoration-none">Astero Digital</a> |
-      Licensed under <a href="https://opensource.org/licenses/MIT" target="_blank" rel="noopener noreferrer"
-        class="text-decoration-none">MIT</a>
-    </p>
-  </footer>
-
-  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
-</body>
-
+      const copyButton = document.getElementById("copy-quick-start");
+      copyButton.addEventListener("click", async () => {
+        const code = document.getElementById("quick-start-code").textContent;
+        try {
+          let copied = false;
+          try {
+            if (navigator.clipboard?.writeText) {
+              await navigator.clipboard.writeText(code);
+              copied = true;
+            }
+          } catch {
+            // Fall back to selecting a temporary field on non-secure origins.
+          }
+          if (!copied) {
+            const field = document.createElement("textarea");
+            field.value = code;
+            field.setAttribute("readonly", "");
+            field.setAttribute("aria-hidden", "true");
+            field.style.position = "fixed";
+            field.style.left = "-9999px";
+            document.body.appendChild(field);
+            try {
+              field.select();
+              copied = document.execCommand("copy");
+            } finally {
+              field.remove();
+              copyButton.focus();
+            }
+          }
+          copyButton.textContent = copied ? "Copied" : "Select code to copy";
+        } catch {
+          copyButton.textContent = "Select code to copy";
+        }
+      });
+    </script>
+  </body>
 </html>

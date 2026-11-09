@@ -3,27 +3,49 @@
   "version": "1.0.3",
   "description": "Generate a static JSON API for geographic data including countries, states, and cities that can be hosted on any CDN. Transform geographic datasets into a small, cacheable, CDN-ready API with search capabilities.",
   "main": "src/data-processor.js",
+  "types": "types/index.d.ts",
+  "bin": {
+    "geo-data-api": "src/data-processor.js"
+  },
+  "engines": {
+    "node": ">=22"
+  },
   "scripts": {
-    "build": "node src/data-processor.js && npm run build:docs && npm run build:demo",
+    "test": "node --test --test-concurrency=1 \"test/*.test.js\"",
+    "build": "node src/data-processor.js && npm run build:demo",
     "build:pretty": "node src/data-processor.js --pretty",
+    "build:compress": "node src/data-processor.js --compress && npm run build:demo",
     "build:docs": "node src/docs-updater.js",
     "build:demo": "node src/demo-copier.js",
-    "clean": "node -e \"require('fs').rmSync('dist/api', { recursive: true, force: true })\"",
-    "dev": "npm run clean && npm run build",
-    "dev:pretty": "npm run clean && npm run build:pretty",
+    "verify": "node scripts/verify.js",
+    "lint": "node scripts/lint.js",
+    "check:package": "node scripts/check-package.js",
+    "deploy:s3": "node scripts/s3-sync.js",
+    "format": "prettier --write \"scripts/**/*.js\" \"test/**/*.js\" \"demo/**/*.{js,html}\" \"docs/*.{html,css,js}\" \"schemas/**/*.json\" \"types/**/*.ts\" index.html openapi.json",
+    "format:check": "prettier --check \"scripts/**/*.js\" \"test/**/*.js\" \"demo/**/*.{js,html}\" \"docs/*.{html,css,js}\" \"schemas/**/*.json\" \"types/**/*.ts\" index.html openapi.json",
+    "clean": "node -e \"require('fs').rmSync('dist/api/v1', { recursive: true, force: true })\"",
+    "dev": "npm run build",
+    "dev:pretty": "npm run build:pretty",
     "dev:serve": "npm run dev && npm run serve",
-    "serve": "node src/server.js"
+    "serve": "node src/server.js",
+    "prepublishOnly": "npm run build && npm run verify"
   },
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/asterodigital/geo-data-api.git"
+    "url": "git+https://github.com/azadshaikh/geo-data-api.git"
   },
   "bugs": {
-    "url": "https://github.com/asterodigital/geo-data-api/issues"
+    "url": "https://github.com/azadshaikh/geo-data-api/issues"
   },
   "homepage": "https://geo-data-api.asterodigital.com",
   "files": [
-    "dist/"
+    "dist/",
+    "!dist/**/.*-backup-*/**",
+    "src/",
+    "scripts/",
+    "schemas/",
+    "types/",
+    "openapi.json"
   ],
   "keywords": [
     "api",
@@ -48,11 +70,8 @@
     "name": "Astero Digital",
     "url": "https://asterodigital.com"
   },
-  "dependencies": {
-    "fs-extra": "^11.3.1",
-    "lodash": "^4.17.21"
-  },
   "devDependencies": {
-    "prettier": "^3.6.2"
+    "prettier": "^3.6.2",
+    "typescript": "5.9.3"
   }
 }

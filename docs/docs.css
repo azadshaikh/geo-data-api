@@ -1,0 +1,54 @@
+body {
+  font-family: "DM Sans", sans-serif;
+}
+
+h1,
+h2,
+h3,
+.display-font {
+  font-family: "Manrope", sans-serif;
+}
+
+.navbar-brand {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.7rem;
+}
+
+summary::-webkit-details-marker {
+  display: none;
+}
+
+a:focus-visible,
+button:focus-visible,
+summary:focus-visible,
+pre:focus-visible {
+  outline: 3px solid #6bc592;
+  outline-offset: 3px;
+}
+
+.docs-code {
+  overflow-x: auto;
+  scrollbar-width: thin;
+  tab-size: 2;
+}
+
+.docs-prose a:not(.no-underline) {
+  color: #216c47;
+  text-decoration: underline;
+  text-decoration-color: #a8d4b7;
+  text-underline-offset: 3px;
+}
+
+.docs-prose a:hover {
+  color: #143f2b;
+}
+
+.docs-prose :not(pre) > code {
+  border-radius: 0.3rem;
+  background: #eaf2eb;
+  padding: 0.1rem 0.3rem;
+  color: #28563a;
+  font-size: 0.87em;
+  overflow-wrap: anywhere;
+}

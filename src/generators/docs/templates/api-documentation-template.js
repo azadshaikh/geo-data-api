@@ -29,7 +29,7 @@ This is a comprehensive static JSON API providing detailed information about cou
 
 - 🌍 **Comprehensive Coverage**: Complete data for all countries, states, and major cities
 - 📍 **Geographic Data**: Latitude/longitude coordinates for precise location mapping
-- 🕒 **Timezone Support**: Timezone information for states and cities
+- 🕒 **Timezone Support**: State and city timezone information where provided by the source data
 - 🏛️ **Administrative Details**: State types (province, state, region, etc.)
 - 🔗 **WikiData Integration**: Enhanced city information with Wikipedia references
 - 💰 **Currency Information**: Detailed currency data with symbols
@@ -38,12 +38,18 @@ This is a comprehensive static JSON API providing detailed information about cou
 - 📱 **No Authentication**: Public API with no keys required
 - ⚡ **Batch API**: Efficient city lookup with 100 cities per batch file
 - 🔍 **Smart Indexing**: Batch index for quick city ID resolution
+- 🗂️ **Country Search Shards**: Load city search data for one country at a time
 
 ## Base URL
 
 \`\`\`text
 ${config.CDN_BASE_URL}
 \`\`\`
+
+## API Discovery
+
+- \`/api-info.json\` contains dataset statistics and an endpoint index.
+- \`/documentation.json\` contains machine-readable endpoint descriptions and client examples.
 
 ## Data Quality
 
@@ -101,6 +107,7 @@ async function getCity(cityId) {
   const batchData = await batchResponse.json();
 
   // Return the city data
+  if (!batchData.data[cityId]) throw new Error('City not found: ' + cityId);
   return batchData.data[cityId];
 }
 
@@ -110,9 +117,23 @@ console.log(bhopal.name); // "Bhopal"
 console.log(bhopal.latitude, bhopal.longitude);
 \`\`\`
 
+### Search Cities in One Country
+
+\`\`\`javascript
+const response = await fetch('${config.CDN_BASE_URL}/search/cities/country/in.json');
+if (!response.ok) throw new Error(\`Search shard request failed: \${response.status}\`);
+const { data } = await response.json();
+const query = 'kochi'.toLowerCase().normalize('NFD').replace(/\\p{M}/gu, '');
+const matches = data.filter(city => city.name_normalized.includes(query));
+\`\`\`
+
+Discover country shards via \`/search/cities/index.json\`. Each shard covers one country; the complete \`/search/cities.json\` index remains available for global searches.
+
+Search normalization removes combining marks after Unicode NFD lowercasing; it is not full transliteration. \`/search/combined-sample.json\` (also available as \`/search/combined.json\`) contains at most 1,000 states and 5,000 cities; its metadata exposes the counts and completeness.
+
 ## Response Format
 
-All endpoints return JSON with a consistent structure:
+Most entity endpoints return JSON with this structure:
 
 \`\`\`json
 {
@@ -129,7 +150,7 @@ All endpoints return JSON with a consistent structure:
 ## Best Practices
 
 1. **Caching**: Implement client-side caching as data doesn't change frequently
-2. **Search**: Use search endpoints for client-side filtering instead of downloading all data
+2. **Search**: Use a country city-search shard when the country is known; use the full city index for global searches
 3. **Coordinates**: Check for latitude/longitude availability before using location features
 4. **WikiData**: Use WikiData IDs to fetch additional information from Wikipedia/Wikidata APIs
 5. **Batch API**: Use city batch files for efficient individual city lookups instead of downloading all cities
@@ -159,13 +180,14 @@ async function getCity(cityId) {
   const batchData = await batchResponse.json();
 
   // Step 4: Extract the city data
+  if (!batchData.data[cityId]) throw new Error('City not found: ' + cityId);
   return batchData.data[cityId];
 }
 
 // Usage examples
 const bhopal = await getCity(57995); // Bhopal, India
-const tokyo = await getCity(18514);  // Tokyo, Japan
-const london = await getCity(3435);  // London, UK
+const tokyo = await getCity(64500);  // Tokyo, Japan
+const london = await getCity(50388); // London, UK
 \`\`\`
 
 ### Advanced: Batch API with Caching
@@ -201,6 +223,7 @@ class CityAPI {
     // Check cache first
     if (this.batchCache.has(batch.filename)) {
       const cachedBatch = this.batchCache.get(batch.filename);
+      if (!cachedBatch[cityId]) throw new Error('City not found: ' + cityId);
       return cachedBatch[cityId];
     }
 
@@ -209,6 +232,7 @@ class CityAPI {
     const batchData = await response.json();
 
     this.batchCache.set(batch.filename, batchData.data);
+    if (!batchData.data[cityId]) throw new Error('City not found: ' + cityId);
     return batchData.data[cityId];
   }
 
@@ -257,8 +281,8 @@ const bhopal = await cityAPI.getCity(57995);
 console.log(bhopal.name); // "Bhopal"
 
 // Get multiple cities efficiently
-const cities = await cityAPI.getCities([57995, 18514, 3435]);
-console.log(cities[57995].name, cities[18514].name);
+const cities = await cityAPI.getCities([57995, 64500, 50388]);
+console.log(cities[57995].name, cities[64500].name);
 \`\`\`
 
 ### Batch API Endpoints
@@ -268,7 +292,7 @@ console.log(cities[57995].name, cities[18514].name);
 
 ## Support
 
-For issues, questions, or contributions, please visit the [GitHub repository](https://github.com/asterodigital/geo-data-api).
+For issues, questions, or contributions, please visit the [GitHub repository](https://github.com/azadshaikh/geo-data-api).
 
 ## License
 

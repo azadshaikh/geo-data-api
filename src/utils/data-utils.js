@@ -1,11 +1,9 @@
-const _ = require("lodash");
+const { releaseTimestamp } = require("./build-context");
 
 class DataUtils {
-  static sanitizeData(data, fields = null) {
-    if (fields) {
-      return _.pick(data, fields);
-    }
-    return data;
+  static hasCoordinates(record) {
+    const present = (value) => value === 0 || Boolean(value);
+    return present(record.latitude) && present(record.longitude);
   }
 
   static createSearchIndex(data, searchFields) {
@@ -24,11 +22,26 @@ class DataUtils {
   }
 
   static groupBy(data, key) {
-    return _.groupBy(data, key);
+    const result = {};
+    for (const item of data) {
+      const group = String(item?.[key]);
+      if (!Object.hasOwn(result, group)) Object.defineProperty(result, group, { value: [], enumerable: true });
+      result[group].push(item);
+    }
+    return result;
   }
 
   static sortBy(data, key) {
-    return _.sortBy(data, key);
+    const rank = (value) => Number.isNaN(value) ? 3 : value === undefined ? 2 : value === null ? 1 : 0;
+    return [...data].sort((a, b) => {
+      const left = a?.[key];
+      const right = b?.[key];
+      const difference = rank(left) - rank(right);
+      if (difference) return difference;
+      if (left < right) return -1;
+      if (left > right) return 1;
+      return 0;
+    });
   }
 
   static addMetadata(data, type, additionalMeta = {}) {
@@ -37,7 +50,7 @@ class DataUtils {
       meta: {
         type,
         count: Array.isArray(data) ? data.length : 1,
-        generated_at: new Date().toISOString(),
+        generated_at: releaseTimestamp(),
         api_version: require("../config").API_VERSION,
         ...additionalMeta,
       },
@@ -172,7 +185,7 @@ class DataUtils {
       const sanitized = { ...item };
 
       Object.entries(sanitizationRules).forEach(([field, rule]) => {
-        if (sanitized[field]) {
+        if (Object.hasOwn(sanitized, field)) {
           switch (rule) {
             case "trim":
               if (typeof sanitized[field] === "string") {

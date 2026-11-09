@@ -1,5 +1,7 @@
 const FileUtils = require("../../utils/file-utils");
 const config = require("../../config");
+const DataUtils = require("../../utils/data-utils");
+const { releaseTimestamp } = require("../../utils/build-context");
 
 class APIDocumentationGenerator {
   constructor(countries, states, cities, dataAnalysis) {
@@ -13,7 +15,7 @@ class APIDocumentationGenerator {
     const documentation = {
       title: "Geo-Data API Documentation",
       version: config.API_VERSION,
-      generated_at: new Date().toISOString(),
+      generated_at: releaseTimestamp(),
       base_url: config.CDN_BASE_URL,
 
       overview: {
@@ -24,7 +26,7 @@ class APIDocumentationGenerator {
           `${this.states.length}+ states/provinces/regions with administrative details`,
           `${this.cities.length}+ cities with geographic coordinates`,
           "Multi-language support for countries",
-          "Timezone information for states and cities",
+          "Timezone information where provided by the source dataset",
           "Currency details with symbols",
           "Geographic coordinates for precise location",
           "Regional and administrative groupings",
@@ -45,7 +47,7 @@ class APIDocumentationGenerator {
       },
 
       data_quality: {
-        coordinates: `${((this.states.filter((s) => s.latitude && s.longitude).length / this.states.length) * 100).toFixed(1)}% of states and ${((this.cities.filter((c) => c.latitude && c.longitude).length / this.cities.length) * 100).toFixed(1)}% of cities have coordinates`,
+        coordinates: `${((this.states.filter(DataUtils.hasCoordinates).length / this.states.length) * 100).toFixed(1)}% of states and ${((this.cities.filter(DataUtils.hasCoordinates).length / this.cities.length) * 100).toFixed(1)}% of cities have coordinates`,
         wikidata: `${((this.cities.filter((c) => c.wikiDataId).length / this.cities.length) * 100).toFixed(1)}% of cities have WikiData references`,
         timezones: `${[...new Set(this.states.map((s) => s.timezone))].filter(Boolean).length} unique state timezones available`,
       },
@@ -67,18 +69,23 @@ class APIDocumentationGenerator {
           response_fields: config.COUNTRY_FIELDS.list,
           example: `${config.CDN_BASE_URL}/countries.json`,
         },
-        "GET /countries/{id}.json": {
+        "GET /countries/{iso2}.json": {
           description:
             "Get detailed information for a specific country including timezones and translations",
-          parameters: { id: "Country ID (integer)" },
+          parameters: { iso2: "Lowercase country ISO2 code" },
           response_fields:
             "All available fields including timezones, translations, and geographic data",
-          example: `${config.CDN_BASE_URL}/countries/1.json`,
+          example: `${config.CDN_BASE_URL}/countries/af.json`,
         },
         "GET /countries/region/{region}.json": {
           description: "Get countries by region (e.g., Asia, Europe, Africa)",
           parameters: { region: "Region name (lowercase, hyphenated)" },
           example: `${config.CDN_BASE_URL}/countries/region/asia.json`,
+        },
+        "GET /countries/subregion/{subregion}.json": {
+          description: "Get countries by subregion",
+          parameters: { subregion: "Subregion name (lowercase, hyphenated)" },
+          example: `${config.CDN_BASE_URL}/countries/subregion/southern-asia.json`,
         },
         "GET /countries/regions.json": {
           description: "Get index of all available regions with country counts",
@@ -96,14 +103,9 @@ class APIDocumentationGenerator {
           description:
             "Get states for a specific country with administrative details",
           parameters: {
-            country_iso2: "Country ISO2 code (2-letter uppercase)",
+            country_iso2: "Lowercase country ISO2 code",
           },
-          features: [
-            "Administrative type",
-            "Timezone",
-            "Geographic coordinates",
-            "ISO codes",
-          ],
+          response_fields: config.STATE_FIELDS.list,
           example: `${config.CDN_BASE_URL}/states/country/us.json`,
         },
         "GET /states/type/{type}.json": {
@@ -114,31 +116,33 @@ class APIDocumentationGenerator {
         },
         "GET /states/timezone/{timezone}.json": {
           description: "Get states by timezone",
-          parameters: { timezone: "Timezone name (URL encoded)" },
+          parameters: {
+            timezone:
+              "Timezone name with non-alphanumeric characters replaced by hyphens",
+          },
           example: `${config.CDN_BASE_URL}/states/timezone/Asia-Kabul.json`,
         },
-        "GET /states/{id}.json": {
+        "GET /states/{iso3166_2}.json": {
           description: "Get detailed information for a specific state",
-          parameters: { id: "State ID (integer)" },
-          example: `${config.CDN_BASE_URL}/states/3901.json`,
+          parameters: { iso3166_2: "Lowercase ISO 3166-2 subdivision code" },
+          example: `${config.CDN_BASE_URL}/states/af-bds.json`,
         },
         "GET /states/types.json": {
           description: "Get index of all state types with counts",
           example: `${config.CDN_BASE_URL}/states/types.json`,
         },
+        "GET /states/timezones.json": {
+          description: "Get index of available state timezones",
+          example: `${config.CDN_BASE_URL}/states/timezones.json`,
+        },
       },
 
       cities: {
-        "GET /cities/major.json": {
-          description: "Get major cities (curated list with WikiData priority)",
-          note: "Up to 50 cities per country, prioritizing cities with WikiData",
-          example: `${config.CDN_BASE_URL}/cities/major.json`,
-        },
         "GET /cities/country/{country_iso2}.json": {
           description:
             "Get cities for a specific country (full list, not paginated)",
           parameters: {
-            country_iso2: "Country ISO2 code (2-letter uppercase)",
+            country_iso2: "Lowercase country ISO2 code",
           },
           note: "Cities are provided as a full list (no pagination)",
           example: `${config.CDN_BASE_URL}/cities/country/us.json`,
@@ -151,26 +155,39 @@ class APIDocumentationGenerator {
           },
           example: `${config.CDN_BASE_URL}/cities/state/us-ca.json`,
         },
+        "GET /cities/country/{country_iso2}/index.json": {
+          description: "Index of smaller country city chunks, generated only for countries larger than the configured shard size",
+          note: "Use the index filenames relative to the API base URL. The full country file remains available.",
+        },
         "GET /cities/batches.json": {
           description: "Get batch index for efficient single city access",
-          note: "Contains 1512+ batch files with ID ranges for optimal city lookup",
+          note: "Contains batch filenames and ID ranges for city lookup",
           response_fields: ["filename", "start_id", "end_id", "count"],
           example: `${config.CDN_BASE_URL}/cities/batches.json`,
         },
-        "GET /cities/batch/{filename}.json": {
+        "GET /cities/batch/{filename}": {
           description: "Get a specific batch of cities (100 cities per batch)",
           parameters: {
-            filename: "Batch filename (e.g., batch-57900-58006.json)",
+            filename:
+              "Batch basename including .json (e.g., batch-57900-58006.json)",
           },
-          note: "Cities are stored as objects keyed by ID within the batch data",
+          note: "The batch index filename is already a path relative to the API base URL; cities are keyed by ID in the batch data",
           example: `${config.CDN_BASE_URL}/cities/batch/batch-57900-58006.json`,
         },
-        "GET /cities/{id}.json": {
-          description: "Get detailed information for a specific city",
-          parameters: { id: "City ID (integer)" },
-          note: "Individual city files generated for sample cities only. For full access, use batch system",
-          example: `${config.CDN_BASE_URL}/cities/52.json`,
-        },
+        ...(this.cities.some((city) => city.timezone)
+          ? {
+              "GET /cities/timezone/{timezone}.json": {
+                description:
+                  "Get cities by a timezone available in the source data",
+                parameters: {
+                  timezone: "Use the endpoint in cities/timezones.json; collisions have distinct filenames",
+                },
+              },
+              "GET /cities/timezones.json": {
+                description: "Index of city timezones and their unambiguous endpoints",
+              },
+            }
+          : {}),
       },
 
       search: {
@@ -189,14 +206,32 @@ class APIDocumentationGenerator {
         "GET /search/cities.json": {
           description: "Searchable cities index for client-side filtering",
           searchable_fields: config.SEARCH_FIELDS.cities,
-          warning: "Large file - consider pagination in your application",
+          warning:
+            "Large global file - prefer country shards when a country is known",
           example: `${config.CDN_BASE_URL}/search/cities.json`,
+        },
+        "GET /search/cities/index.json": {
+          description:
+            "Manifest of country city-search shards and their relative filenames",
+          example: `${config.CDN_BASE_URL}/search/cities/index.json`,
+        },
+        "GET /search/cities/country/{iso2}.json": {
+          description:
+            "Searchable cities for one country; use unknown.json for records without a usable country code",
+          parameters: { iso2: "Lowercase two-letter country code" },
+          searchable_fields: config.SEARCH_FIELDS.cities,
+          example: `${config.CDN_BASE_URL}/search/cities/country/in.json`,
         },
         "GET /search/combined.json": {
           description:
             "Combined search index across all entity types (limited dataset)",
-          limitations: "Limited to prevent large file sizes",
+          limitations:
+            "Includes at most the first 1,000 states and 5,000 cities",
           example: `${config.CDN_BASE_URL}/search/combined.json`,
+        },
+        "GET /search/combined-sample.json": {
+          description: "Combined search sample; the legacy combined.json endpoint is an identical alias",
+          example: `${config.CDN_BASE_URL}/search/combined-sample.json`,
         },
       },
     };
@@ -209,7 +244,7 @@ class APIDocumentationGenerator {
         meta: {
           type: "Type of data (countries, states, cities, etc.)",
           count: "Number of items in data array (for arrays)",
-          generated_at: "ISO timestamp of when the data was generated",
+          generated_at: "Stable ISO release timestamp (configurable using SOURCE_DATE_EPOCH)",
           api_version: "API version",
           "...additional_meta": "Context-specific metadata",
         },
@@ -219,14 +254,8 @@ class APIDocumentationGenerator {
           {
             id: 3901,
             name: "Badakhshan",
-            country_id: 1,
-            country_code: "AF",
-            country_name: "Afghanistan",
             iso2: "BDS",
-            type: "province",
-            latitude: "36.80402540",
-            longitude: "71.36765800",
-            timezone: "Asia/Kabul",
+            iso3166_2: "AF-BDS",
           },
         ],
         meta: {
@@ -273,10 +302,11 @@ async function getCityById(cityId) {
   }
 
   // Step 3: Fetch the specific batch
-  const batchResponse = await fetch(\`${config.CDN_BASE_URL}/cities/batch/\${batch.filename}\`);
+  const batchResponse = await fetch(\`${config.CDN_BASE_URL}/\${batch.filename}\`);
   const batchData = await batchResponse.json();
 
   // Step 4: Extract city data from batch
+  if (!batchData.data[cityId]) throw new Error('City not found: ' + cityId);
   return batchData.data[cityId];
 }
 

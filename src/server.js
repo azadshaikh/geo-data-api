@@ -2,58 +2,105 @@ const http = require("http");
 const fs = require("fs");
 const path = require("path");
 
-const server = http.createServer((req, res) => {
-  // Handle root path
-  let filePath = path.join("./dist", req.url === "/" ? "/index.html" : req.url);
+const outputDir = path.resolve("./dist");
+const corsHeaders = {
+  "Access-Control-Allow-Origin": "*",
+  "Access-Control-Allow-Methods": "GET, HEAD, OPTIONS",
+  "Access-Control-Allow-Headers": "Content-Type",
+};
 
-  // Get file extension for MIME type
-  const ext = path.extname(filePath).toLowerCase();
-  const mimeTypes = {
-    ".html": "text/html",
-    ".js": "text/javascript",
-    ".css": "text/css",
-    ".json": "application/json",
-    ".png": "image/png",
-    ".jpg": "image/jpeg",
-    ".gif": "image/gif",
-    ".ico": "image/x-icon",
-    ".svg": "image/svg+xml",
-  };
+const mimeTypes = {
+  ".html": "text/html",
+  ".js": "text/javascript",
+  ".css": "text/css",
+  ".json": "application/json",
+  ".png": "image/png",
+  ".jpg": "image/jpeg",
+  ".gif": "image/gif",
+  ".ico": "image/x-icon",
+  ".svg": "image/svg+xml",
+};
 
-  const contentType = mimeTypes[ext] || "application/octet-stream";
+function isOutside(root, target) {
+  const relative = path.relative(root, target);
+  return (
+    relative === ".." ||
+    relative.startsWith(`..${path.sep}`) ||
+    path.isAbsolute(relative)
+  );
+}
 
-  // Read and serve file
-  fs.readFile(filePath, (err, content) => {
-    if (err) {
-      if (err.code === "ENOENT") {
-        // File not found
-        res.writeHead(404, { "Content-Type": "text/html" });
-        res.end(`
-          <h1>404 - Not Found</h1>
-          <p>The requested file <code>${req.url}</code> was not found.</p>
-          <p><a href="/">← Back to Home</a></p>
-        `);
-      } else {
-        // Server error
-        res.writeHead(500, { "Content-Type": "text/html" });
-        res.end("<h1>500 - Server Error</h1>");
-      }
-    } else {
-      // Serve file with CORS headers
-      res.writeHead(200, {
-        "Content-Type": contentType,
-        "Access-Control-Allow-Origin": "*",
-        "Access-Control-Allow-Methods": "GET, POST, PUT, DELETE, OPTIONS",
-        "Access-Control-Allow-Headers": "Content-Type",
-      });
-      res.end(content, "utf-8");
+const server = http.createServer(async (req, res) => {
+  for (const [name, value] of Object.entries(corsHeaders))
+    res.setHeader(name, value);
+
+  if (req.method === "OPTIONS") {
+    res.writeHead(204);
+    res.end();
+    return;
+  }
+  if (req.method !== "GET" && req.method !== "HEAD") {
+    res.writeHead(405, { Allow: "GET, HEAD, OPTIONS" });
+    res.end();
+    return;
+  }
+
+  let pathname;
+  try {
+    pathname = decodeURIComponent(req.url.split("?", 1)[0]).replace(/\\/g, "/");
+  } catch {
+    res.writeHead(400);
+    res.end("Bad Request");
+    return;
+  }
+
+  if (
+    !pathname.startsWith("/") ||
+    pathname.includes("\0") ||
+    pathname.split("/").includes("..")
+  ) {
+    res.writeHead(403);
+    res.end("Forbidden");
+    return;
+  }
+
+  try {
+    const root = await fs.promises.realpath(outputDir);
+    const requested = path.resolve(
+      root,
+      `.${pathname === "/" ? "/index.html" : pathname}`,
+    );
+    if (isOutside(root, requested)) {
+      res.writeHead(403);
+      res.end("Forbidden");
+      return;
     }
-  });
+
+    // Resolve symlinks before reading so they cannot escape the output directory.
+    const file = await fs.promises.realpath(requested);
+    if (isOutside(root, file)) {
+      res.writeHead(403);
+      res.end("Forbidden");
+      return;
+    }
+    const content = await fs.promises.readFile(file);
+    const contentType =
+      mimeTypes[path.extname(file).toLowerCase()] || "application/octet-stream";
+    res.writeHead(200, { "Content-Type": contentType });
+    res.end(req.method === "HEAD" ? undefined : content);
+  } catch (error) {
+    const notFound = ["ENOENT", "ENOTDIR", "EISDIR", "ELOOP"].includes(
+      error.code,
+    );
+    res.writeHead(notFound ? 404 : 500);
+    res.end(notFound ? "Not Found" : "Internal Server Error");
+  }
 });
 
 const port = process.env.PORT || 3000;
+const host = process.env.HOST || "127.0.0.1";
 
-server.listen(port, () => {
+server.listen(port, host, () => {
   console.log("");
   console.log("🚀 Geo-Data API Server");
   console.log("━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━");
@@ -64,19 +111,19 @@ server.listen(port, () => {
   console.log(`   🏠 Homepage:      http://localhost:${port}`);
   console.log(`   🎮 Demo:          http://localhost:${port}/demo/demo.html`);
   console.log(
-    `   🌍 Countries:     http://localhost:${port}/api/v1/countries.json`
+    `   🌍 Countries:     http://localhost:${port}/api/v1/countries.json`,
   );
   console.log(
-    `   🏛️  States:        http://localhost:${port}/api/v1/states/all.json`
+    `   🏛️  States:        http://localhost:${port}/api/v1/states/all.json`,
   );
   console.log(
-    `   🏙️  Cities (US):   http://localhost:${port}/api/v1/cities/country/us.json`
+    `   🏙️  Cities (US):   http://localhost:${port}/api/v1/cities/country/us.json`,
   );
   console.log(
-    `   🏙️  Cities (CA):   http://localhost:${port}/api/v1/cities/state/us-ca.json`
+    `   🏙️  Cities (CA):   http://localhost:${port}/api/v1/cities/state/us-ca.json`,
   );
   console.log(
-    `   🔍 Search:        http://localhost:${port}/api/v1/search/countries.json`
+    `   🔍 Search:        http://localhost:${port}/api/v1/search/countries.json`,
   );
   console.log("");
   console.log("💡 Tips:");

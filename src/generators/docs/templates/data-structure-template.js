@@ -50,10 +50,10 @@ ${JSON.stringify(sampleCountry, null, 2)}
 | \`currency_symbol\` | string | Currency symbol | ❌ |
 | \`region\` | string | Continental region | ❌ |
 | \`subregion\` | string | Geographic subregion | ❌ |
-| \`phone_code\` | string | International dialing code | ❌ |
-| \`latitude\` | string | Geographic latitude | ❌ |
-| \`longitude\` | string | Geographic longitude | ❌ |
-| \`flag\` | string | Unicode flag emoji | ❌ |
+| \`phonecode\` | string | International dialing code | ❌ |
+| \`latitude\` | number or string | Geographic latitude | ❌ |
+| \`longitude\` | number or string | Geographic longitude | ❌ |
+| \`emoji\` | string | Unicode flag emoji | ❌ |
 | \`tld\` | string | Top-level domain | ❌ |
 | \`timezones\` | array | List of timezone objects | ❌ |
 | \`translations\` | object | Country name translations | ❌ |
@@ -81,8 +81,8 @@ ${JSON.stringify(sampleState, null, 2)}
 | \`iso3166_2\` | string | ISO 3166-2 subdivision code | ❌ |
 | \`type\` | string | Administrative type (province, state, etc.) | ❌ |
 | \`fips_code\` | string | FIPS code | ❌ |
-| \`latitude\` | string | Geographic latitude | ❌ |
-| \`longitude\` | string | Geographic longitude | ❌ |
+| \`latitude\` | number or string | Geographic latitude | ❌ |
+| \`longitude\` | number or string | Geographic longitude | ❌ |
 | \`timezone\` | string | Primary timezone | ❌ |
 
 ### State Types
@@ -113,8 +113,8 @@ ${JSON.stringify(sampleCity, null, 2)}
 | \`country_name\` | string | Country name | ✅ |
 | \`state_code\` | string | State ISO code | ❌ |
 | \`country_code\` | string | Country ISO2 code | ❌ |
-| \`latitude\` | string | Geographic latitude | ❌ |
-| \`longitude\` | string | Geographic longitude | ❌ |
+| \`latitude\` | number or string | Geographic latitude | ❌ |
+| \`longitude\` | number or string | Geographic longitude | ❌ |
 | \`wikiDataId\` | string | WikiData identifier | ❌ |
 | \`timezone\` | string | Primary timezone | ❌ |
 
@@ -122,7 +122,7 @@ ${JSON.stringify(sampleCity, null, 2)}
 
 ## Response Wrapper
 
-All API responses are wrapped in a consistent structure:
+Most entity responses are wrapped in this structure:
 
 ### Standard Response
 
@@ -132,7 +132,7 @@ All API responses are wrapped in a consistent structure:
   "meta": {
     "type": "countries", // Type of data returned
     "count": 195, // Number of items in data array
-    "generated_at": "2024-01-01T00:00:00.000Z", // Generation timestamp
+    "generated_at": "2024-01-01T00:00:00.000Z", // Stable release timestamp
     "api_version": "v1" // API version
   }
 }
@@ -160,7 +160,7 @@ All API responses are wrapped in a consistent structure:
 
 - **${((this.dataAnalysis.states.with_coordinates / this.states.length) * 100).toFixed(1)}%** of states have latitude/longitude coordinates
 - **${((this.dataAnalysis.cities.with_coordinates / this.cities.length) * 100).toFixed(1)}%** of cities have latitude/longitude coordinates
-- Coordinates are provided as strings for precision
+- Compact JSON converts coordinates to numbers; pretty JSON preserves the source values, which may be strings.
 
 ### WikiData Integration
 
@@ -172,7 +172,7 @@ All API responses are wrapped in a consistent structure:
 
 - **${this.dataAnalysis.states.timezones}** unique timezones available for states
 - Format follows IANA timezone database (e.g., "Asia/Kabul", "America/New_York")
-- Some cities also include timezone information
+- City timezone fields and timezone endpoint files are present only when supplied by the source dataset.
 
 ### Administrative Types
 
@@ -188,11 +188,11 @@ ${this.dataAnalysis.states.types.map((type) => `- **${type}**: ${this.states.fil
 
 \`\`\`javascript
 // Get cities with coordinates
-const cities = await fetch('${config.CDN_BASE_URL}/search/cities.json');
+const cities = await fetch('${config.CDN_BASE_URL}/cities/country/us.json');
 const citiesData = await cities.json();
 
 const citiesWithCoords = citiesData.data.filter(city =>
-  city.latitude && city.longitude
+  city.latitude != null && city.latitude !== '' && city.longitude != null && city.longitude !== ''
 );
 \`\`\`
 
@@ -240,6 +240,7 @@ class CityAPI {
 
     if (this.batchCache.has(batch.filename)) {
       const cachedBatch = this.batchCache.get(batch.filename);
+      if (!cachedBatch[cityId]) throw new Error('City not found: ' + cityId);
       return cachedBatch[cityId];
     }
 
@@ -247,6 +248,7 @@ class CityAPI {
     const batchData = await response.json();
 
     this.batchCache.set(batch.filename, batchData.data);
+    if (!batchData.data[cityId]) throw new Error('City not found: ' + cityId);
     return batchData.data[cityId];
   }
 }

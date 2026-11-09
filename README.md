@@ -2,6 +2,7 @@
 
 [![npm version](https://badge.fury.io/js/geo-data-api.svg)](https://www.npmjs.com/package/geo-data-api)
 [![jsDelivr hits (npm)](https://img.shields.io/jsdelivr/npm/hm/geo-data-api)](https://www.jsdelivr.com/package/npm/geo-data-api)
+[![Demo](https://img.shields.io/badge/demo-interactive-blue)](https://geo-data-api.asterodigital.com/demo/demo.html)
 
 Generate a static JSON API for geographic data including countries, states and cities that can be hosted on any CDN.
 
@@ -9,7 +10,7 @@ This repository transforms the upstream dataset (countries, states, cities) into
 
 ## Quick start
 
-Prerequisites: Node.js and npm.
+Prerequisites: Node.js 22 or newer and npm. The checked-in `db/` already contains a dataset; replace it when building another release.
 
 1. Place source JSON files in the `db/` directory:
    - `countries.json`
@@ -23,11 +24,22 @@ You can download the dataset from the GitHub project: [dr5hn/countries-states-ci
 ```powershell
 npm install
 npm run build
+npm run verify
 ```
 
 1. Upload the contents of `dist/api/v1/` to your CDN.
 
 1. Update `src/config.js` (for example, `CDN_BASE_URL`) if you need client-side configuration.
+
+## Testing and local preview
+
+Run `npm test` with Node.js 22 or later to check the generator and development server.
+
+`npm run lint` checks JavaScript syntax, and `npm run format:check` checks formatting of the website, tests, and contract files. CI also applies a 5 MB limit to each city search shard. Run `npm run build:docs` explicitly when you want to regenerate the tracked Markdown documentation; an ordinary build leaves those documents alone. `npm run clean` removes `dist/api/v1` only.
+
+Run `npm run serve` to preview an existing build at `http://127.0.0.1:3000`. The server binds to localhost by default; set `HOST` and `PORT` only if a different address is required.
+
+Open `http://127.0.0.1:3000/demo/demo.html` to try the interactive playground: a cascading address form, country-scoped city search, and city lookup by ID. Visit `http://127.0.0.1:3000/docs/index.html` for the website documentation. Both use the Tailwind CSS v3 CDN and work under a deployment subpath.
 
 ## What this generates
 
@@ -35,20 +47,32 @@ The generator creates a small static API tree (example):
 
 ```text
 dist/api/v1/
+├── api-info.json                 # dataset statistics and endpoint index
+├── documentation.json            # machine-readable API documentation
+├── manifest.json                 # dataset version, counts, file checksums
+├── build-report.json             # complete source validation summary
 ├── countries.json                # list all countries
 ├── countries/{iso2}.json         # country details (ISO2 code)
 ├── states/country/{iso2}.json    # states by country (ISO2 code)
 ├── states/{iso3166_2}.json       # state details (ISO 3166-2 code)
 ├── cities/country/{iso2}.json    # cities by country (ISO2 code)
+├── cities/country/{iso2}/        # indexed chunks for large country lists
 ├── cities/state/{iso3166_2}.json # cities by state (ISO 3166-2 code)
-├── cities/{id}.json              # (limited) city details
+├── cities/batches.json           # index of city batches by ID range
+├── cities/batch/{filename}       # city details keyed by ID
 └── search/
     ├── countries.json            # searchable country index
     ├── states.json               # searchable state index
-    └── cities.json               # searchable city index
+    ├── cities.json               # complete global city index
+    └── cities/
+        ├── index.json            # country shard manifest
+        └── country/{iso2}.json   # searchable cities in one country
 ```
 
 ## API endpoints (static files)
+
+- GET /api-info.json — dataset statistics and endpoint index
+- GET /documentation.json — machine-readable endpoint descriptions and examples
 
 ### Countries
 
@@ -70,18 +94,25 @@ dist/api/v1/
 ### Cities
 
 - GET /cities/country/{iso2}.json
+- GET /cities/country/{iso2}/index.json and its numbered chunks (only for large countries)
 - GET /cities/state/{iso3166_2}.json
-- GET /cities/timezone/{timezone}.json
-- GET /cities/{id}.json
-- GET /cities/batch/{batchId}.json
+- GET /cities/timezones.json and its referenced timezone files (only when source cities include timezones)
+- GET /cities/batch/{filename} (the filename supplied by the batch index)
 - GET /cities/batches.json
+
+City details are retrieved through `cities/batches.json` and its referenced batch files; individual `cities/{id}.json` files are not generated.
 
 ### Search
 
 - GET /search/countries.json
 - GET /search/states.json
-- GET /search/cities.json
-- GET /search/combined.json
+- GET /search/cities.json (complete global index)
+- GET /search/cities/index.json (country shard manifest)
+- GET /search/cities/country/{iso2}.json (lowercase country code)
+- GET /search/combined-sample.json (at most the first 1,000 states and 5,000 cities)
+- GET /search/combined.json (compatibility alias for the same sample)
+
+Search responses include `name_normalized`: lowercase Unicode NFD text with combining marks removed. Normalize the query in the same way for searches such as `Sao Paulo` matching `São Paulo`. This folds diacritics but does not transliterate every letter. The combined sample's `meta.counts` and `meta.complete` report what it contains; use the complete entity indexes or country shards when all results are required.
 
 ## Configuration
 
@@ -90,16 +121,33 @@ Edit `src/config.js` to customize:
 - Output formatting (pretty vs compact)
 - Search fields included in index files
 - `CDN_BASE_URL` used by examples
-- Optional: country flag icons via [flag-icons (Lipis)](https://flagicons.lipis.dev/) (configurable in `src/config.js`)
+- Country city chunk size (`COUNTRY_CITY_SHARD_SIZE`, default 5,000; set to 0 to disable)
+
+The CLI accepts `--input`, `--output`, `--pretty`, `--compress`, `--compression-threshold`, and `--country-shard-size`. For example:
+
+```sh
+npx geo-data-api --input ./db --output ./dist/api/v1 --compress
+```
+
+Programmatic builds are also available. Run builds sequentially because generator configuration is shared within a Node process:
+
+```js
+const { DataProcessor } = require("geo-data-api");
+await new DataProcessor({ inputDir: "./db", outputDir: "./generated-api" }).run();
+```
 
 ## Documentation
 
 📚 **Complete API Documentation**
 
+- **[Website documentation](https://geo-data-api.asterodigital.com/docs/index.html)** — getting started, endpoint reference, and integration guides (available after deploying this version)
 - **[API Documentation](docs/API_DOCUMENTATION.md)** - Comprehensive overview with examples and best practices
 - **[Quick Start Guide](docs/QUICK_START.md)** - Get up and running quickly with code examples
 - **[Endpoints Reference](docs/ENDPOINTS.md)** - Detailed reference for all available API endpoints
 - **[Data Structure Reference](docs/DATA_STRUCTURE.md)** - Complete field definitions and sample objects
+- **[OpenAPI 3.1](openapi.json)**, **[JSON Schema](schemas/geo-data.schema.json)**, and **[TypeScript types](types/index.d.ts)**
+- **[GitHub repository](https://github.com/azadshaikh/geo-data-api)** — source code, issues, and contributions
+- **[Published package on jsDelivr](https://www.jsdelivr.com/package/npm/geo-data-api)** — published versions may differ from this checkout
 
 ## Advanced Features
 
@@ -112,17 +160,17 @@ Edit `src/config.js` to customize:
 
 ### Smart Search & Filtering
 
-- **Multi-entity Search**: Combined search index across countries, states, and cities
-- **Advanced Filtering**: Filter by region, subregion, administrative type, and timezone
-- **Client-side Search**: Pre-built search indexes for fast client-side filtering
+- **Multi-entity Search**: Explicitly limited combined sample across countries, states, and cities
+- **Advanced Filtering**: Use files grouped by region, subregion, administrative type, and available timezones
+- **Client-side Search**: Country city-search shards reduce downloads when the country is known
 - **Batch City Access**: Efficient city lookup with 100 cities per batch file
 
 ### Geographic Intelligence
 
-- **100% Coordinate Coverage**: All states and cities include latitude/longitude
-- **Timezone Support**: Complete timezone data for states and cities
-- **Administrative Types**: 93 different state/province types supported
-- **WikiData Integration**: 99.8% of cities linked to Wikipedia references
+- **Coordinate Coverage**: Latitude and longitude are included where available in the source data
+- **Timezone Support**: State and city timezones are available where included in the source data
+- **Administrative Types**: State and province types are available when present in the source data
+- **WikiData Integration**: City WikiData identifiers are included when available
 
 ## Roadmap
 
@@ -134,10 +182,10 @@ Edit `src/config.js` to customize:
 
 ### 🔧 Phase 2: Developer Experience
 
-- [ ] **OpenAPI Specification**: Generate comprehensive OpenAPI/Swagger docs for better API discovery
+- [x] **OpenAPI Specification**: Describe the static API and response schemas
 - [ ] **SDK Generation**: Create SDKs for JavaScript, Python, and PHP
-- [ ] **TypeScript Support**: Add TypeScript definitions for better developer experience
-- [ ] **CLI Tool Enhancement**: Improve command-line interface with more options and better error handling
+- [x] **TypeScript Support**: Provide response types and a typed processor entry point
+- [x] **CLI Tool Enhancement**: Configure input, output, formatting, compression, and sharding
 
 ### 📊 Phase 3: Advanced Features
 
@@ -149,7 +197,7 @@ Edit `src/config.js` to customize:
 ## Deployment
 
 1. Run the build (see Quick start).
-1. Upload `dist/api/` to your CDN or static host.
+1. Upload `dist/api/v1/` to your CDN or static host.
 1. Configure CORS on the CDN to allow public reads. Example headers:
 
 ```text
@@ -160,9 +208,10 @@ Access-Control-Allow-Headers: Content-Type
 
 Performance tips:
 
-- Enable gzip/brotli compression on your CDN.
-- Use long cache TTLs for static files and versioning on rebuilds.
-- Use the `/search` endpoints for client-side filtering instead of downloading full datasets.
+- Enable gzip/Brotli compression on your CDN. Alternatively, `npm run build:compress` writes deterministic `.gz` and `.br` siblings for JSON files at least 1 KiB; `--compression-threshold` changes that threshold. These siblings do not provide content negotiation by themselves: configure the host to select them using `Accept-Encoding` and return the matching `Content-Encoding` and `Vary` headers.
+- `_headers` (copied to `dist/`) provides CORS and conservative cache settings for Netlify/Cloudflare Pages; `vercel.json` provides equivalent settings for Vercel. Use immutable caching only with versioned URLs.
+- For S3, `npm run deploy:s3 -- s3://BUCKET/api/v1` syncs JSON and optional encoded siblings with content metadata and no `--delete`. Configure bucket CORS and CDN content negotiation separately. S3 sync does not update metadata on unchanged objects automatically.
+- Use `/search/cities/country/{iso2}.json` for country-specific searches. Use the manifest to discover available shards, or the full `/search/cities.json` index for worldwide searches.
 
 ## Usage examples
 
@@ -204,6 +253,28 @@ const index = await resp.json();
 const matches = index.data.filter((c) => c.name.toLowerCase().includes("ind"));
 ```
 
+Search cities in one country:
+
+```javascript
+const response = await fetch(
+  "https://cdn.jsdelivr.net/npm/geo-data-api@latest/dist/api/v1/search/cities/country/in.json"
+);
+if (!response.ok) throw new Error(`Search shard request failed: ${response.status}`);
+const { data } = await response.json();
+const query = "Kochi".toLowerCase().normalize("NFD").replace(/\p{M}/gu, "");
+const matches = data.filter((city) => city.name_normalized.includes(query));
+```
+
+The shard manifest (`/search/cities/index.json`) lists available countries and relative filenames. A country without cities has no shard; records with no usable country code appear in `unknown.json` when present. The complete global index remains available for existing clients.
+
+## Reproducible builds
+
+`meta.generated_at` remains part of API responses and uses a stable release timestamp. The default is the checked-in dataset snapshot time (`2025-09-12T09:30:16.000Z`); set `SOURCE_DATE_EPOCH` to a Unix timestamp in seconds for another release. Record a new timestamp when updating the source data. With the same source files, generator code, runtime, options, and timestamp, output bytes are reproducible. A build stages and verifies its output before replacement and preserves untracked extra files. If those inputs are unchanged, the builder verifies the existing output and skips regeneration altogether.
+
+When replacing an older output that has no manifest, the first build retains the original directory as a sibling `.v1-backup-*` folder so any ambiguous pre-existing files remain recoverable. Review and remove that backup when it is no longer needed; it is excluded from the npm package.
+
+`manifest.json` identifies the source dataset using SHA-256, records a fingerprint of build inputs, the timestamp and counts, and lists each other output file's byte length and SHA-256 checksum. It excludes itself from its checksum list. `build-report.json` summarizes validation; invalid records, duplicate IDs or ISO codes, and orphan relationships fail the build. `npm run verify` checks generated JSON, endpoint coverage, batch and shard coverage, filename collisions, and manifest checksums. Pass an output directory or `--max-search-shard-bytes N` to customize verification.
+
 React hook example (tiny helper):
 
 ```javascript
@@ -229,13 +300,13 @@ export function useCountriesAPI() {
   }, []);
 
   async function getStates(countryId) {
-    // Use ISO2 code (e.g., 'af' for Afghanistan) or numeric ID
+    // Use a lowercase ISO2 code (e.g., 'af' for Afghanistan)
     const r = await fetch(`${API_BASE_URL}/states/country/${countryId}.json`);
     return r.json();
   }
 
   async function getCities(stateId) {
-    // Use ISO 3166-2 code (e.g., 'af-bds' for Badakhshan) or numeric ID
+    // Use a lowercase ISO 3166-2 code (e.g., 'af-bds' for Badakhshan)
     const r = await fetch(`${API_BASE_URL}/cities/state/${stateId}.json`);
     return r.json();
   }
@@ -260,7 +331,7 @@ export function useCountriesAPI() {
   - `validators/` - data structure validation
   - `utils/` - utility helpers and performance monitoring
   - `docs/` - documentation generation templates
-- `db/` - source JSON data files (not committed)
+- `db/` - source JSON data files tracked in this repository
   - `countries.json` - country data
   - `states.json` - state/province data
   - `cities.json` - city data
@@ -273,7 +344,7 @@ export function useCountriesAPI() {
 ## Notes
 
 - The repository is intended to produce a fully static API; no runtime server is required.
-- Keep `db/*.json` out of source control; the repo's `.gitignore` already excludes them.
+- The checked-in `db/*.json` files are the source dataset used by the build.
 
 ## License
 

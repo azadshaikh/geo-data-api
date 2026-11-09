@@ -1,5 +1,10 @@
 # API Endpoints Reference
 
+## API Information
+
+- `GET /api-info.json` - Dataset statistics and endpoint index.
+- `GET /documentation.json` - Machine-readable endpoint descriptions and examples.
+
 ## Countries
 
 ### GET /countries.json
@@ -16,7 +21,7 @@ Get detailed information for a specific country by ISO2 code.
 
 **Parameters**:
 
-- `iso2`: Country ISO2 code (2-letter uppercase)
+- `iso2`: Lowercase country ISO2 code (for example, `us`)
 
 **Response Fields**: All available fields including timezones, translations, and geographic data
 
@@ -67,13 +72,9 @@ Get states for a specific country with administrative details.
 
 **Parameters**:
 
-- `country_iso2`: Country ISO2 code (2-letter uppercase)
+- `country_iso2`: Lowercase country ISO2 code (for example, `af`)
 
-**Features**:
-- Administrative type
-- Timezone
-- Geographic coordinates
-- ISO codes
+**List fields**: ID, name, ISO2 code, and ISO 3166-2 code. Use the individual state endpoint for additional details.
 
 **Example**: `https://cdn.jsdelivr.net/npm/geo-data-api@latest/dist/api/v1/states/country/af.json`
 
@@ -201,7 +202,7 @@ Get states by timezone.
 
 **Parameters**:
 
-- `timezone`: Timezone name (URL encoded)
+- `timezone`: Timezone name with non-alphanumeric characters replaced by hyphens
 
 **Example**: `https://cdn.jsdelivr.net/npm/geo-data-api@latest/dist/api/v1/states/timezone/Asia-Kabul.json`
 
@@ -221,9 +222,13 @@ Get cities for a specific country.
 
 **Parameters**:
 
-- `country_iso2`: Country ISO2 code (2-letter uppercase)
+- `country_iso2`: Lowercase country ISO2 code (for example, `af`)
 
 **Example**: `https://cdn.jsdelivr.net/npm/geo-data-api@latest/dist/api/v1/cities/country/af.json`
+
+### GET /cities/country/{country_iso2}/index.json
+
+For countries exceeding the configured shard size (5,000 cities by default), this index lists numbered chunks and their API-root-relative filenames. The complete country file remains available. Smaller countries do not have a chunk index.
 
 ### GET /cities/state/{state_iso3166_2}.json
 
@@ -253,13 +258,13 @@ Get batch index for efficient individual city lookups.
       "filename": "cities/batch/batch-57900-58006.json",
       "start_id": 57900,
       "end_id": 58006,
-      "count": 107
+      "count": 100
     },
     {
       "filename": "cities/batch/batch-58007-58116.json",
       "start_id": 58007,
       "end_id": 58116,
-      "count": 110
+      "count": 100
     }
   ],
   "meta": {
@@ -278,9 +283,9 @@ Get a batch of cities for efficient individual city access.
 
 **Parameters**:
 
-- `filename`: Batch filename from the batch index (e.g., "cities/batch/batch-57900-58006.json")
+- `filename`: Batch basename including `.json` (e.g., `batch-57900-58006.json`)
 
-**Note**: Cities are accessible by ID as object keys in the `data` field. Use the batch index to find the correct filename for any city ID.
+**Note**: Cities are accessible by ID as object keys in the `data` field. The batch index contains the complete path relative to the API base URL; append `batch.filename` directly to that base URL.
 
 **Example**: `https://cdn.jsdelivr.net/npm/geo-data-api@latest/dist/api/v1/cities/batch/batch-57900-58006.json`
 
@@ -295,15 +300,14 @@ Get a batch of cities for efficient individual city access.
       "state_name": "Madhya Pradesh",
       "country_id": 101,
       "country_name": "India",
-      "latitude": "23.25469000",
-      "longitude": "77.40289000",
-      "timezone": "Asia/Kolkata"
+      "latitude": 23.25469,
+      "longitude": 77.40289
     }
   },
   "meta": {
     "type": "cities_batch",
     "batch_range": "57900-58006",
-    "cities_count": 107,
+    "cities_count": 100,
     "usage": "Access city by ID: data[city_id]"
   }
 }
@@ -311,25 +315,11 @@ Get a batch of cities for efficient individual city access.
 
 ### GET /cities/timezone/{timezone}.json
 
-Get cities by timezone.
+Get cities by timezone when the source data contains city timezone values. A build with no city timezones does not produce these files.
 
-**Parameters**:
+Fetch `cities/timezones.json` and use each entry's `endpoint` value. Some timezone names require disambiguating suffixes to avoid filename collisions. The index and files are omitted when the source has no city timezones. The same rule applies to `states/timezones.json` for states.
 
-- `timezone`: Timezone name (URL encoded)
-
-**Example**: `https://cdn.jsdelivr.net/npm/geo-data-api@latest/dist/api/v1/cities/timezone/Asia-Kabul.json`
-
-### GET /cities/{id}.json
-
-Get detailed information for a specific city.
-
-**Parameters**:
-
-- `id`: City ID (integer)
-
-**Note**: Individual city files generated for sample cities only
-
-**Example**: `https://cdn.jsdelivr.net/npm/geo-data-api@latest/dist/api/v1/cities/52.json`
+Individual city detail files are not generated. Use `cities/batches.json` and the indicated batch file to look up a city by ID.
 
 ---
 
@@ -339,7 +329,7 @@ Get detailed information for a specific city.
 
 Searchable countries index for client-side filtering.
 
-**Searchable Fields**: name, iso2, iso3, native, capital, currency, region, subregion
+**Searchable Fields**: name, name_normalized, iso2, iso3, native, capital, currency, region, subregion
 
 **Usage**: Download once and filter client-side using any searchable field
 
@@ -349,27 +339,45 @@ Searchable countries index for client-side filtering.
 
 Searchable states index for client-side filtering.
 
-**Searchable Fields**: name, iso2, country_name, country_code, type, timezone
+**Searchable Fields**: name, name_normalized, iso2, country_name, country_code, type, timezone
 
 **Example**: `https://cdn.jsdelivr.net/npm/geo-data-api@latest/dist/api/v1/search/states.json`
 
 ### GET /search/cities.json
 
-Searchable cities index for client-side filtering.
+Complete global city search index for client-side filtering. This endpoint remains available for existing clients.
 
-**Searchable Fields**: name, state_name, country_name, state_code, country_code, wikiDataId
+**Searchable Fields**: name, name_normalized, state_name, country_name, state_code, country_code, wikiDataId
 
-**Warning**: Large file - consider client-side filtering in your application
+**Warning**: Large file - prefer a country shard when the country is known.
 
 **Example**: `https://cdn.jsdelivr.net/npm/geo-data-api@latest/dist/api/v1/search/cities.json`
 
-### GET /search/combined.json
+### GET /search/cities/index.json
+
+Manifest of available city-search shards. Each entry includes a country code, record count, and `filename` relative to the API base URL.
+
+**Example**: `https://cdn.jsdelivr.net/npm/geo-data-api@latest/dist/api/v1/search/cities/index.json`
+
+### GET /search/cities/country/{iso2}.json
+
+Searchable city records for one country, with the same fields as the global city index.
+
+**Parameters**: `iso2` is the lowercase two-letter country code. Use the manifest to discover available shards; a country without cities has no shard. Records without a usable country code appear in `unknown.json` when present.
+
+**Example**: `https://cdn.jsdelivr.net/npm/geo-data-api@latest/dist/api/v1/search/cities/country/in.json`
+
+Search records include `name_normalized`, produced by lowercasing and removing Unicode combining marks. Normalize the query in the same way; this is diacritic folding rather than full transliteration.
+
+### GET /search/combined-sample.json
 
 Combined search index across all entity types (limited dataset).
 
-**Limitations**: Limited to prevent large file sizes
+**Limitations**: Includes at most the first 1,000 states and 5,000 cities. Use the individual search indexes for complete results.
 
-**Example**: `https://cdn.jsdelivr.net/npm/geo-data-api@latest/dist/api/v1/search/combined.json`
+`meta.counts` and `meta.complete` describe the returned and total records. `search/combined.json` is a compatibility alias for the same sample.
+
+**Example**: `https://cdn.jsdelivr.net/npm/geo-data-api@latest/dist/api/v1/search/combined-sample.json`
 
 ---
 

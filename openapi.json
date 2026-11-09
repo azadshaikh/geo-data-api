@@ -1,0 +1,826 @@
+{
+  "openapi": "3.1.0",
+  "info": {
+    "title": "Geo Data API",
+    "version": "v1",
+    "description": "Static JSON files generated from a geographic dataset. Availability of data-dependent files varies by build. Responses may omit unavailable fields or retain null values; coordinates can be numbers in compact output and strings in pretty output."
+  },
+  "servers": [
+    {
+      "url": "https://cdn.jsdelivr.net/npm/geo-data-api@latest/dist/api/v1",
+      "description": "Default CDN base URL; deployments can use another host."
+    }
+  ],
+  "paths": {
+    "/countries.json": {
+      "get": {
+        "operationId": "getCountries",
+        "summary": "List countries",
+        "description": "Complete country list with selected fields.",
+        "responses": {
+          "200": {
+            "description": "Generated JSON file",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "./schemas/geo-data.schema.json#/$defs/CountryListResponse"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "File not found or not generated for this dataset; the hosting provider controls the error body."
+          }
+        }
+      }
+    },
+    "/countries/{iso2}.json": {
+      "get": {
+        "operationId": "getCountry",
+        "summary": "Get country details",
+        "description": "The filename is derived from the source data.",
+        "responses": {
+          "200": {
+            "description": "Generated JSON file",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "./schemas/geo-data.schema.json#/$defs/CountryResponse"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "File not found or not generated for this dataset; the hosting provider controls the error body."
+          }
+        },
+        "parameters": [
+          {
+            "name": "iso2",
+            "in": "path",
+            "required": true,
+            "description": "Lowercase country ISO 3166-1 alpha-2 filename; a numeric ID may be used as a fallback when a code is absent.",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ]
+      }
+    },
+    "/countries/regions.json": {
+      "get": {
+        "operationId": "getRegions",
+        "summary": "List regions",
+        "description": "The index contains relative endpoint paths for available regions.",
+        "responses": {
+          "200": {
+            "description": "Generated JSON file",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "./schemas/geo-data.schema.json#/$defs/RegionIndexResponse"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "File not found or not generated for this dataset; the hosting provider controls the error body."
+          }
+        }
+      }
+    },
+    "/countries/region/{region}.json": {
+      "get": {
+        "operationId": "getCountriesByRegion",
+        "summary": "List countries in a region",
+        "description": "Only files for regions present in the source dataset are generated.",
+        "responses": {
+          "200": {
+            "description": "Generated JSON file",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "./schemas/geo-data.schema.json#/$defs/CountryGroupResponse"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "File not found or not generated for this dataset; the hosting provider controls the error body."
+          }
+        },
+        "parameters": [
+          {
+            "name": "region",
+            "in": "path",
+            "required": true,
+            "description": "Lowercase region filename stem; prefer the path from the regions index.",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ]
+      }
+    },
+    "/countries/subregion/{subregion}.json": {
+      "get": {
+        "operationId": "getCountriesBySubregion",
+        "summary": "List countries in a subregion",
+        "description": "Only files for subregions present in the source dataset are generated.",
+        "responses": {
+          "200": {
+            "description": "Generated JSON file",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "./schemas/geo-data.schema.json#/$defs/CountryGroupResponse"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "File not found or not generated for this dataset; the hosting provider controls the error body."
+          }
+        },
+        "parameters": [
+          {
+            "name": "subregion",
+            "in": "path",
+            "required": true,
+            "description": "Lowercase hyphenated subregion filename stem.",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ]
+      }
+    },
+    "/states/all.json": {
+      "get": {
+        "operationId": "getStates",
+        "summary": "List states",
+        "description": "Complete state list with selected fields.",
+        "responses": {
+          "200": {
+            "description": "Generated JSON file",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "./schemas/geo-data.schema.json#/$defs/StateListResponse"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "File not found or not generated for this dataset; the hosting provider controls the error body."
+          }
+        }
+      }
+    },
+    "/states/{iso3166_2}.json": {
+      "get": {
+        "operationId": "getState",
+        "summary": "Get state details",
+        "description": "The filename is derived from the source data.",
+        "responses": {
+          "200": {
+            "description": "Generated JSON file",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "./schemas/geo-data.schema.json#/$defs/StateResponse"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "File not found or not generated for this dataset; the hosting provider controls the error body."
+          }
+        },
+        "parameters": [
+          {
+            "name": "iso3166_2",
+            "in": "path",
+            "required": true,
+            "description": "Lowercase ISO 3166-2 subdivision filename, or its numeric ID when no code is available.",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ]
+      }
+    },
+    "/states/country/{country_iso2}.json": {
+      "get": {
+        "operationId": "getStatesByCountry",
+        "summary": "List states in a country",
+        "description": "Generated only for countries with eligible state records and a country code.",
+        "responses": {
+          "200": {
+            "description": "Generated JSON file",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "./schemas/geo-data.schema.json#/$defs/StateListResponse"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "File not found or not generated for this dataset; the hosting provider controls the error body."
+          }
+        },
+        "parameters": [
+          {
+            "name": "country_iso2",
+            "in": "path",
+            "required": true,
+            "description": "Lowercase country code filename; city country files may fall back to a numeric country ID.",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ]
+      }
+    },
+    "/states/types.json": {
+      "get": {
+        "operationId": "getStateTypes",
+        "summary": "List state types",
+        "description": "The index contains relative paths for available state types.",
+        "responses": {
+          "200": {
+            "description": "Generated JSON file",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "./schemas/geo-data.schema.json#/$defs/StateTypeIndexResponse"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "File not found or not generated for this dataset; the hosting provider controls the error body."
+          }
+        }
+      }
+    },
+    "/states/type/{type}.json": {
+      "get": {
+        "operationId": "getStatesByType",
+        "summary": "List states of an administrative type",
+        "description": "Only types present in the source dataset have files.",
+        "responses": {
+          "200": {
+            "description": "Generated JSON file",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "./schemas/geo-data.schema.json#/$defs/StateGroupResponse"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "File not found or not generated for this dataset; the hosting provider controls the error body."
+          }
+        },
+        "parameters": [
+          {
+            "name": "type",
+            "in": "path",
+            "required": true,
+            "description": "Filename stem from the state types index.",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ]
+      }
+    },
+    "/states/timezones.json": {
+      "get": {
+        "operationId": "getStateTimezones",
+        "summary": "List state timezones",
+        "description": "Use index endpoint paths to resolve timezone filename collisions.",
+        "responses": {
+          "200": {
+            "description": "Generated JSON file",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "./schemas/geo-data.schema.json#/$defs/StateTimezoneIndexResponse"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "File not found or not generated for this dataset; the hosting provider controls the error body."
+          }
+        }
+      }
+    },
+    "/states/timezone/{timezone}.json": {
+      "get": {
+        "operationId": "getStatesByTimezone",
+        "summary": "List states in a timezone",
+        "description": "Only available timezones have files. For collisions, the unsuffixed legacy path is an alias for one timezone; use the index for an unambiguous path.",
+        "responses": {
+          "200": {
+            "description": "Generated JSON file",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "./schemas/geo-data.schema.json#/$defs/StateGroupResponse"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "File not found or not generated for this dataset; the hosting provider controls the error body."
+          }
+        },
+        "parameters": [
+          {
+            "name": "timezone",
+            "in": "path",
+            "required": true,
+            "description": "Filename stem obtained from the corresponding timezones index. Colliding timezone names may use disambiguating suffixes; do not reconstruct the filename.",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ]
+      }
+    },
+    "/cities/country/{country_iso2}.json": {
+      "get": {
+        "operationId": "getCitiesByCountry",
+        "summary": "List cities in a country",
+        "description": "Generated only when the source has cities for this country.",
+        "responses": {
+          "200": {
+            "description": "Generated JSON file",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "./schemas/geo-data.schema.json#/$defs/CityListResponse"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "File not found or not generated for this dataset; the hosting provider controls the error body."
+          }
+        },
+        "parameters": [
+          {
+            "name": "country_iso2",
+            "in": "path",
+            "required": true,
+            "description": "Lowercase country code filename; city country files may fall back to a numeric country ID.",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ]
+      }
+    },
+    "/cities/country/{country_iso2}/index.json": {
+      "get": {
+        "operationId": "getCountryCityShardIndex",
+        "summary": "Find country city chunks",
+        "description": "Available only when the country exceeds the configured shard size. Filenames are relative to the API base URL.",
+        "parameters": [
+          {
+            "name": "country_iso2",
+            "in": "path",
+            "required": true,
+            "schema": { "type": "string" }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Chunk index",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "./schemas/geo-data.schema.json#/$defs/CountryCityShardIndexResponse"
+                }
+              }
+            }
+          },
+          "404": { "description": "Country has no shard index." }
+        }
+      }
+    },
+    "/cities/country/{country_iso2}/{shard}.json": {
+      "get": {
+        "operationId": "getCountryCityShard",
+        "summary": "List one country city chunk",
+        "description": "Use filenames from the country city chunk index.",
+        "parameters": [
+          {
+            "name": "country_iso2",
+            "in": "path",
+            "required": true,
+            "schema": { "type": "string" }
+          },
+          {
+            "name": "shard",
+            "in": "path",
+            "required": true,
+            "schema": { "type": "integer", "minimum": 1 }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Chunk of city records",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "./schemas/geo-data.schema.json#/$defs/CityListResponse"
+                }
+              }
+            }
+          },
+          "404": { "description": "Chunk not generated." }
+        }
+      }
+    },
+    "/cities/state/{state_iso3166_2}.json": {
+      "get": {
+        "operationId": "getCitiesByState",
+        "summary": "List cities in a state",
+        "description": "Generated only when the source has cities for this state.",
+        "responses": {
+          "200": {
+            "description": "Generated JSON file",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "./schemas/geo-data.schema.json#/$defs/CityListResponse"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "File not found or not generated for this dataset; the hosting provider controls the error body."
+          }
+        },
+        "parameters": [
+          {
+            "name": "state_iso3166_2",
+            "in": "path",
+            "required": true,
+            "description": "Lowercase ISO 3166-2 subdivision filename, or its numeric ID when no code is available.",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ]
+      }
+    },
+    "/cities/batches.json": {
+      "get": {
+        "operationId": "getCityBatches",
+        "summary": "Find city batches",
+        "description": "Use the start and end IDs to find a candidate, then append its filename directly to the API base URL. IDs may have gaps.",
+        "responses": {
+          "200": {
+            "description": "Generated JSON file",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "./schemas/geo-data.schema.json#/$defs/CityBatchIndexResponse"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "File not found or not generated for this dataset; the hosting provider controls the error body."
+          }
+        }
+      }
+    },
+    "/cities/batch/{filename}": {
+      "get": {
+        "operationId": "getCityBatch",
+        "summary": "Get a city batch",
+        "description": "City details are keyed by ID. An ID within a batch range may still be absent.",
+        "responses": {
+          "200": {
+            "description": "Generated JSON file",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "./schemas/geo-data.schema.json#/$defs/CityBatchResponse"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "File not found or not generated for this dataset; the hosting provider controls the error body."
+          }
+        },
+        "parameters": [
+          {
+            "name": "filename",
+            "in": "path",
+            "required": true,
+            "description": "Batch basename including .json; the index filename is already a complete path relative to the API base URL.",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ]
+      }
+    },
+    "/cities/timezones.json": {
+      "get": {
+        "operationId": "getCityTimezones",
+        "summary": "List city timezones",
+        "description": "This index and the city timezone files are generated only when city timezone data exists. Use its endpoint paths to resolve filename collisions.",
+        "responses": {
+          "200": {
+            "description": "Generated JSON file",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "./schemas/geo-data.schema.json#/$defs/CityTimezoneIndexResponse"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "File not found or not generated for this dataset; the hosting provider controls the error body."
+          }
+        }
+      }
+    },
+    "/cities/timezone/{timezone}.json": {
+      "get": {
+        "operationId": "getCitiesByTimezone",
+        "summary": "List cities in a timezone",
+        "description": "This file exists only if the source has cities with this timezone. For collisions, use the city timezones index for an unambiguous path.",
+        "responses": {
+          "200": {
+            "description": "Generated JSON file",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "./schemas/geo-data.schema.json#/$defs/CityTimezoneResponse"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "File not found or not generated for this dataset; the hosting provider controls the error body."
+          }
+        },
+        "parameters": [
+          {
+            "name": "timezone",
+            "in": "path",
+            "required": true,
+            "description": "Filename stem obtained from the corresponding timezones index. Colliding timezone names may use disambiguating suffixes; do not reconstruct the filename.",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ]
+      }
+    },
+    "/search/countries.json": {
+      "get": {
+        "operationId": "getCountrySearch",
+        "summary": "Get country search index",
+        "description": "Download the index and filter client-side. name_normalized is lowercased using Unicode NFD with combining marks removed; it is not full transliteration.",
+        "responses": {
+          "200": {
+            "description": "Generated JSON file",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "./schemas/geo-data.schema.json#/$defs/CountrySearchResponse"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "File not found or not generated for this dataset; the hosting provider controls the error body."
+          }
+        }
+      }
+    },
+    "/search/states.json": {
+      "get": {
+        "operationId": "getStateSearch",
+        "summary": "Get state search index",
+        "description": "Download the index and filter client-side; name_normalized uses diacritic folding.",
+        "responses": {
+          "200": {
+            "description": "Generated JSON file",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "./schemas/geo-data.schema.json#/$defs/StateSearchResponse"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "File not found or not generated for this dataset; the hosting provider controls the error body."
+          }
+        }
+      }
+    },
+    "/search/cities.json": {
+      "get": {
+        "operationId": "getCitySearch",
+        "summary": "Get global city search index",
+        "description": "Complete global city index. Use country shards when a country is known.",
+        "responses": {
+          "200": {
+            "description": "Generated JSON file",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "./schemas/geo-data.schema.json#/$defs/CitySearchResponse"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "File not found or not generated for this dataset; the hosting provider controls the error body."
+          }
+        }
+      }
+    },
+    "/search/cities/index.json": {
+      "get": {
+        "operationId": "getCitySearchShardIndex",
+        "summary": "List city search shards",
+        "description": "Each filename is relative to the API base URL.",
+        "responses": {
+          "200": {
+            "description": "Generated JSON file",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "./schemas/geo-data.schema.json#/$defs/CitySearchShardIndexResponse"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "File not found or not generated for this dataset; the hosting provider controls the error body."
+          }
+        }
+      }
+    },
+    "/search/cities/country/{iso2}.json": {
+      "get": {
+        "operationId": "getCitySearchShard",
+        "summary": "Get a city search shard",
+        "description": "Discover available shards using the index. An unknown shard is generated only if records lack a usable country code.",
+        "responses": {
+          "200": {
+            "description": "Generated JSON file",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "./schemas/geo-data.schema.json#/$defs/CitySearchShardResponse"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "File not found or not generated for this dataset; the hosting provider controls the error body."
+          }
+        },
+        "parameters": [
+          {
+            "name": "iso2",
+            "in": "path",
+            "required": true,
+            "description": "Lowercase two-letter country code, or unknown; follow the filename provided by the shard index.",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ]
+      }
+    },
+    "/search/combined-sample.json": {
+      "get": {
+        "operationId": "getCombinedSearchSample",
+        "summary": "Get combined search sample",
+        "description": "This is a sample: at most the first 1,000 states and 5,000 cities. Inspect meta.counts and meta.complete; use individual search indexes for complete results.",
+        "responses": {
+          "200": {
+            "description": "Generated JSON file",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "./schemas/geo-data.schema.json#/$defs/CombinedSearchResponse"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "File not found or not generated for this dataset; the hosting provider controls the error body."
+          }
+        }
+      }
+    },
+    "/search/combined.json": {
+      "get": {
+        "operationId": "getCombinedSearchLegacy",
+        "summary": "Get combined search sample at legacy path",
+        "description": "This is a sample: at most the first 1,000 states and 5,000 cities. Inspect meta.counts and meta.complete; use individual search indexes for complete results. This legacy path contains the same content as combined-sample.json.",
+        "responses": {
+          "200": {
+            "description": "Generated JSON file",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "./schemas/geo-data.schema.json#/$defs/CombinedSearchResponse"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "File not found or not generated for this dataset; the hosting provider controls the error body."
+          }
+        }
+      }
+    },
+    "/manifest.json": {
+      "get": {
+        "operationId": "getManifest",
+        "summary": "Get build manifest",
+        "description": "The manifest lists generated and preserved files including optional compressed sidecars. Its file_count includes the manifest, but the files list excludes the manifest itself.",
+        "responses": {
+          "200": {
+            "description": "Generated JSON file",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "./schemas/geo-data.schema.json#/$defs/Manifest"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "File not found or not generated for this dataset; the hosting provider controls the error body."
+          }
+        }
+      }
+    },
+    "/api-info.json": {
+      "get": {
+        "operationId": "getApiInfo",
+        "summary": "Get API information",
+        "description": "Dataset statistics and endpoint catalog.",
+        "responses": {
+          "200": {
+            "description": "Generated JSON file",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "File not found or not generated for this dataset; the hosting provider controls the error body."
+          }
+        }
+      }
+    },
+    "/documentation.json": {
+      "get": {
+        "operationId": "getDocumentation",
+        "summary": "Get generated documentation",
+        "description": "Machine-readable endpoint descriptions and usage examples.",
+        "responses": {
+          "200": {
+            "description": "Generated JSON file",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "File not found or not generated for this dataset; the hosting provider controls the error body."
+          }
+        }
+      }
+    }
+  }
+}

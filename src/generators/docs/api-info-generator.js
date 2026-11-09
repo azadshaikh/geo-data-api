@@ -1,5 +1,7 @@
 const FileUtils = require("../../utils/file-utils");
 const config = require("../../config");
+const DataUtils = require("../../utils/data-utils");
+const { releaseTimestamp } = require("../../utils/build-context");
 
 class APIInfoGenerator {
   constructor(countries, states, cities, dataAnalysis) {
@@ -12,28 +14,26 @@ class APIInfoGenerator {
   async generate() {
     const apiInfo = {
       api_version: config.API_VERSION,
-      generated_at: new Date().toISOString(),
+      generated_at: releaseTimestamp(),
       base_url: config.CDN_BASE_URL,
       statistics: {
         total_countries: this.countries.length,
         total_states: this.states.length,
         total_cities: this.cities.length,
         regions: [...new Set(this.countries.map((c) => c.region))].filter(
-          Boolean
+          Boolean,
         ).length,
         subregions: [...new Set(this.countries.map((c) => c.subregion))].filter(
-          Boolean
+          Boolean,
         ).length,
         state_types: [...new Set(this.states.map((s) => s.type))].filter(
-          Boolean
+          Boolean,
         ),
         cities_with_wikidata: this.cities.filter((c) => c.wikiDataId).length,
-        states_with_coordinates: this.states.filter(
-          (s) => s.latitude && s.longitude
-        ).length,
-        cities_with_coordinates: this.cities.filter(
-          (c) => c.latitude && c.longitude
-        ).length,
+        states_with_coordinates: this.states.filter(DataUtils.hasCoordinates)
+          .length,
+        cities_with_coordinates: this.cities.filter(DataUtils.hasCoordinates)
+          .length,
       },
       data_analysis: this.dataAnalysis,
       endpoints: {
@@ -54,16 +54,22 @@ class APIInfoGenerator {
           timezones_index: "states/timezones.json",
         },
         cities: {
-          major: "cities/major.json",
           by_country: "cities/country/{country_iso2}.json",
+          country_shards_index: "cities/country/{country_iso2}/index.json",
           by_state: "cities/state/{state_iso3166_2}.json",
-          by_timezone: "cities/timezone/{timezone-name}.json",
-          individual: "cities/{id}.json",
+          ...(this.cities.some((city) => city.timezone)
+            ? { by_timezone: "cities/timezone/{timezone-name}.json", timezones_index: "cities/timezones.json" }
+            : {}),
+          batches: "cities/batches.json",
+          batch: "cities/batch/{filename}",
         },
         search: {
           countries: "search/countries.json",
           states: "search/states.json",
           cities: "search/cities.json",
+          city_shards_index: "search/cities/index.json",
+          cities_by_country: "search/cities/country/{iso2}.json",
+          combined_sample: "search/combined-sample.json",
           combined: "search/combined.json",
         },
       },
@@ -74,16 +80,19 @@ class APIInfoGenerator {
         "Get states by country": `${config.CDN_BASE_URL}/states/country/us.json`,
         "Get provinces only": `${config.CDN_BASE_URL}/states/type/province.json`,
         "Get cities by state": `${config.CDN_BASE_URL}/cities/state/us-ca.json`,
-        "Get major cities": `${config.CDN_BASE_URL}/cities/major.json`,
+        "Get city batch index": `${config.CDN_BASE_URL}/cities/batches.json`,
         // Note: a dedicated cities WikiData endpoint/file is no longer generated.
         "Search countries": `${config.CDN_BASE_URL}/search/countries.json`,
       },
       notes: {
         pagination:
-          "States and cities are provided as full lists (no pagination) in this release",
+          "Complete country and state lists are available; large country city lists also have optional indexed chunks",
         coordinates: "Geographic coordinates available for most locations",
         wikidata: "WikiData IDs available for enhanced city information",
-        timezones: "Timezone information available for states and some cities",
+        timezones:
+          "Timezone information is available where supplied by the source dataset",
+        city_batches:
+          "Batch index filenames are complete paths relative to the API base URL",
         types:
           "States include type information (province, state, region, etc.)",
       },

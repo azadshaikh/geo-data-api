@@ -1,3 +1,5 @@
+const DataUtils = require("../utils/data-utils");
+
 class DataAnalyzer {
   constructor(countries, states, cities) {
     this.countries = countries;
@@ -33,9 +35,7 @@ class DataAnalyzer {
     const stateTimezones = [
       ...new Set(this.states.map((s) => s.timezone)),
     ].filter(Boolean);
-    const statesWithCoords = this.states.filter(
-      (s) => s.latitude && s.longitude
-    ).length;
+    const statesWithCoords = this.states.filter(DataUtils.hasCoordinates).length;
 
     console.log(`📊 States Analysis:`);
     console.log(`   • ${this.states.length} states`);
@@ -48,9 +48,7 @@ class DataAnalyzer {
 
     // Analyze cities
     const citiesWithWikiData = this.cities.filter((c) => c.wikiDataId).length;
-    const citiesWithCoords = this.cities.filter(
-      (c) => c.latitude && c.longitude
-    ).length;
+    const citiesWithCoords = this.cities.filter(DataUtils.hasCoordinates).length;
     const cityTimezones = [
       ...new Set(this.cities.map((c) => c.timezone)),
     ].filter(Boolean);
@@ -111,6 +109,7 @@ class DataAnalyzer {
       },
       cities: {
         total: this.cities.length,
+        countries: Object.keys(citiesByCountry).length,
         with_wikidata: citiesWithWikiData,
         with_coordinates: citiesWithCoords,
         timezones: cityTimezones.length,

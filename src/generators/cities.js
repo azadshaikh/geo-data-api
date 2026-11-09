@@ -2,6 +2,8 @@ const FileUtils = require("../utils/file-utils");
 const DataUtils = require("../utils/data-utils");
 const config = require("../config");
 const BaseGenerator = require("./base-generator");
+const { planTimezoneFilenames } = require("../utils/timezone-filenames");
+const { releaseTimestamp } = require("../utils/build-context");
 
 class CitiesGenerator extends BaseGenerator {
   constructor(cities, states, countries) {
@@ -74,14 +76,12 @@ class CitiesGenerator extends BaseGenerator {
         country_iso2: country?.iso2,
         country_code: cities[0].country_code,
         total_cities: optimizedCities.length,
-        generated_at: new Date().toISOString(),
+        generated_at: releaseTimestamp(),
         api_version: config.API_VERSION,
         summary: {
           states: [...new Set(cities.map((c) => c.state_name))].length,
           cities_with_wikidata: cities.filter((c) => c.wikiDataId).length,
-          cities_with_coordinates: cities.filter(
-            (c) => c.latitude && c.longitude
-          ).length,
+          cities_with_coordinates: cities.filter(DataUtils.hasCoordinates).length,
         },
       });
 
@@ -98,6 +98,22 @@ class CitiesGenerator extends BaseGenerator {
         `cities/country/${safeCountryFileName}.json`,
         dataWithMeta
       );
+      const shardSize = config.COUNTRY_CITY_SHARD_SIZE;
+      if (Number.isSafeInteger(shardSize) && shardSize > 0 && optimizedCities.length > shardSize) {
+        const chunks = [];
+        for (let offset = 0; offset < optimizedCities.length; offset += shardSize) {
+          const chunk = optimizedCities.slice(offset, offset + shardSize);
+          const filename = `cities/country/${safeCountryFileName}/${chunks.length + 1}.json`;
+          await FileUtils.writeJSON(filename, DataUtils.addMetadata(chunk, "cities_country_shard", {
+            country_id: parseInt(countryId), country_iso2: country?.iso2,
+          }));
+          chunks.push({ filename, count: chunk.length });
+        }
+        await FileUtils.writeJSON(`cities/country/${safeCountryFileName}/index.json`, DataUtils.addMetadata(chunks, "cities_country_shard_index", {
+          country_id: parseInt(countryId), country_iso2: country?.iso2,
+          city_count: optimizedCities.length, shard_size: shardSize,
+        }));
+      }
     }
     // Completed cities by country generation (no pagination)
   }
@@ -134,8 +150,7 @@ class CitiesGenerator extends BaseGenerator {
         country_code: cities[0].country_code,
         total_cities: optimizedCities.length,
         cities_with_wikidata: cities.filter((c) => c.wikiDataId).length,
-        cities_with_coordinates: cities.filter((c) => c.latitude && c.longitude)
-          .length,
+        cities_with_coordinates: cities.filter(DataUtils.hasCoordinates).length,
       });
 
       // Use state iso3166_2 as filename (lowercased). Fallback to numeric id when iso3166_2 missing.
@@ -169,8 +184,9 @@ class CitiesGenerator extends BaseGenerator {
         citiesWithTimezone,
         "timezone"
       );
+      const { filenames, aliases } = planTimezoneFilenames(Object.keys(citiesByTimezone));
 
-      for (const [timezone, cities] of Object.entries(citiesByTimezone)) {
+      const writeTimezone = async (timezone, cities, safeTimezoneName) => {
         const sortedCities = DataUtils.sortBy(cities, "name");
 
         const optimizedCities = sortedCities.map((city) => ({
@@ -194,12 +210,25 @@ class CitiesGenerator extends BaseGenerator {
           }
         );
 
-        const safeTimezoneName = timezone.replace(/[^a-zA-Z0-9]/g, "-");
         await FileUtils.writeJSON(
           `cities/timezone/${safeTimezoneName}.json`,
           dataWithMeta
         );
+      };
+
+      for (const [timezone, cities] of Object.entries(citiesByTimezone)) {
+        await writeTimezone(timezone, cities, filenames.get(timezone));
       }
+      for (const alias of aliases) {
+        await writeTimezone(alias.timezone, citiesByTimezone[alias.timezone], alias.legacy);
+      }
+
+      const index = Object.keys(citiesByTimezone).sort().map((timezone) => ({
+        timezone,
+        city_count: citiesByTimezone[timezone].length,
+        endpoint: `cities/timezone/${filenames.get(timezone)}.json`,
+      }));
+      await FileUtils.writeJSON("cities/timezones.json", DataUtils.addMetadata(index, "city_timezones_index"));
     }
   }
 
@@ -232,7 +261,7 @@ class CitiesGenerator extends BaseGenerator {
           country_name: country?.name || city.country_name,
           country_iso2: country?.iso2,
           country_iso3: country?.iso3,
-          has_coordinates: !!(city.latitude && city.longitude),
+          has_coordinates: DataUtils.hasCoordinates(city),
           has_wikidata: !!city.wikiDataId,
           has_timezone: !!city.timezone,
         };
@@ -249,7 +278,7 @@ class CitiesGenerator extends BaseGenerator {
           cities_count: batch.length,
           usage: "Access city by ID: data[city_id]",
           api_version: config.API_VERSION,
-          generated_at: new Date().toISOString(),
+          generated_at: releaseTimestamp(),
         },
       });
 
@@ -272,7 +301,7 @@ class CitiesGenerator extends BaseGenerator {
         usage:
           "Use start_id/end_id to find which batch contains a specific city ID",
         api_version: config.API_VERSION,
-        generated_at: new Date().toISOString(),
+        generated_at: releaseTimestamp(),
       },
     });
 

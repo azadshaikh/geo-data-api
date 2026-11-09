@@ -4,15 +4,20 @@ module.exports = {
   OUTPUT_DIR: "./dist/api/v1",
 
   // File settings
-  PRETTY_JSON: false, // Changed to false for performance - can be overridden with --pretty flag
-  OPTIMIZE_JSON: true, // Enable advanced JSON optimizations (remove null/empty values, optimize coordinates)
+  PRETTY_JSON: false, // false: compact, true: pretty, null: choose by threshold
+  OPTIMIZE_JSON: false, // Opt in to removing null and empty-string fields
   COORDINATE_PRECISION: 8, // Decimal places for latitude/longitude
+  COUNTRY_CITY_SHARD_SIZE: 5000, // Large country lists also get chunks and an index
 
   // JSON serialization thresholds
-  PRETTY_JSON_THRESHOLD: 100, // Files smaller than this (in records) will be pretty-printed
+  PRETTY_JSON_THRESHOLD: 100, // Used only when PRETTY_JSON is null
 
   // API version
   API_VERSION: "v1",
+
+  // Timestamp of this repository's checked-in dataset snapshot. Set
+  // SOURCE_DATE_EPOCH for a different reproducible release timestamp.
+  RELEASE_TIMESTAMP: "2025-09-12T09:30:16.000Z",
 
   // CDN settings (for reference)
   CDN_BASE_URL: "https://cdn.jsdelivr.net/npm/geo-data-api@latest/dist/api/v1",
@@ -25,6 +30,7 @@ module.exports = {
   SEARCH_FIELDS: {
     countries: [
       "name",
+      "name_normalized",
       "iso2",
       "iso3",
       "native",
@@ -35,6 +41,7 @@ module.exports = {
     ],
     states: [
       "name",
+      "name_normalized",
       "iso2",
       "country_name",
       "country_code",
@@ -43,6 +50,7 @@ module.exports = {
     ],
     cities: [
       "name",
+      "name_normalized",
       "state_name",
       "country_name",
       "state_code",
@@ -115,8 +123,6 @@ module.exports = {
   GENERATION_OPTIONS: {
     // Batch size for processing large datasets
     batchSize: 100,
-    // Maximum concurrent file operations
-    maxConcurrentFiles: 5,
     // Enable progress logging during generation
     enableProgressLogging: false,
     // Error handling mode: 'strict', 'warn', 'ignore'

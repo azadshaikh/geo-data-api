@@ -38,7 +38,7 @@ const response = await fetch('https://cdn.jsdelivr.net/npm/geo-data-api@latest/d
 const states = await response.json();
 
 states.data.forEach(state => {
-  console.log(`${state.name} (${state.type})`);
+  console.log(`${state.name} (${state.iso3166_2})`);
 });
 ```
 
@@ -54,7 +54,7 @@ cities.data.forEach(city => {
 });
 ```
 
-### 6. Get Individual State Details
+### 5. Get Individual State Details
 
 ```javascript
 // Get detailed information for a specific state
@@ -62,10 +62,12 @@ const response = await fetch('https://cdn.jsdelivr.net/npm/geo-data-api@latest/d
 const state = await response.json();
 
 console.log(state.data.name); // "Badakhshan"
-console.log(state.data.type); // "province"
+console.log(state.data.type);
 console.log(state.data.timezone); // "Asia/Kabul"
 console.log(`${state.data.latitude}, ${state.data.longitude}`);
 ```
+
+### 6. Get a City by ID
 
 ```javascript
 // Method 1: Direct batch index lookup (recommended)
@@ -86,13 +88,14 @@ async function getCity(cityId) {
   const batchData = await batchResponse.json();
 
   // Step 4: Extract the city data
+  if (!batchData.data[cityId]) throw new Error('City not found: ' + cityId);
   return batchData.data[cityId];
 }
 
 // Usage examples
 const bhopal = await getCity(57995); // Bhopal, India
-const tokyo = await getCity(18514);  // Tokyo, Japan
-const london = await getCity(3435);  // London, UK
+const tokyo = await getCity(64500);  // Tokyo, Japan
+const london = await getCity(50388); // London, UK
 
 console.log(bhopal.name); // "Bhopal"
 console.log(`${bhopal.latitude}, ${bhopal.longitude}`);
@@ -127,6 +130,7 @@ class CityAPI {
 
     if (this.batchCache.has(batch.filename)) {
       const cachedBatch = this.batchCache.get(batch.filename);
+      if (!cachedBatch[cityId]) throw new Error('City not found: ' + cityId);
       return cachedBatch[cityId];
     }
 
@@ -134,6 +138,7 @@ class CityAPI {
     const batchData = await response.json();
 
     this.batchCache.set(batch.filename, batchData.data);
+    if (!batchData.data[cityId]) throw new Error('City not found: ' + cityId);
     return batchData.data[cityId];
   }
 
@@ -178,26 +183,25 @@ class CityAPI {
 const cityAPI = new CityAPI('https://cdn.jsdelivr.net/npm/geo-data-api@latest/dist/api/v1');
 
 // Get single city
-const kabul = await cityAPI.getCity(52);
+const kabul = await cityAPI.getCity(79);
 console.log(kabul.name); // "Kabul"
 
 // Get multiple cities efficiently
-const cities = await cityAPI.getCities([57995, 18514, 3435]);
-console.log(cities[57995].name, cities[18514].name);
+const cities = await cityAPI.getCities([57995, 64500, 50388]);
+console.log(cities[57995].name, cities[64500].name);
 ```
 
 ### 7. Search and Filter
 
 ```javascript
-// Download search index for client-side filtering
-const searchResponse = await fetch('https://cdn.jsdelivr.net/npm/geo-data-api@latest/dist/api/v1/search/cities.json');
+// Download only the US city-search shard for client-side filtering.
+// Use /search/cities/index.json to discover available country shards.
+const searchResponse = await fetch('https://cdn.jsdelivr.net/npm/geo-data-api@latest/dist/api/v1/search/cities/country/us.json');
+if (!searchResponse.ok) throw new Error(`Search shard request failed: ${searchResponse.status}`);
 const searchData = await searchResponse.json();
 
 // Filter cities with WikiData
 const citiesWithWikiData = searchData.data.filter(city => city.wikiDataId);
-
-// Filter by country
-const usaCities = searchData.data.filter(city => city.country_code === 'US');
 
 // Filter by name (case-insensitive)
 const newYorkCities = searchData.data.filter(city =>

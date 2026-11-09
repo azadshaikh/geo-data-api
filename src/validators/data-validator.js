@@ -1,190 +1,70 @@
-const config = require("../config");
-
 class DataValidator {
   constructor(countries, states, cities) {
-    this.countries = countries;
-    this.states = states;
-    this.cities = cities;
+    this.datasets = { countries, states, cities };
   }
 
   validateDataStructure() {
-    console.log("Validating data structure...");
-
-    // Validate countries structure
-    if (this.countries.length > 0) {
-      const sampleCountry = this.countries[0];
-      const requiredFields = ["id", "name", "iso2", "iso3"];
-      const missingFields = requiredFields.filter(
-        (field) => !(field in sampleCountry)
-      );
-
-      if (missingFields.length > 0) {
-        throw new Error(
-          `Countries data missing required fields: ${missingFields.join(", ")}`
-        );
-      }
-
-      // Log available country fields for reference
-      const availableFields = Object.keys(sampleCountry);
-      console.log(
-        `✓ Countries data structure validated (${availableFields.length} fields available)`
-      );
-      console.log(
-        `  Available fields: ${availableFields.slice(0, 10).join(", ")}${availableFields.length > 10 ? "..." : ""}`
-      );
+    const { states, cities } = this.datasets;
+    const report = { counts: {}, issues: [] };
+    const issues = new Map();
+    const recordIssue = (code, message) => {
+      if (!issues.has(code)) issues.set(code, { code, count: 0, samples: [] });
+      const issue = issues.get(code);
+      issue.count++;
+      if (issue.samples.length < 3) issue.samples.push(message);
+    };
+    const required = {
+      countries: ["id", "name", "iso2", "iso3"],
+      states: ["id", "name", "country_id", "country_code", "country_name"],
+      cities: ["id", "name", "state_id", "state_name", "country_id", "country_name"],
+    };
+    const ids = {};
+    for (const [kind, records] of Object.entries(this.datasets)) {
+      if (!Array.isArray(records)) throw new Error(`${kind} must be an array`);
+      report.counts[kind] = records.length;
+      ids[kind] = new Map();
+      const codes = { iso2: new Set(), iso3: new Set() };
+      records.forEach((record, index) => {
+        if (!record || typeof record !== "object" || Array.isArray(record)) {
+          recordIssue(`${kind}.record`, `${kind}[${index}] must be an object`);
+          return;
+        }
+        for (const field of required[kind]) {
+          const value = record[field];
+          if (field === "id" || field.endsWith("_id")) {
+            if (!Number.isSafeInteger(value) || value < 0) recordIssue(`${kind}.${field}`, `${kind}[${index}].${field} must be a non-negative integer`);
+          } else if (typeof value !== "string" || !value.trim()) {
+            recordIssue(`${kind}.${field}`, `${kind}[${index}].${field} must be a non-empty string`);
+          }
+        }
+        if (ids[kind].has(record.id)) recordIssue(`${kind}.duplicate_id`, `duplicate ${kind} id ${record.id}`);
+        else ids[kind].set(record.id, record);
+        if (kind === "countries") {
+          for (const field of ["iso2", "iso3"]) {
+            if (typeof record[field] !== "string") continue;
+            const code = record[field].toUpperCase();
+            if (codes[field].has(code)) recordIssue(`countries.duplicate_${field}`, `duplicate countries ${field} ${record[field]}`);
+            else codes[field].add(code);
+          }
+        }
+      });
     }
-
-    // Validate states structure - Updated for your data structure
-    if (this.states.length > 0) {
-      const sampleState = this.states[0];
-      const requiredFields = [
-        "id",
-        "name",
-        "country_id",
-        "country_code",
-        "country_name",
-      ];
-      const missingFields = requiredFields.filter(
-        (field) => !(field in sampleState)
-      );
-
-      if (missingFields.length > 0) {
-        throw new Error(
-          `States data missing required fields: ${missingFields.join(", ")}`
-        );
-      }
-
-      // Log available state fields for reference
-      const availableFields = Object.keys(sampleState);
-      console.log(
-        `✓ States data structure validated (${availableFields.length} fields available)`
-      );
-      console.log(`  Available fields: ${availableFields.join(", ")}`);
-
-      // Check for enhanced fields
-      const enhancedFields = [
-        "iso2",
-        "iso3166_2",
-        "type",
-        "timezone",
-        "latitude",
-        "longitude",
-      ];
-      const presentEnhanced = enhancedFields.filter(
-        (field) => field in sampleState
-      );
-      if (presentEnhanced.length > 0) {
-        console.log(
-          `  Enhanced fields detected: ${presentEnhanced.join(", ")}`
-        );
-      }
+    for (const state of states.filter((item) => item && typeof item === "object")) {
+      if (!ids.countries.has(state.country_id)) recordIssue("states.orphan_country", `state ${state.id} references missing country_id ${state.country_id}`);
     }
-
-    // Validate cities structure - Updated for your data structure
-    if (this.cities.length > 0) {
-      const sampleCity = this.cities[0];
-      const requiredFields = [
-        "id",
-        "name",
-        "state_id",
-        "state_name",
-        "country_id",
-        "country_name",
-      ];
-      const missingFields = requiredFields.filter(
-        (field) => !(field in sampleCity)
-      );
-
-      if (missingFields.length > 0) {
-        throw new Error(
-          `Cities data missing required fields: ${missingFields.join(", ")}`
-        );
-      }
-
-      // Log available city fields for reference
-      const availableFields = Object.keys(sampleCity);
-      console.log(
-        `✓ Cities data structure validated (${availableFields.length} fields available)`
-      );
-      console.log(`  Available fields: ${availableFields.join(", ")}`);
-
-      // Check for enhanced fields
-      const enhancedFields = [
-        "state_code",
-        "country_code",
-        "wikiDataId",
-        "timezone",
-        "latitude",
-        "longitude",
-      ];
-      const presentEnhanced = enhancedFields.filter(
-        (field) => field in sampleCity
-      );
-      if (presentEnhanced.length > 0) {
-        console.log(
-          `  Enhanced fields detected: ${presentEnhanced.join(", ")}`
-        );
-      }
+    for (const city of cities.filter((item) => item && typeof item === "object")) {
+      if (!ids.countries.has(city.country_id)) recordIssue("cities.orphan_country", `city ${city.id} references missing country_id ${city.country_id}`);
+      const state = ids.states.get(city.state_id);
+      if (!state) recordIssue("cities.orphan_state", `city ${city.id} references missing state_id ${city.state_id}`);
+      else if (state.country_id !== city.country_id) recordIssue("cities.country_mismatch", `city ${city.id} and state ${state.id} reference different countries`);
     }
-
-    // Validate data relationships
-    this.validateDataRelationships();
-  }
-
-  validateDataRelationships() {
-    console.log("Validating data relationships...");
-
-    // Create lookup maps
-    const countryIds = new Set(this.countries.map((c) => c.id));
-    const stateIds = new Set(this.states.map((s) => s.id));
-
-    // Validate state-country relationships
-    const invalidStateCountries = this.states.filter(
-      (state) => !countryIds.has(state.country_id)
-    );
-    if (invalidStateCountries.length > 0) {
-      console.warn(
-        `⚠️  Found ${invalidStateCountries.length} states with invalid country_id references`
-      );
-      console.warn(
-        `  Sample invalid states: ${invalidStateCountries
-          .slice(0, 3)
-          .map((s) => `${s.name} (country_id: ${s.country_id})`)
-          .join(", ")}`
-      );
-    } else {
-      console.log("✓ All states have valid country references");
+    report.issues = [...issues.values()];
+    if (report.issues.length) {
+      const error = new Error(`Source validation failed: ${report.issues.map((issue) => `${issue.count} ${issue.samples[0]}`).join("; ")}`);
+      error.report = report;
+      throw error;
     }
-
-    // Validate city-state relationships
-    const invalidCityStates = this.cities.filter(
-      (city) => !stateIds.has(city.state_id)
-    );
-    if (invalidCityStates.length > 0) {
-      console.warn(
-        `⚠️  Found ${invalidCityStates.length} cities with invalid state_id references`
-      );
-      console.warn(
-        `  Sample invalid cities: ${invalidCityStates
-          .slice(0, 3)
-          .map((c) => `${c.name} (state_id: ${c.state_id})`)
-          .join(", ")}`
-      );
-    } else {
-      console.log("✓ All cities have valid state references");
-    }
-
-    // Validate city-country relationships
-    const invalidCityCountries = this.cities.filter(
-      (city) => !countryIds.has(city.country_id)
-    );
-    if (invalidCityCountries.length > 0) {
-      console.warn(
-        `⚠️  Found ${invalidCityCountries.length} cities with invalid country_id references`
-      );
-    } else {
-      console.log("✓ All cities have valid country references");
-    }
+    return report;
   }
 }
 
