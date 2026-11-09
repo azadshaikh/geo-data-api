@@ -8,10 +8,11 @@ This folder contains the project's Markdown documentation. Use this page to quic
 - [Quick Start Guide](QUICK_START.md) — Minimal setup and examples to get started.
 - [Endpoints Reference](ENDPOINTS.md) — List of available endpoints and parameters.
 - [Data Structure](DATA_STRUCTURE.md) — Description of the JSON data layout used by the project.
+- [Deploy with Dokploy](DOKPLOY.md) — Host the website, demo and API using Docker Compose.
 
 ## Regenerating the docs
 
-Documentation is generated from templates in `src/generators/docs/` (see `markdown-generator.js`). To update these files, run the project's documentation generator using Node.js.
+The API reference guides are generated from templates in `src/generators/docs/` (see `markdown-generator.js`). To update those guides, run the project's documentation generator using Node.js. The Dokploy guide is maintained directly in this folder.
 
 ## Contributing
 

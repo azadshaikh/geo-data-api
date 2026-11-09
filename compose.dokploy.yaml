@@ -1,0 +1,9 @@
+# Dokploy adds the domain's Traefik labels and network when you deploy.
+services:
+  geo-data-api:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    expose:
+      - "3000"
+    restart: unless-stopped

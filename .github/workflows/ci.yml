@@ -44,6 +44,7 @@ jobs:
             fs.writeFileSync(`db/${name}.json`, JSON.stringify([item]));
           NODE
       - run: docker compose config --quiet
+      - run: docker compose -f compose.dokploy.yaml config --quiet
       - run: docker build -t geo-data-api:ci .
       - name: Check the running container
         run: |

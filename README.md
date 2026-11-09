@@ -105,7 +105,7 @@ docker compose up --build -d
 
 Compose exposes the service on `127.0.0.1:3000` by default. Set `GEO_DATA_HOST_PORT` to choose a different host port; the container still listens on port **3000**. Stop it with `docker compose down`. The image builds the dataset and serves the website and API as a non-root user. Rebuild the image after changing the source data.
 
-For Dokploy, create an application from this repository using the Dockerfile and context `.`, then point its domain at container port **3000**. Configure the domain and HTTPS in Dokploy.
+For Dokploy, use the [Dokploy Compose file](compose.dokploy.yaml), select the `geo-data-api` service and point its domain at container port **3000**. See the [step-by-step Dokploy deployment guide](docs/DOKPLOY.md) for DNS, HTTPS, updates and troubleshooting.
 
 The included server and deployment headers require revalidation for mutable `/api/v2/` URLs. For immutable CDN caching, use an exact published package version. `npm run build:compress` can generate `.gz` and `.br` JSON siblings; a host must be configured to negotiate those files because the included Node server does not select them automatically.
 
