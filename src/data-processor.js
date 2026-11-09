@@ -22,7 +22,11 @@ const { buildFingerprint } = require("./utils/build-fingerprint");
 
 class DataProcessor {
   constructor(options = {}) {
-    this.options = options;
+    this.options = {
+      ...options,
+      omitGlobalCityIndex:
+        options.omitGlobalCityIndex ?? (process.env.CF_PAGES === "1"),
+    };
     this.countries = [];
     this.states = [];
     this.cities = [];
@@ -110,12 +114,21 @@ class DataProcessor {
         FileUtils.assertNoOutputCollisions();
       });
       await this.performanceMonitor.measure("search_generation", async () => {
-        await new SearchGenerator(this.countries, this.states, this.cities).generate();
+        await new SearchGenerator(this.countries, this.states, this.cities, {
+          includeGlobalCityIndex: !this.options.omitGlobalCityIndex,
+        }).generate();
         FileUtils.assertNoOutputCollisions();
       });
       await this.performanceMonitor.measure("api_documentation_generation", async () => {
-        await new APIInfoGenerator(this.countries, this.states, this.cities, this.dataAnalysis).generate();
-        await new APIDocumentationGenerator(this.countries, this.states, this.cities, this.dataAnalysis).generate();
+        const searchOptions = {
+          includeGlobalCityIndex: !this.options.omitGlobalCityIndex,
+        };
+        await new APIInfoGenerator(
+          this.countries, this.states, this.cities, this.dataAnalysis, searchOptions,
+        ).generate();
+        await new APIDocumentationGenerator(
+          this.countries, this.states, this.cities, this.dataAnalysis, searchOptions,
+        ).generate();
         FileUtils.assertNoOutputCollisions();
       });
 

@@ -127,7 +127,7 @@ const query = 'kochi'.toLowerCase().normalize('NFD').replace(/\\p{M}/gu, '');
 const matches = data.filter(city => city.name_normalized.includes(query));
 \`\`\`
 
-Discover country shards via \`/search/cities/index.json\`. Each shard covers one country; the complete \`/search/cities.json\` index remains available for global searches.
+Discover country shards via \`/search/cities/index.json\`. Each shard covers one country. Ordinary builds include the complete \`/search/cities.json\` index; Cloudflare Pages builds omit that file to meet the 25 MiB asset limit. The shards together still cover the complete dataset, and \`meta.global_index_available\` indicates whether the full file is present.
 
 Search normalization removes combining marks after Unicode NFD lowercasing; it is not full transliteration. \`/search/combined-sample.json\` (also available as \`/search/combined.json\`) contains at most 1,000 states and 5,000 cities; its metadata exposes the counts and completeness.
 

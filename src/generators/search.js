@@ -14,11 +14,17 @@ const nameNormalization =
   "name_normalized uses lowercase Unicode NFD and removes combining marks (diacritic folding, not full transliteration)";
 
 class SearchGenerator extends BaseGenerator {
-  constructor(countries, states, cities) {
+  constructor(
+    countries,
+    states,
+    cities,
+    { includeGlobalCityIndex = true } = {},
+  ) {
     super(countries);
     this.countries = countries;
     this.states = states;
     this.cities = cities;
+    this.includeGlobalCityIndex = includeGlobalCityIndex;
   }
 
   async generate() {
@@ -30,7 +36,9 @@ class SearchGenerator extends BaseGenerator {
     await this.generateCombinedSearch();
 
     console.log("✓ Generated search endpoints");
-    return { filesGenerated: 6 + shardCount };
+    return {
+      filesGenerated: 5 + shardCount + Number(this.includeGlobalCityIndex),
+    };
   }
 
   async generateCountriesSearch() {
@@ -111,7 +119,9 @@ class SearchGenerator extends BaseGenerator {
       total_cities: searchData.length,
     });
 
-    await FileUtils.writeJSON("search/cities.json", dataWithMeta);
+    if (this.includeGlobalCityIndex) {
+      await FileUtils.writeJSON("search/cities.json", dataWithMeta);
+    }
     return this.generateCitySearchShards(searchData);
   }
 
@@ -176,8 +186,10 @@ class SearchGenerator extends BaseGenerator {
         total_cities: searchData.length,
         searchable_fields: config.SEARCH_FIELDS.cities,
         name_normalization: nameNormalization,
-        usage:
-          "Fetch a country shard by its filename; use search/cities.json for the full global index",
+        global_index_available: this.includeGlobalCityIndex,
+        usage: this.includeGlobalCityIndex
+          ? "Fetch a country shard by its filename; use search/cities.json for the full global index"
+          : "Fetch country shards by their filenames; together they contain the complete global index",
       }),
     );
     return index.length;

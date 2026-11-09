@@ -11,6 +11,7 @@ async function buildFingerprint({ datasetVersion, config, options, timestamp, ge
   hash.update(JSON.stringify({
     datasetVersion, settings, timestamp, generatorVersion,
     compression: { enabled: !!options.compress, threshold: options.compressionThreshold ?? 1024 },
+    omitGlobalCityIndex: !!options.omitGlobalCityIndex,
     runtime: {
       node: process.versions.node, zlib: process.versions.zlib, brotli: process.versions.brotli,
       icu: process.versions.icu, locale: Intl.DateTimeFormat().resolvedOptions().locale,

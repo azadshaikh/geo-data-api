@@ -355,34 +355,76 @@ function verifyOutput(
     return { outputDir: root, filesChecked, errors };
   }
   scan(root);
-  for (const name of REQUIRED_FILES) read(name);
+  const shardIndex = read("search/cities/index.json");
+  const globalIndexFlag = shardIndex?.meta?.global_index_available;
+  if (globalIndexFlag !== undefined && typeof globalIndexFlag !== "boolean") {
+    error("search/cities/index.json: global_index_available must be a boolean");
+  }
+  const hasGlobalCityIndex = globalIndexFlag !== false;
+  if (!hasGlobalCityIndex && files.has("search/cities.json")) {
+    error(
+      "search/cities/index.json: global index is present but marked unavailable",
+    );
+  }
+  for (const name of REQUIRED_FILES) {
+    if (name !== "search/cities.json" || hasGlobalCityIndex) read(name);
+  }
 
   const info = read("api-info.json");
   const documentation = read("documentation.json");
   for (const [group, endpoints] of Object.entries(INFO_ENDPOINTS)) {
     for (const [key, value] of Object.entries(endpoints)) {
+      if (!hasGlobalCityIndex && group === "search" && key === "cities")
+        continue;
       if (info?.endpoints?.[group]?.[key] !== value)
         error(`api-info.json endpoints.${group}.${key}: expected ${value}`);
     }
   }
   for (const [group, endpoints] of Object.entries(DOCUMENTATION_ENDPOINTS)) {
     for (const endpoint of endpoints) {
+      if (!hasGlobalCityIndex && endpoint === "GET /search/cities.json")
+        continue;
       if (!Object.hasOwn(documentation?.endpoints?.[group] || {}, endpoint))
         error(`documentation.json: missing ${endpoint}`);
     }
   }
+  if (!hasGlobalCityIndex) {
+    if (Object.hasOwn(info?.endpoints?.search || {}, "cities"))
+      error(
+        "api-info.json: unavailable global city index must not be advertised",
+      );
+    if (
+      Object.hasOwn(
+        documentation?.endpoints?.search || {},
+        "GET /search/cities.json",
+      )
+    )
+      error(
+        "documentation.json: unavailable global city index must not be advertised",
+      );
+  }
 
   const countryList = read("countries.json");
   const stateList = read("states/all.json");
-  const globalCities = read("search/cities.json");
+  const globalCities = hasGlobalCityIndex ? read("search/cities.json") : null;
   const countries = idMap(
     array("countries.json", countryList),
     "countries.json",
   );
   const states = idMap(array("states/all.json", stateList), "states/all.json");
+  const shardEntries = array("search/cities/index.json", shardIndex);
+  const searchRows = hasGlobalCityIndex
+    ? array("search/cities.json", globalCities)
+    : shardEntries.flatMap((entry) => {
+        if (!isObject(entry)) return [];
+        return array(
+          entry.filename,
+          read(entry.filename, "search/cities/index.json"),
+        );
+      });
   const citySearch = idMap(
-    array("search/cities.json", globalCities),
-    "search/cities.json",
+    searchRows,
+    hasGlobalCityIndex ? "search/cities.json" : "country search shards",
   );
   checkCount(
     "api-info.json statistics.total_countries",
@@ -645,8 +687,33 @@ function verifyOutput(
   compareIds(
     citySearch,
     batchCities,
-    "City batch coverage against search/cities.json",
+    "City batch coverage against search index",
   );
+  if (!hasGlobalCityIndex) {
+    for (const [id, city] of citySearch) {
+      const batch = batchCities.get(id);
+      if (!batch) continue;
+      for (const field of [
+        "name",
+        "state_id",
+        "state_code",
+        "country_id",
+        "country_code",
+        "wikiDataId",
+      ]) {
+        if (!isDeepStrictEqual(city[field], batch[field]))
+          error(`search shard city ID ${id} ${field} differs from city batch`);
+      }
+      const normalized =
+        typeof batch.name === "string"
+          ? batch.name.toLowerCase().normalize("NFD").replace(/\p{M}/gu, "")
+          : "";
+      if (city.name_normalized !== normalized)
+        error(
+          `search shard city ID ${id} name_normalized differs from city batch`,
+        );
+    }
+  }
 
   function checkCityGroups(groups, kind) {
     for (const [id, entries] of groups) {
@@ -754,8 +821,6 @@ function verifyOutput(
     }
   }
 
-  const shardIndex = read("search/cities/index.json");
-  const shardEntries = array("search/cities/index.json", shardIndex);
   const shardCities = new Map();
   const shardCodes = new Set();
   let shardCount = 0;

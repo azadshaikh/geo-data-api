@@ -4,11 +4,18 @@ const DataUtils = require("../../utils/data-utils");
 const { releaseTimestamp } = require("../../utils/build-context");
 
 class APIDocumentationGenerator {
-  constructor(countries, states, cities, dataAnalysis) {
+  constructor(
+    countries,
+    states,
+    cities,
+    dataAnalysis,
+    { includeGlobalCityIndex = true } = {},
+  ) {
     this.countries = countries;
     this.states = states;
     this.cities = cities;
     this.dataAnalysis = dataAnalysis;
+    this.includeGlobalCityIndex = includeGlobalCityIndex;
   }
 
   async generate() {
@@ -203,16 +210,21 @@ class APIDocumentationGenerator {
           searchable_fields: config.SEARCH_FIELDS.states,
           example: `${config.CDN_BASE_URL}/search/states.json`,
         },
-        "GET /search/cities.json": {
-          description: "Searchable cities index for client-side filtering",
-          searchable_fields: config.SEARCH_FIELDS.cities,
-          warning:
-            "Large global file - prefer country shards when a country is known",
-          example: `${config.CDN_BASE_URL}/search/cities.json`,
-        },
+        ...(this.includeGlobalCityIndex
+          ? {
+              "GET /search/cities.json": {
+                description: "Searchable cities index for client-side filtering",
+                searchable_fields: config.SEARCH_FIELDS.cities,
+                warning:
+                  "Large global file - prefer country shards when a country is known",
+                example: `${config.CDN_BASE_URL}/search/cities.json`,
+              },
+            }
+          : {}),
         "GET /search/cities/index.json": {
           description:
             "Manifest of country city-search shards and their relative filenames",
+          note: "meta.global_index_available indicates whether search/cities.json is present; all country shards together cover every city",
           example: `${config.CDN_BASE_URL}/search/cities/index.json`,
         },
         "GET /search/cities/country/{iso2}.json": {

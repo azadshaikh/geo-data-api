@@ -334,7 +334,10 @@ export type CitySearchShardResponse = DataResponse<
 >;
 export type CitySearchShardIndexResponse = DataResponse<
   CitySearchShardIndexItem[],
-  SearchMeta
+  SearchMeta & {
+    /** Whether search/cities.json is present; absent in older builds. */
+    global_index_available?: boolean;
+  }
 >;
 export type CombinedSearchResponse = DataResponse<CombinedData, CombinedMeta>;
 export type CityBatchIndexResponse = DataResponse<

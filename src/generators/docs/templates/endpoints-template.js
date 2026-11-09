@@ -262,7 +262,7 @@ Searchable states index for client-side filtering.
 
 ### GET /search/cities.json
 
-Complete global city search index for client-side filtering. This endpoint remains available for existing clients.
+Complete global city search index for client-side filtering. Ordinary builds retain this endpoint; Cloudflare Pages builds omit it to meet the 25 MiB asset limit. For complete global search on Cloudflare, use all country shards listed by \`search/cities/index.json\`.
 
 **Searchable Fields**: ${config.SEARCH_FIELDS.cities.join(", ")}
 
@@ -272,7 +272,7 @@ Complete global city search index for client-side filtering. This endpoint remai
 
 ### GET /search/cities/index.json
 
-Manifest of available city-search shards. Each entry includes a country code, record count, and \`filename\` relative to the API base URL.
+Manifest of available city-search shards. Each entry includes a country code, record count, and \`filename\` relative to the API base URL. \`meta.global_index_available\` indicates whether \`search/cities.json\` is present.
 
 **Example**: \`${config.CDN_BASE_URL}/search/cities/index.json\`
 

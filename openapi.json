@@ -639,7 +639,7 @@
       "get": {
         "operationId": "getCitySearch",
         "summary": "Get global city search index",
-        "description": "Complete global city index. Use country shards when a country is known.",
+        "description": "Complete global city index on ordinary builds. Cloudflare Pages builds omit this file; use all country shards for complete global search.",
         "responses": {
           "200": {
             "description": "Generated JSON file",

@@ -63,7 +63,7 @@ dist/api/v1/
 └── search/
     ├── countries.json            # searchable country index
     ├── states.json               # searchable state index
-    ├── cities.json               # complete global city index
+    ├── cities.json               # complete global city index (except on Cloudflare Pages)
     └── cities/
         ├── index.json            # country shard manifest
         └── country/{iso2}.json   # searchable cities in one country
@@ -106,13 +106,15 @@ City details are retrieved through `cities/batches.json` and its referenced batc
 
 - GET /search/countries.json
 - GET /search/states.json
-- GET /search/cities.json (complete global index)
+- GET /search/cities.json (complete global index; omitted from Cloudflare Pages builds)
 - GET /search/cities/index.json (country shard manifest)
 - GET /search/cities/country/{iso2}.json (lowercase country code)
 - GET /search/combined-sample.json (at most the first 1,000 states and 5,000 cities)
 - GET /search/combined.json (compatibility alias for the same sample)
 
 Search responses include `name_normalized`: lowercase Unicode NFD text with combining marks removed. Normalize the query in the same way for searches such as `Sao Paulo` matching `São Paulo`. This folds diacritics but does not transliterate every letter. The combined sample's `meta.counts` and `meta.complete` report what it contains; use the complete entity indexes or country shards when all results are required.
+
+Cloudflare Pages builds omit the large `search/cities.json` file to meet the 25 MiB per-file limit. All cities remain available through the country shards listed in `search/cities/index.json`; its `meta.global_index_available` field reports whether the full file is present. Ordinary builds continue to include the full index.
 
 ## Configuration
 
@@ -211,7 +213,8 @@ Performance tips:
 - Enable gzip/Brotli compression on your CDN. Alternatively, `npm run build:compress` writes deterministic `.gz` and `.br` siblings for JSON files at least 1 KiB; `--compression-threshold` changes that threshold. These siblings do not provide content negotiation by themselves: configure the host to select them using `Accept-Encoding` and return the matching `Content-Encoding` and `Vary` headers.
 - `_headers` (copied to `dist/`) provides CORS and conservative cache settings for Netlify/Cloudflare Pages; `vercel.json` provides equivalent settings for Vercel. Use immutable caching only with versioned URLs.
 - For S3, `npm run deploy:s3 -- s3://BUCKET/api/v1` syncs JSON and optional encoded siblings with content metadata and no `--delete`. Configure bucket CORS and CDN content negotiation separately. S3 sync does not update metadata on unchanged objects automatically.
-- Use `/search/cities/country/{iso2}.json` for country-specific searches. Use the manifest to discover available shards, or the full `/search/cities.json` index for worldwide searches.
+- Use `/search/cities/country/{iso2}.json` for country-specific searches. Use the shard index to discover available files; fetch all shards for worldwide searches, or use `/search/cities.json` when the host provides it.
+- Cloudflare Pages automatically sets `CF_PAGES=1`, so its existing `npm run build` command produces the shard-only variant and checks every deployed asset against the 25 MiB limit. To check another output directory, run `node scripts/check-cloudflare-assets.js path/to/dist`.
 
 ## Usage examples
 
@@ -265,7 +268,7 @@ const query = "Kochi".toLowerCase().normalize("NFD").replace(/\p{M}/gu, "");
 const matches = data.filter((city) => city.name_normalized.includes(query));
 ```
 
-The shard manifest (`/search/cities/index.json`) lists available countries and relative filenames. A country without cities has no shard; records with no usable country code appear in `unknown.json` when present. The complete global index remains available for existing clients.
+The shard manifest (`/search/cities/index.json`) lists available countries and relative filenames. A country without cities has no shard; records with no usable country code appear in `unknown.json` when present. The complete global index remains available in ordinary builds; Cloudflare Pages builds use shards only.
 
 ## Reproducible builds
 

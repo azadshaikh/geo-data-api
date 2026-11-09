@@ -12,9 +12,9 @@
   },
   "scripts": {
     "test": "node --test --test-concurrency=1 \"test/*.test.js\"",
-    "build": "node src/data-processor.js && npm run build:demo",
+    "build": "node src/data-processor.js && npm run build:demo && node scripts/check-cloudflare-assets.js --if-cloudflare",
     "build:pretty": "node src/data-processor.js --pretty",
-    "build:compress": "node src/data-processor.js --compress && npm run build:demo",
+    "build:compress": "node src/data-processor.js --compress && npm run build:demo && node scripts/check-cloudflare-assets.js --if-cloudflare",
     "build:docs": "node src/docs-updater.js",
     "build:demo": "node src/demo-copier.js",
     "verify": "node scripts/verify.js",

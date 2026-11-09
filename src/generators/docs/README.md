@@ -79,7 +79,7 @@ console.log(data); // Array of cities
 
 - `GET /search/countries.json` - Searchable countries index
 - `GET /search/states.json` - Searchable states index
-- `GET /search/cities.json` - Complete global city-search index
+- `GET /search/cities.json` - Complete global city-search index (omitted on Cloudflare Pages)
 - `GET /search/cities/index.json` - Country shard manifest
 - `GET /search/cities/country/{iso2}.json` - City-search data for one country
 - `GET /search/combined-sample.json` - Sample limited to the first 1,000 states and 5,000 cities; `/search/combined.json` is an identical compatibility alias

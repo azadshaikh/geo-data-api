@@ -4,11 +4,18 @@ const DataUtils = require("../../utils/data-utils");
 const { releaseTimestamp } = require("../../utils/build-context");
 
 class APIInfoGenerator {
-  constructor(countries, states, cities, dataAnalysis) {
+  constructor(
+    countries,
+    states,
+    cities,
+    dataAnalysis,
+    { includeGlobalCityIndex = true } = {},
+  ) {
     this.countries = countries;
     this.states = states;
     this.cities = cities;
     this.dataAnalysis = dataAnalysis;
+    this.includeGlobalCityIndex = includeGlobalCityIndex;
   }
 
   async generate() {
@@ -66,7 +73,7 @@ class APIInfoGenerator {
         search: {
           countries: "search/countries.json",
           states: "search/states.json",
-          cities: "search/cities.json",
+          ...(this.includeGlobalCityIndex ? { cities: "search/cities.json" } : {}),
           city_shards_index: "search/cities/index.json",
           cities_by_country: "search/cities/country/{iso2}.json",
           combined_sample: "search/combined-sample.json",
@@ -85,6 +92,9 @@ class APIInfoGenerator {
         "Search countries": `${config.CDN_BASE_URL}/search/countries.json`,
       },
       notes: {
+        city_search: this.includeGlobalCityIndex
+          ? "The full city search index and country shards are available"
+          : "The global city search file is omitted; country shards together cover all cities",
         pagination:
           "Complete country and state lists are available; large country city lists also have optional indexed chunks",
         coordinates: "Geographic coordinates available for most locations",

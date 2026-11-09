@@ -1187,7 +1187,13 @@
           }
         },
         "meta": {
-          "$ref": "#/$defs/SearchMeta"
+          "allOf": [
+            { "$ref": "#/$defs/SearchMeta" },
+            {
+              "type": "object",
+              "properties": { "global_index_available": { "type": "boolean" } }
+            }
+          ]
         }
       },
       "required": ["data", "meta"]

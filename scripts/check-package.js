@@ -23,6 +23,7 @@ for (const required of [
   "src/utils/path-safety.js",
   "src/utils/build-fingerprint.js",
   "scripts/verify.js",
+  "scripts/check-cloudflare-assets.js",
   "types/index.d.ts",
   "schemas/geo-data.schema.json",
   "openapi.json",
