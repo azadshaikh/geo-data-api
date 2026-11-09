@@ -43,8 +43,8 @@ jobs:
           for (const [name, item] of Object.entries({ countries: country, states: state, cities: city }))
             fs.writeFileSync(`db/${name}.json`, JSON.stringify([item]));
           NODE
-      - run: docker compose config --quiet
-      - run: docker compose -f compose.dokploy.yaml config --quiet
+      - run: docker compose -f compose.yaml config --quiet
+      - run: docker compose -f docker-compose.yml config --quiet
       - run: docker build -t geo-data-api:ci .
       - name: Check the running container
         run: |

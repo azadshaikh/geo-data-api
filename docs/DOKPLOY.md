@@ -35,13 +35,13 @@ The `db/` source files are already in the repository. You do not need to run
    | --- | --- |
    | Repository | `https://github.com/azadshaikh/geo-data-api` |
    | Branch | `main`, or the branch containing the desired release |
-   | Compose path | `./compose.dokploy.yaml` |
+   | Compose path | `./docker-compose.yml` |
 
 4. Save the configuration. Leave the environment variables empty: the image
    already sets the host and port. Use the repository as the source so Docker
    can access the Dockerfile and dataset when it builds.
 
-The supplied [Compose file](../compose.dokploy.yaml) is:
+The supplied [Compose file](../docker-compose.yml) is:
 
 ```yaml
 services:
@@ -57,7 +57,7 @@ services:
 It does not publish a host port or contain domain-specific Traefik labels.
 Dokploy adds the routing labels and network for the configured domain during
 deployment. The separate root `compose.yaml` is for local preview and publishes
-port 3000 on localhost; use `compose.dokploy.yaml` in Dokploy.
+port 3000 on localhost; use `docker-compose.yml` in Dokploy.
 
 ## 2. Add a domain and HTTPS
 
@@ -115,9 +115,10 @@ an earlier version, select the earlier branch or commit supported by your Git
 provider configuration and deploy it again. Avoid mounting over `/app/dist`:
 the generated data is already inside the image and a mount can hide it.
 
-For a local preview instead of Dokploy, run `docker compose up --build -d` from
-the repository root and open `http://127.0.0.1:3000`. Use `docker compose down`
-to stop the local preview.
+For a local preview instead of Dokploy, run
+`docker compose -f compose.yaml up --build -d` from the repository root and
+open `http://127.0.0.1:3000`. Use `docker compose -f compose.yaml down` to stop
+the local preview.
 
 ## Troubleshooting
 
