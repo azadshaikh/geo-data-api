@@ -23,7 +23,7 @@ All routes below are relative to `api/v2/`; path codes are lowercase, while ISO 
 | `search/cities/index.json` | Complete country index referencing the country city-page indexes. |
 | `api-info.json`, `documentation.json`, `manifest.json`, `build-report.json` | Discovery, contract, checksums, and source-validation report. |
 
-Existing region, state-type, and timezone groupings remain available under v2 where their source data exists. The old city batches, combined sample, global city search file, and Cloudflare-specific output profile are not emitted. City search filters prebuilt country/state data in the client; arbitrary query strings are not server-side search. Pages have at most 5,000 records by default; all country indexes have the same shape, including small and empty countries.
+Existing region, state-type, and timezone groupings remain available under v2 where their source data exists. The old city batches, combined sample, and global city search file are not emitted. City search filters prebuilt country/state data in the client; arbitrary query strings are not server-side search. Pages have at most 5,000 records by default; all country indexes have the same shape, including small and empty countries.
 
 The retained cross-cutting paths are `countries/regions.json`, `countries/region/{region}.json`, `countries/subregion/{subregion}.json`, `states/all.json`, `states/types.json`, `states/type/{type}.json`, `states/timezones.json`, `states/timezone/{timezone}.json`, and, when city timezone data exists, `cities/timezones.json` and `cities/timezone/{timezone}.json`. Their index entries must name the actual output filename, including collision-safe timezone suffixes.
 

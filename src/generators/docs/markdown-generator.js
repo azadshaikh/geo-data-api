@@ -17,20 +17,20 @@ class MarkdownGenerator {
       countries,
       states,
       cities,
-      dataAnalysis
+      dataAnalysis,
     );
     this.quickStartTemplate = new QuickStartTemplate();
     this.endpointsTemplate = new EndpointsTemplate(
       countries,
       states,
       cities,
-      dataAnalysis
+      dataAnalysis,
     );
     this.dataStructureTemplate = new DataStructureTemplate(
       countries,
       states,
       cities,
-      dataAnalysis
+      dataAnalysis,
     );
   }
 

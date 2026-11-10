@@ -48,7 +48,7 @@ class BaseGenerator {
 
     if (this.errors.length > 0) {
       console.warn(
-        `⚠️  ${this.errors.length} errors occurred during generation`
+        `⚠️  ${this.errors.length} errors occurred during generation`,
       );
       if (config.GENERATION_OPTIONS.errorHandlingMode === "strict") {
         throw new Error(`Generation failed with ${this.errors.length} errors`);
@@ -97,7 +97,7 @@ class BaseGenerator {
   async processInBatches(
     items,
     processFn,
-    batchSize = config.GENERATION_OPTIONS.batchSize
+    batchSize = config.GENERATION_OPTIONS.batchSize,
   ) {
     const results = [];
     const totalBatches = Math.ceil(items.length / batchSize);
@@ -148,7 +148,7 @@ class BaseGenerator {
         (field) =>
           item[field] === undefined ||
           item[field] === null ||
-          item[field] === ""
+          item[field] === "",
       );
 
       if (missingFields.length > 0) {
@@ -175,14 +175,14 @@ class BaseGenerator {
 
       if (config.GENERATION_OPTIONS.validationMode === "strict") {
         throw new Error(
-          `${warning}. Use validationMode: 'warn' to continue with valid records only.`
+          `${warning}. Use validationMode: 'warn' to continue with valid records only.`,
         );
       }
 
       // Log first few invalid records for debugging
       invalidRecords.slice(0, 3).forEach((record) => {
         this.logWarn(
-          `Invalid record ${record.id}: missing ${record.missingFields.join(", ")}`
+          `Invalid record ${record.id}: missing ${record.missingFields.join(", ")}`,
         );
       });
     }

@@ -14,11 +14,14 @@ function planTimezoneFilenames(timezones) {
   const filenames = new Map();
   const aliases = [];
   for (const group of groups.values()) {
-    group.sort((a, b) => (a.timezone < b.timezone ? -1 : a.timezone > b.timezone ? 1 : 0));
+    group.sort((a, b) =>
+      a.timezone < b.timezone ? -1 : a.timezone > b.timezone ? 1 : 0,
+    );
     for (const item of group) {
-      const suffix = group.length > 1
-        ? `--${createHash("sha256").update(item.timezone).digest("hex").slice(0, 12)}`
-        : "";
+      const suffix =
+        group.length > 1
+          ? `--${createHash("sha256").update(item.timezone).digest("hex").slice(0, 12)}`
+          : "";
       filenames.set(item.timezone, `${item.legacy}${suffix}`);
     }
     if (group.length > 1) aliases.push(group[0]);

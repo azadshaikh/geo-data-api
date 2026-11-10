@@ -16,11 +16,6 @@ class DemoCopier {
       path.join(projectRoot, "404.html"),
       path.join(projectRoot, "dist", "404.html"),
     );
-    await FileUtils.copyFile(
-      path.join(projectRoot, "_headers"),
-      path.join(projectRoot, "dist", "_headers"),
-    );
-
     // Copy the playground page and its assets.
     const playgroundSourceDir = path.join(projectRoot, "playground");
     const playgroundDestDir = path.join(projectRoot, "dist", "playground");

@@ -314,7 +314,7 @@ test("the demo build copies the page and its scripts", (t) => {
   fs.cpSync(path.join(project, "playground"), path.join(output, "playground"), {
     recursive: true,
   });
-  for (const name of ["index.html", "404.html", "_headers"])
+  for (const name of ["index.html", "404.html"])
     fs.copyFileSync(path.join(project, name), path.join(output, name));
   const result = spawnSync(process.execPath, ["src/demo-copier.js"], {
     cwd: output,

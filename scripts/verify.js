@@ -8,11 +8,20 @@ const { isDeepStrictEqual } = require("node:util");
 const { getRoutes, matchRoute } = require("../src/api-contract");
 const validators = require("../src/generated/validators");
 
+const DEFAULT_MAX_MANIFEST_BYTES = 25 * 1024 * 1024;
+
 function verifyOutput(
   outputDir = path.join(process.cwd(), "dist/api/v2"),
   options = {},
 ) {
   const root = path.resolve(outputDir);
+  const maxManifestBytes =
+    options.maxManifestBytes === undefined
+      ? DEFAULT_MAX_MANIFEST_BYTES
+      : options.maxManifestBytes;
+  if (!Number.isSafeInteger(maxManifestBytes) || maxManifestBytes < 0) {
+    throw new Error("maxManifestBytes must be a non-negative integer");
+  }
   const errors = [];
   const files = new Set();
   const jsonFiles = new Set();
@@ -474,6 +483,20 @@ function verifyOutput(
   }
   read("build-report.json");
 
+  const manifestSize = (() => {
+    try {
+      return fs.statSync(path.join(root, "manifest.json")).size;
+    } catch (error) {
+      if (error.code === "ENOENT") return null;
+      throw error;
+    }
+  })();
+  if (manifestSize !== null && manifestSize > maxManifestBytes) {
+    error(
+      `manifest.json: ${manifestSize} bytes exceeds the ${maxManifestBytes}-byte budget`,
+    );
+  }
+
   for (const name of jsonFiles) {
     if (
       matchRoute(name) &&
@@ -591,29 +614,34 @@ if (require.main === module) {
   const args = process.argv.slice(2);
   let outputDir;
   let maxSearchShardBytes;
+  let maxManifestBytes;
   let invalidArgs = false;
   let help = false;
+  const readByteLimit = (value) => {
+    const number = Number(value);
+    return value && Number.isSafeInteger(number) && number >= 0 ? number : null;
+  };
   for (let i = 0; i < args.length; i++) {
     if (args[i] === "--help" || args[i] === "-h") help = true;
     else if (args[i] === "--max-search-shard-bytes") {
-      const value = args[++i];
-      maxSearchShardBytes = Number(value);
-      if (
-        !value ||
-        !Number.isSafeInteger(maxSearchShardBytes) ||
-        maxSearchShardBytes < 0
-      )
-        invalidArgs = true;
+      maxSearchShardBytes = readByteLimit(args[++i]);
+      if (maxSearchShardBytes === null) invalidArgs = true;
+    } else if (args[i] === "--max-manifest-bytes") {
+      maxManifestBytes = readByteLimit(args[++i]);
+      if (maxManifestBytes === null) invalidArgs = true;
     } else if (!args[i].startsWith("-") && !outputDir) outputDir = args[i];
     else invalidArgs = true;
   }
   if (help || invalidArgs) {
     (invalidArgs ? console.error : console.log)(
-      "Usage: node scripts/verify.js [output-directory] [--max-search-shard-bytes N]",
+      "Usage: node scripts/verify.js [output-directory] [--max-search-shard-bytes N] [--max-manifest-bytes N]",
     );
     if (invalidArgs) process.exitCode = 2;
   } else {
-    const report = verifyOutput(outputDir, { maxSearchShardBytes });
+    const report = verifyOutput(outputDir, {
+      maxSearchShardBytes,
+      maxManifestBytes,
+    });
     if (report.errors.length) {
       console.error(
         `Verification failed: ${report.errors.length} issue(s) in ${report.outputDir}`,

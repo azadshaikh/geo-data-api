@@ -14,7 +14,7 @@ npm test
 npm run serve
 ```
 
-Open `http://127.0.0.1:3000` for the site, `/playground/index.html` for the cascading location picker and search playground, and `/docs/index.html` for the API guides. The site also works under a deployment subpath. `npm run build:docs` regenerates the checked-in Markdown documentation; an ordinary build leaves it alone. `npm run clean` removes the generated v2 tree only.
+Open `http://127.0.0.1:3000` for the site, `/playground/index.html` for the cascading location picker and search playground, and `/docs/index.html` for the API guides. The site also works under a deployment subpath. `npm run build:docs` regenerates the checked-in Markdown documentation; an ordinary build leaves it alone. `npm run clean` removes the generated v2 tree only; `npm run clean:all` removes the whole local `dist/` directory, including legacy or stale build output.
 
 To deploy the data separately, upload the contents of `dist/api/v2/` beneath your host's `api/v2/` path. Configure the host's CORS, caching, and content types for your application. The included website expects the API at the same deployment root. Static hosts must support the large number of city files.
 
@@ -115,7 +115,7 @@ The optional `npm run deploy:s3` command does not delete remote files. Use a new
 
 The checked-in source snapshot comes from [dr5hn/countries-states-cities-database](https://github.com/dr5hn/countries-states-cities-database). Review the upstream license, attribution requirements and update notes when replacing the dataset. Updates are deliberate: replace all three source JSON files as a coherent snapshot, select a release timestamp, build, verify, and review the resulting manifest before publishing or deploying.
 
-`meta.generated_at` is the stable dataset release time, not the wall-clock time of each build. The checked-in snapshot defaults to `2025-09-12T09:30:16.000Z`; set `SOURCE_DATE_EPOCH` to a Unix timestamp in seconds when preparing a different release. With the same source, generator, runtime, options and release timestamp, output bytes are reproducible. The manifest records the source hash and release timestamp and checksums the output files; `build-report.json` records source validation. Builds stage and verify the generated output before replacement.
+`meta.generated_at` is the stable dataset release time, not the wall-clock time of each build. The checked-in snapshot defaults to `2025-09-12T09:30:16.000Z`; set `SOURCE_DATE_EPOCH` to a Unix timestamp in seconds when preparing a different release. With the same source, generator, runtime, options and release timestamp, output bytes are reproducible. The manifest records the source hash and release timestamp and checksums the output files; `build-report.json` records source validation. Builds stage and verify the generated output before replacement. `npm run verify` also enforces a 25 MiB manifest budget by default and accepts `--max-manifest-bytes` when a host needs a different limit; country city pages can be bounded with `--max-search-shard-bytes`.
 
 ## Project links
 

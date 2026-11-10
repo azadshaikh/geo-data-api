@@ -3,7 +3,7 @@ FROM node:22-alpine AS builder
 WORKDIR /app
 
 # The generator uses only Node's built-in modules; no production install is needed.
-COPY package.json package-lock.json README.md openapi.json index.html 404.html _headers ./
+COPY package.json package-lock.json README.md openapi.json index.html 404.html ./
 COPY src/ ./src/
 COPY scripts/ ./scripts/
 COPY schemas/ ./schemas/

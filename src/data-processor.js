@@ -14,7 +14,11 @@ const path = require("path");
 const fs = require("node:fs/promises");
 const { createHash } = require("node:crypto");
 const { releaseTimestamp } = require("./utils/build-context");
-const { preserveExtras, describeFiles, publishStage } = require("./utils/build-output");
+const {
+  preserveExtras,
+  describeFiles,
+  publishStage,
+} = require("./utils/build-output");
 const { verifyOutput } = require("../scripts/verify");
 const { compressJsonFiles } = require("./utils/compression");
 const { assertSafeLocations } = require("./utils/path-safety");
@@ -53,7 +57,10 @@ class DataProcessor {
 
       // Perform data analysis
       this.analyzeData();
-      Object.assign(this, normalizeDataset(this.countries, this.states, this.cities));
+      Object.assign(
+        this,
+        normalizeDataset(this.countries, this.states, this.cities),
+      );
     } catch (error) {
       console.error("Error loading data:", error.message);
       console.error(
@@ -64,7 +71,11 @@ class DataProcessor {
   }
 
   validateDataStructure() {
-    this.validationReport = new DataValidator(this.countries, this.states, this.cities).validateDataStructure();
+    this.validationReport = new DataValidator(
+      this.countries,
+      this.states,
+      this.cities,
+    ).validateDataStructure();
     console.log("✓ Validated all source records and relationships");
   }
 
@@ -80,16 +91,35 @@ class DataProcessor {
     const output = path.resolve(originalOutput);
     let generatorVersion = "unknown";
     try {
-      generatorVersion = JSON.parse(await fs.readFile(path.join(__dirname, "../package.json"), "utf8")).version;
+      generatorVersion = JSON.parse(
+        await fs.readFile(path.join(__dirname, "../package.json"), "utf8"),
+      ).version;
     } catch (error) {
       if (error.code !== "ENOENT") throw error;
     }
-    const fingerprint = await buildFingerprint({ datasetVersion: this.datasetVersion, config, options: this.options, timestamp: releaseTimestamp(), generatorVersion });
+    const fingerprint = await buildFingerprint({
+      datasetVersion: this.datasetVersion,
+      config,
+      options: this.options,
+      timestamp: releaseTimestamp(),
+      generatorVersion,
+    });
     let previousManifest;
-    try { previousManifest = JSON.parse(await fs.readFile(path.join(output, "manifest.json"), "utf8")); }
-    catch (error) { if (error.code !== "ENOENT" && !(error instanceof SyntaxError)) throw error; }
-    if (previousManifest?.build_fingerprint === fingerprint && verifyOutput(output).errors.length === 0) {
-      console.log("✅ API output is unchanged; verified existing files without regenerating them.");
+    try {
+      previousManifest = JSON.parse(
+        await fs.readFile(path.join(output, "manifest.json"), "utf8"),
+      );
+    } catch (error) {
+      if (error.code !== "ENOENT" && !(error instanceof SyntaxError))
+        throw error;
+    }
+    if (
+      previousManifest?.build_fingerprint === fingerprint &&
+      verifyOutput(output).errors.length === 0
+    ) {
+      console.log(
+        "✅ API output is unchanged; verified existing files without regenerating them.",
+      );
       return { manifest: previousManifest, changed: false };
     }
     const parent = path.dirname(output);
@@ -99,31 +129,51 @@ class DataProcessor {
     config.OUTPUT_DIR = stage;
     FileUtils.beginOutputTracking();
     try {
-      await this.performanceMonitor.measure("countries_generation", async () => {
-        await new CountriesGenerator(this.countries).generate();
-        FileUtils.assertNoOutputCollisions();
-      });
+      await this.performanceMonitor.measure(
+        "countries_generation",
+        async () => {
+          await new CountriesGenerator(this.countries).generate();
+          FileUtils.assertNoOutputCollisions();
+        },
+      );
       await this.performanceMonitor.measure("states_generation", async () => {
         await new StatesGenerator(this.states, this.countries).generate();
         FileUtils.assertNoOutputCollisions();
       });
       await this.performanceMonitor.measure("cities_generation", async () => {
-        await new CitiesGenerator(this.cities, this.states, this.countries).generate();
+        await new CitiesGenerator(
+          this.cities,
+          this.states,
+          this.countries,
+        ).generate();
         FileUtils.assertNoOutputCollisions();
       });
       await this.performanceMonitor.measure("search_generation", async () => {
-        await new SearchGenerator(this.countries, this.states, this.cities).generate();
-        FileUtils.assertNoOutputCollisions();
-      });
-      await this.performanceMonitor.measure("api_documentation_generation", async () => {
-        await new APIInfoGenerator(
-          this.countries, this.states, this.cities, this.dataAnalysis,
-        ).generate();
-        await new APIDocumentationGenerator(
-          this.countries, this.states, this.cities, this.dataAnalysis,
+        await new SearchGenerator(
+          this.countries,
+          this.states,
+          this.cities,
         ).generate();
         FileUtils.assertNoOutputCollisions();
       });
+      await this.performanceMonitor.measure(
+        "api_documentation_generation",
+        async () => {
+          await new APIInfoGenerator(
+            this.countries,
+            this.states,
+            this.cities,
+            this.dataAnalysis,
+          ).generate();
+          await new APIDocumentationGenerator(
+            this.countries,
+            this.states,
+            this.cities,
+            this.dataAnalysis,
+          ).generate();
+          FileUtils.assertNoOutputCollisions();
+        },
+      );
 
       await FileUtils.writeJSON("build-report.json", this.validationReport);
 
@@ -134,7 +184,9 @@ class DataProcessor {
         console.log(`✓ Generated ${count} compressed files`);
       }
 
-      const generatedPaths = FileUtils.getTrackedFiles().map((file) => file.path);
+      const generatedPaths = FileUtils.getTrackedFiles().map(
+        (file) => file.path,
+      );
       const preserved = await preserveExtras(output, stage, generatedPaths);
       const files = await describeFiles(stage, preserved);
       const manifest = {
@@ -144,7 +196,11 @@ class DataProcessor {
         build_fingerprint: fingerprint,
         generator_version: generatorVersion,
         generated_at: releaseTimestamp(),
-        counts: { countries: this.countries.length, states: this.states.length, cities: this.cities.length },
+        counts: {
+          countries: this.countries.length,
+          states: this.states.length,
+          cities: this.cities.length,
+        },
         file_count: files.length + 1,
         checksum_algorithm: "sha256",
         files,
@@ -152,10 +208,22 @@ class DataProcessor {
       await FileUtils.writeJSON("manifest.json", manifest);
       FileUtils.assertNoOutputCollisions();
       const verification = verifyOutput(stage);
-      if (verification.errors.length) throw new Error(`Generated output failed verification:\n${verification.errors.join("\n")}`);
-      const changed = await publishStage(stage, output, { retainBackup: !previousManifest });
-      this.performanceMonitor.increment("files_generated", files.filter((file) => file.generated).length + 1);
-      console.log(changed ? "✅ API generation completed successfully!" : "✅ API output is unchanged.");
+      if (verification.errors.length)
+        throw new Error(
+          `Generated output failed verification:\n${verification.errors.join("\n")}`,
+        );
+      const changed = await publishStage(stage, output, {
+        retainBackup: !previousManifest,
+      });
+      this.performanceMonitor.increment(
+        "files_generated",
+        files.filter((file) => file.generated).length + 1,
+      );
+      console.log(
+        changed
+          ? "✅ API generation completed successfully!"
+          : "✅ API output is unchanged.",
+      );
       console.log(`📁 Generated files are in: ${originalOutput}`);
       console.log(`🌐 Upload ${originalOutput} to your CDN`);
       this.performanceMonitor.printReport();
@@ -163,20 +231,32 @@ class DataProcessor {
     } finally {
       config.OUTPUT_DIR = originalOutput;
       FileUtils.endOutputTracking();
-      if (path.dirname(stage) === parent && path.basename(stage).startsWith(`.${base}-stage-`)) {
+      if (
+        path.dirname(stage) === parent &&
+        path.basename(stage).startsWith(`.${base}-stage-`)
+      ) {
         await fs.rm(stage, { recursive: true, force: true });
       }
     }
   }
 
   async run() {
-    const previous = { input: config.INPUT_DIR, output: config.OUTPUT_DIR, pretty: config.PRETTY_JSON, countryShardSize: config.COUNTRY_CITY_SHARD_SIZE };
+    const previous = {
+      input: config.INPUT_DIR,
+      output: config.OUTPUT_DIR,
+      pretty: config.PRETTY_JSON,
+      countryShardSize: config.COUNTRY_CITY_SHARD_SIZE,
+    };
     try {
       if (this.options.inputDir) config.INPUT_DIR = this.options.inputDir;
       if (this.options.outputDir) config.OUTPUT_DIR = this.options.outputDir;
       if (this.options.pretty) config.PRETTY_JSON = true;
       if (this.options.countryShardSize !== undefined) {
-        if (!Number.isSafeInteger(this.options.countryShardSize) || this.options.countryShardSize < 1) throw new Error("Country page size must be a positive integer");
+        if (
+          !Number.isSafeInteger(this.options.countryShardSize) ||
+          this.options.countryShardSize < 1
+        )
+          throw new Error("Country page size must be a positive integer");
         config.COUNTRY_CITY_SHARD_SIZE = this.options.countryShardSize;
       }
       await assertSafeLocations(config.INPUT_DIR, config.OUTPUT_DIR);
@@ -236,14 +316,29 @@ function parseArgs() {
     if (arg === "--help" || arg === "-h") options.help = true;
     else if (arg === "--pretty") options.pretty = true;
     else if (arg === "--compress") options.compress = true;
-    else if (["--input", "--output", "--compression-threshold", "--country-shard-size"].includes(arg)) {
+    else if (
+      [
+        "--input",
+        "--output",
+        "--compression-threshold",
+        "--country-shard-size",
+      ].includes(arg)
+    ) {
       const value = args[++i];
-      if (!value || value.startsWith("--")) throw new Error(`${arg} requires a value`);
+      if (!value || value.startsWith("--"))
+        throw new Error(`${arg} requires a value`);
       if (arg === "--input") options.inputDir = value;
       else if (arg === "--output") options.outputDir = value;
       else {
         const number = Number(value);
-        if (!Number.isSafeInteger(number) || number < 0 || (arg === "--country-shard-size" && number === 0)) throw new Error(`${arg} requires ${arg === "--country-shard-size" ? "a positive" : "a non-negative"} integer`);
+        if (
+          !Number.isSafeInteger(number) ||
+          number < 0 ||
+          (arg === "--country-shard-size" && number === 0)
+        )
+          throw new Error(
+            `${arg} requires ${arg === "--country-shard-size" ? "a positive" : "a non-negative"} integer`,
+          );
         if (arg === "--country-shard-size") options.countryShardSize = number;
         else options.compressionThreshold = number;
       }
@@ -274,11 +369,13 @@ Performance Notes:
 module.exports = { DataProcessor };
 
 if (require.main === module) {
-  Promise.resolve().then(() => {
-    const options = parseArgs();
-    return options.help ? undefined : new DataProcessor(options).run();
-  }).catch((error) => {
-    console.error(error.message);
-    process.exitCode = 1;
-  });
+  Promise.resolve()
+    .then(() => {
+      const options = parseArgs();
+      return options.help ? undefined : new DataProcessor(options).run();
+    })
+    .catch((error) => {
+      console.error(error.message);
+      process.exitCode = 1;
+    });
 }

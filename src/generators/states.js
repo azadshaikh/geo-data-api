@@ -19,14 +19,8 @@ class StatesGenerator extends BaseGenerator {
       // Validate data with enhanced error handling
       this.states = this.validateData(
         this.states,
-        [
-          "id",
-          "name",
-          "country_id",
-          "country_code",
-          "country_name",
-        ],
-        { context: "States validation" }
+        ["id", "name", "country_id", "country_code", "country_name"],
+        { context: "States validation" },
       );
 
       // Generate states by country
@@ -45,7 +39,7 @@ class StatesGenerator extends BaseGenerator {
       await this.generateAllStatesList();
 
       this.logSuccess(
-        `Generated states endpoints for ${this.states.length} states`
+        `Generated states endpoints for ${this.states.length} states`,
       );
     } catch (error) {
       this.logError(`States generation failed: ${error.message}`);
@@ -58,7 +52,10 @@ class StatesGenerator extends BaseGenerator {
   async generateStatesByCountry() {
     const statesByCountry = DataUtils.groupBy(this.states, "country_id");
     for (const country of this.countries) {
-      await this.processCountryStates(country, statesByCountry[String(country.id)] || []);
+      await this.processCountryStates(
+        country,
+        statesByCountry[String(country.id)] || [],
+      );
     }
   }
 
@@ -81,23 +78,23 @@ class StatesGenerator extends BaseGenerator {
 
     const safeCountryFileName = this.generateSafeFilename(
       country.iso2,
-      country.id.toString()
+      country.id.toString(),
     );
     const success = await this.safeWriteJSON(
       `countries/${safeCountryFileName}/states.json`,
-      dataWithMeta
+      dataWithMeta,
     );
 
     if (success && config.GENERATION_OPTIONS.enableProgressLogging) {
       this.logInfo(
-        `Generated states for ${country.name} (${optimizedStates.length} states)`
+        `Generated states for ${country.name} (${optimizedStates.length} states)`,
       );
     }
   }
 
   async generateIndividualStates() {
     this.logInfo(
-      `Generating individual state files for ${this.states.length} states...`
+      `Generating individual state files for ${this.states.length} states...`,
     );
 
     let generatedCount = 0;
@@ -111,21 +108,21 @@ class StatesGenerator extends BaseGenerator {
   }
 
   async generateSingleState(state) {
-      const country = this.countriesMap.get(state.country_id);
+    const country = this.countriesMap.get(state.country_id);
 
-      // Include all fields for individual state view
-      const stateData = DataUtils.addMetadata(state, "state", {
-        country_name: country?.name,
-        country_iso2: country?.iso2,
-        country_iso3: country?.iso3,
-        has_coordinates: DataUtils.hasCoordinates(state),
-        has_timezone: !!state.timezone,
-      });
+    // Include all fields for individual state view
+    const stateData = DataUtils.addMetadata(state, "state", {
+      country_name: country?.name,
+      country_iso2: country?.iso2,
+      country_iso3: country?.iso3,
+      has_coordinates: DataUtils.hasCoordinates(state),
+      has_timezone: !!state.timezone,
+    });
 
-      await FileUtils.writeJSON(
-        `countries/${country.iso2.toLowerCase()}/states/${state.path_key}.json`,
-        stateData
-      );
+    await FileUtils.writeJSON(
+      `countries/${country.iso2.toLowerCase()}/states/${state.path_key}.json`,
+      stateData,
+    );
   }
 
   async generateStatesByType() {
@@ -139,7 +136,7 @@ class StatesGenerator extends BaseGenerator {
           await this.processStatesByType(type, states);
         } catch (error) {
           this.logError(
-            `Error processing state type ${type}: ${error.message}`
+            `Error processing state type ${type}: ${error.message}`,
           );
           if (config.GENERATION_OPTIONS.errorHandlingMode === "strict") {
             throw error;
@@ -170,13 +167,13 @@ class StatesGenerator extends BaseGenerator {
         timezones: [...new Set(states.map((s) => s.timezone))]
           .filter(Boolean)
           .sort(),
-      }
+      },
     );
 
     const safeTypeName = this.generateSafeFilename(type);
     const success = await this.safeWriteJSON(
       `states/type/${safeTypeName}.json`,
-      dataWithMeta
+      dataWithMeta,
     );
 
     return success;
@@ -199,7 +196,7 @@ class StatesGenerator extends BaseGenerator {
 
       const dataWithMeta = DataUtils.addMetadata(
         typesIndex,
-        "state_types_index"
+        "state_types_index",
       );
       await this.safeWriteJSON("states/types.json", dataWithMeta);
     } catch (error) {
@@ -212,10 +209,11 @@ class StatesGenerator extends BaseGenerator {
     try {
       const statesByTimezone = DataUtils.groupBy(
         this.states.filter((s) => s.timezone),
-        "timezone"
+        "timezone",
       );
       const timezones = Object.keys(statesByTimezone).filter(
-        (timezone) => timezone && timezone !== "undefined" && timezone !== "null"
+        (timezone) =>
+          timezone && timezone !== "undefined" && timezone !== "null",
       );
       const { filenames } = planTimezoneFilenames(timezones);
 
@@ -224,10 +222,14 @@ class StatesGenerator extends BaseGenerator {
           continue;
 
         try {
-          await this.processStatesByTimezone(timezone, states, filenames.get(timezone));
+          await this.processStatesByTimezone(
+            timezone,
+            states,
+            filenames.get(timezone),
+          );
         } catch (error) {
           this.logError(
-            `Error processing timezone ${timezone}: ${error.message}`
+            `Error processing timezone ${timezone}: ${error.message}`,
           );
           if (config.GENERATION_OPTIONS.errorHandlingMode === "strict") {
             throw error;
@@ -239,7 +241,7 @@ class StatesGenerator extends BaseGenerator {
       await this.generateStateTimezonesIndex(statesByTimezone, filenames);
     } catch (error) {
       this.logError(
-        `Critical error in generateStatesByTimezone: ${error.message}`
+        `Critical error in generateStatesByTimezone: ${error.message}`,
       );
       throw error;
     }
@@ -258,12 +260,12 @@ class StatesGenerator extends BaseGenerator {
         total_states: sortedStates.length,
         countries: [...new Set(states.map((s) => s.country_name))].sort(),
         types: [...new Set(states.map((s) => s.type))].filter(Boolean).sort(),
-      }
+      },
     );
 
     const success = await this.safeWriteJSON(
       `states/timezone/${safeTimezoneName}.json`,
-      dataWithMeta
+      dataWithMeta,
     );
 
     return success;
@@ -286,12 +288,12 @@ class StatesGenerator extends BaseGenerator {
 
       const dataWithMeta = DataUtils.addMetadata(
         timezonesIndex,
-        "state_timezones_index"
+        "state_timezones_index",
       );
       await this.safeWriteJSON("states/timezones.json", dataWithMeta);
     } catch (error) {
       this.logError(
-        `Failed to generate state timezones index: ${error.message}`
+        `Failed to generate state timezones index: ${error.message}`,
       );
       throw error;
     }
@@ -309,14 +311,14 @@ class StatesGenerator extends BaseGenerator {
         countries: [...new Set(this.states.map((s) => s.country_name))].length,
         types: [...new Set(this.states.map((s) => s.type))].filter(Boolean),
         timezones: [...new Set(this.states.map((s) => s.timezone))].filter(
-          Boolean
+          Boolean,
         ).length,
       });
 
       const success = await this.safeWriteJSON("states/all.json", dataWithMeta);
       if (success) {
         this.logSuccess(
-          `Generated complete states list with ${sortedStates.length} states`
+          `Generated complete states list with ${sortedStates.length} states`,
         );
       }
     } catch (error) {

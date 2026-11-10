@@ -299,7 +299,9 @@ const routeMatchers = routes.map((route) => {
 
 function matchRoute(filename) {
   if (typeof filename !== "string") return null;
-  return routeMatchers.find(({ matcher }) => matcher.test(filename))?.route || null;
+  return (
+    routeMatchers.find(({ matcher }) => matcher.test(filename))?.route || null
+  );
 }
 
 module.exports = { routes, parameters, getRoutes, matchRoute };

@@ -52,7 +52,7 @@ test("the website build includes the documentation pages and their assets", (t) 
       recursive: true,
     });
   }
-  for (const name of ["index.html", "404.html", "_headers"]) {
+  for (const name of ["index.html", "404.html"]) {
     fs.copyFileSync(path.join(root, name), path.join(output, name));
   }
   const result = spawnSync(process.execPath, ["src/demo-copier.js"], {

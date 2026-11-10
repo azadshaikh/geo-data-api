@@ -21,7 +21,7 @@ jobs:
       - run: npm run contracts:check
       - run: npm test
       - run: npm run build
-      - run: npm run verify -- --max-search-shard-bytes 5000000
+      - run: npm run verify -- --max-search-shard-bytes 5000000 --max-manifest-bytes 26214400
       - run: npm run check:package
 
   docker-smoke:

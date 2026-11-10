@@ -13,7 +13,7 @@ class DataAnalyzer {
 
     // Analyze countries
     const regions = [...new Set(this.countries.map((c) => c.region))].filter(
-      Boolean
+      Boolean,
     );
     const subregions = [
       ...new Set(this.countries.map((c) => c.subregion)),
@@ -30,12 +30,14 @@ class DataAnalyzer {
 
     // Analyze states
     const stateTypes = [...new Set(this.states.map((s) => s.type))].filter(
-      Boolean
+      Boolean,
     );
     const stateTimezones = [
       ...new Set(this.states.map((s) => s.timezone)),
     ].filter(Boolean);
-    const statesWithCoords = this.states.filter(DataUtils.hasCoordinates).length;
+    const statesWithCoords = this.states.filter(
+      DataUtils.hasCoordinates,
+    ).length;
 
     console.log(`📊 States Analysis:`);
     console.log(`   • ${this.states.length} states`);
@@ -43,12 +45,14 @@ class DataAnalyzer {
     console.log(`   • ${stateTypes.length} state types`);
     console.log(`   • ${stateTimezones.length} unique timezones`);
     console.log(
-      `   • ${statesWithCoords} states with coordinates (${((statesWithCoords / this.states.length) * 100).toFixed(1)}%)`
+      `   • ${statesWithCoords} states with coordinates (${((statesWithCoords / this.states.length) * 100).toFixed(1)}%)`,
     );
 
     // Analyze cities
     const citiesWithWikiData = this.cities.filter((c) => c.wikiDataId).length;
-    const citiesWithCoords = this.cities.filter(DataUtils.hasCoordinates).length;
+    const citiesWithCoords = this.cities.filter(
+      DataUtils.hasCoordinates,
+    ).length;
     const cityTimezones = [
       ...new Set(this.cities.map((c) => c.timezone)),
     ].filter(Boolean);
@@ -56,10 +60,10 @@ class DataAnalyzer {
     console.log(`📊 Cities Analysis:`);
     console.log(`   • ${this.cities.length} cities`);
     console.log(
-      `   • ${citiesWithWikiData} cities with WikiData (${((citiesWithWikiData / this.cities.length) * 100).toFixed(1)}%)`
+      `   • ${citiesWithWikiData} cities with WikiData (${((citiesWithWikiData / this.cities.length) * 100).toFixed(1)}%)`,
     );
     console.log(
-      `   • ${citiesWithCoords} cities with coordinates (${((citiesWithCoords / this.cities.length) * 100).toFixed(1)}%)`
+      `   • ${citiesWithCoords} cities with coordinates (${((citiesWithCoords / this.cities.length) * 100).toFixed(1)}%)`,
     );
     console.log(`   • ${cityTimezones.length} unique city timezones`);
 
@@ -87,10 +91,10 @@ class DataAnalyzer {
 
     console.log(`📊 Distribution Analysis:`);
     console.log(
-      `   • Top countries by cities: ${topCountriesByCities.map(([name, count]) => `${name} (${count})`).join(", ")}`
+      `   • Top countries by cities: ${topCountriesByCities.map(([name, count]) => `${name} (${count})`).join(", ")}`,
     );
     console.log(
-      `   • Top countries by states: ${topCountriesByStates.map(([name, count]) => `${name} (${count})`).join(", ")}`
+      `   • Top countries by states: ${topCountriesByStates.map(([name, count]) => `${name} (${count})`).join(", ")}`,
     );
 
     // Store analysis for API info

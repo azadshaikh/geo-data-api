@@ -25,14 +25,22 @@ class DataUtils {
     const result = {};
     for (const item of data) {
       const group = String(item?.[key]);
-      if (!Object.hasOwn(result, group)) Object.defineProperty(result, group, { value: [], enumerable: true });
+      if (!Object.hasOwn(result, group))
+        Object.defineProperty(result, group, { value: [], enumerable: true });
       result[group].push(item);
     }
     return result;
   }
 
   static sortBy(data, key) {
-    const rank = (value) => Number.isNaN(value) ? 3 : value === undefined ? 2 : value === null ? 1 : 0;
+    const rank = (value) =>
+      Number.isNaN(value)
+        ? 3
+        : value === undefined
+          ? 2
+          : value === null
+            ? 1
+            : 0;
     return [...data].sort((a, b) => {
       const left = a?.[key];
       const right = b?.[key];

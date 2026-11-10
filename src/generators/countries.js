@@ -40,7 +40,7 @@ class CountriesGenerator extends BaseGenerator {
 
   async generateIndividualCountries() {
     console.log(
-      `Generating individual country files for ${this.countries.length} countries...`
+      `Generating individual country files for ${this.countries.length} countries...`,
     );
 
     let generatedCount = 0;
@@ -73,7 +73,10 @@ class CountriesGenerator extends BaseGenerator {
   }
 
   async generateCountriesByRegion() {
-    const countriesByRegion = DataUtils.groupBy(this.countries.filter((c) => c.region), "region");
+    const countriesByRegion = DataUtils.groupBy(
+      this.countries.filter((c) => c.region),
+      "region",
+    );
 
     for (const [region, countries] of Object.entries(countriesByRegion)) {
       if (!region || region === "undefined") continue;
@@ -86,14 +89,14 @@ class CountriesGenerator extends BaseGenerator {
           region: region,
           region_id: countries[0].region_id,
           total_countries: sortedCountries.length,
-        }
+        },
       );
 
       // Create safe filename from region name
       const safeRegionName = region.toLowerCase().replace(/[^a-z0-9]/g, "-");
       await FileUtils.writeJSON(
         `countries/region/${safeRegionName}.json`,
-        dataWithMeta
+        dataWithMeta,
       );
     }
 
@@ -114,12 +117,15 @@ class CountriesGenerator extends BaseGenerator {
 
     await FileUtils.writeJSON(
       "countries/regions.json",
-      DataUtils.addMetadata(regionsIndex, "regions_index")
+      DataUtils.addMetadata(regionsIndex, "regions_index"),
     );
   }
 
   async generateCountriesBySubregion() {
-    const countriesBySubregion = DataUtils.groupBy(this.countries.filter((c) => c.subregion), "subregion");
+    const countriesBySubregion = DataUtils.groupBy(
+      this.countries.filter((c) => c.subregion),
+      "subregion",
+    );
 
     for (const [subregion, countries] of Object.entries(countriesBySubregion)) {
       if (!subregion || subregion === "undefined") continue;
@@ -133,7 +139,7 @@ class CountriesGenerator extends BaseGenerator {
           subregion_id: countries[0].subregion_id,
           region: countries[0].region,
           total_countries: sortedCountries.length,
-        }
+        },
       );
 
       const safeSubregionName = subregion
@@ -141,7 +147,7 @@ class CountriesGenerator extends BaseGenerator {
         .replace(/[^a-z0-9]/g, "-");
       await FileUtils.writeJSON(
         `countries/subregion/${safeSubregionName}.json`,
-        dataWithMeta
+        dataWithMeta,
       );
     }
   }

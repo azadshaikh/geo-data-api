@@ -96,7 +96,7 @@ class PerformanceMonitor {
     if (Object.keys(report.counters).length > 0) {
       console.log("\nCounters:");
       for (const [name, count] of Object.entries(report.counters)) {
-        console.log(`  ${name}: ${count.toLocaleString()}`);
+        console.log(`  ${name}: ${count.toLocaleString("en-US")}`);
       }
     }
 

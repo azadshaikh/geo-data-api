@@ -24,8 +24,15 @@ class FileUtils {
     const root = path.resolve(config.OUTPUT_DIR);
     const target = path.resolve(root, filePath);
     const relative = path.relative(root, target);
-    if (!relative || relative === ".." || relative.startsWith(`..${path.sep}`) || path.isAbsolute(relative)) {
-      const error = new Error(`Output path is outside the API directory: ${filePath}`);
+    if (
+      !relative ||
+      relative === ".." ||
+      relative.startsWith(`..${path.sep}`) ||
+      path.isAbsolute(relative)
+    ) {
+      const error = new Error(
+        `Output path is outside the API directory: ${filePath}`,
+      );
       error.code = "OUTPUT_PATH_OUTSIDE_ROOT";
       throw error;
     }
@@ -33,7 +40,9 @@ class FileUtils {
   }
 
   static async writeIfChanged(fullPath, content) {
-    const bytes = Buffer.isBuffer(content) ? content : Buffer.from(content, "utf8");
+    const bytes = Buffer.isBuffer(content)
+      ? content
+      : Buffer.from(content, "utf8");
     try {
       if ((await fs.readFile(fullPath)).equals(bytes)) return false;
     } catch (error) {
@@ -56,12 +65,16 @@ class FileUtils {
 
   static async writeOutput(filePath, content) {
     const { target: fullPath, relative } = this.resolveOutputPath(filePath);
-    const bytes = Buffer.isBuffer(content) ? content : Buffer.from(content, "utf8");
+    const bytes = Buffer.isBuffer(content)
+      ? content
+      : Buffer.from(content, "utf8");
     const tracking = this.outputTracking;
     const key = relative.normalize("NFC").toLowerCase();
     if (tracking) {
       if (tracking.paths.has(key)) {
-        const error = new Error(`Output filename collision: ${tracking.paths.get(key)} and ${relative}`);
+        const error = new Error(
+          `Output filename collision: ${tracking.paths.get(key)} and ${relative}`,
+        );
         error.code = "OUTPUT_PATH_COLLISION";
         tracking.errors.push(error);
         throw error;
@@ -103,14 +116,14 @@ class FileUtils {
       // When suppression is enabled, only log files considered important by patterns.
       if (isImportant) {
         console.log(
-          `✓ Generated: ${filePath}${shouldPrettyPrint ? "" : " (minified)"}`
+          `✓ Generated: ${filePath}${shouldPrettyPrint ? "" : " (minified)"}`,
         );
       }
     } else {
       // When suppression is disabled, log important files or explicit forceLog.
       if (options.forceLog || isImportant) {
         console.log(
-          `✓ Generated: ${filePath}${shouldPrettyPrint ? "" : " (minified)"}`
+          `✓ Generated: ${filePath}${shouldPrettyPrint ? "" : " (minified)"}`,
         );
       }
     }
@@ -235,8 +248,13 @@ class FileUtils {
   }
 
   static async pathExists(filePath) {
-    try { await fs.access(filePath); return true; }
-    catch (error) { if (error.code === "ENOENT") return false; throw error; }
+    try {
+      await fs.access(filePath);
+      return true;
+    } catch (error) {
+      if (error.code === "ENOENT") return false;
+      throw error;
+    }
   }
 
   static async copyFile(sourcePath, destPath) {

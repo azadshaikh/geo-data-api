@@ -231,6 +231,16 @@ test("enforces a configurable byte budget for country city pages", (t) => {
   );
 });
 
+test("enforces a configurable manifest byte budget", (t) => {
+  const { root } = fixture(t);
+  const bytes = fs.statSync(path.join(root, "manifest.json")).size;
+  assert.deepEqual(verifyOutput(root, { maxManifestBytes: bytes }).errors, []);
+  assert.match(
+    verifyOutput(root, { maxManifestBytes: bytes - 1 }).errors.join("\n"),
+    /manifest\.json: \d+ bytes exceeds the \d+-byte budget/i,
+  );
+});
+
 test("rejects missing and inconsistent list counts", (t) => {
   const { root, read, write } = fixture(t);
   const countries = read("countries.json");

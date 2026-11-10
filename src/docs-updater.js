@@ -17,7 +17,7 @@ class DocsUpdater {
 
     try {
       this.countries = await FileUtils.readJSON(
-        `${config.INPUT_DIR}/countries.json`
+        `${config.INPUT_DIR}/countries.json`,
       );
       this.states = await FileUtils.readJSON(`${config.INPUT_DIR}/states.json`);
       this.cities = await FileUtils.readJSON(`${config.INPUT_DIR}/cities.json`);
@@ -34,14 +34,18 @@ class DocsUpdater {
     } catch (error) {
       console.error("Error loading data:", error.message);
       console.error(
-        "Make sure countries.json, states.json, and cities.json exist in the db/ folder"
+        "Make sure countries.json, states.json, and cities.json exist in the db/ folder",
       );
       throw error;
     }
   }
 
   validateDataStructure() {
-    new DataValidator(this.countries, this.states, this.cities).validateDataStructure();
+    new DataValidator(
+      this.countries,
+      this.states,
+      this.cities,
+    ).validateDataStructure();
   }
 
   analyzeData() {
@@ -63,7 +67,7 @@ class DocsUpdater {
       this.countries,
       this.states,
       this.cities,
-      this.dataAnalysis
+      this.dataAnalysis,
     );
 
     // Generate all documentation using markdown generator
@@ -99,5 +103,7 @@ class DocsUpdater {
 
 module.exports = { DocsUpdater };
 if (require.main === module) {
-  new DocsUpdater().run().catch(() => { process.exitCode = 1; });
+  new DocsUpdater().run().catch(() => {
+    process.exitCode = 1;
+  });
 }
