@@ -3,6 +3,9 @@ services:
     build:
       context: .
       dockerfile: Dockerfile
+    environment:
+      WEB_CONCURRENCY: ${WEB_CONCURRENCY:-auto}
     ports:
       - "127.0.0.1:${GEO_DATA_HOST_PORT:-3000}:3000"
     restart: unless-stopped
+    stop_grace_period: 20s

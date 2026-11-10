@@ -4,6 +4,9 @@ services:
     build:
       context: .
       dockerfile: Dockerfile
+    environment:
+      WEB_CONCURRENCY: ${WEB_CONCURRENCY:-auto}
     expose:
       - "3000"
     restart: unless-stopped
+    stop_grace_period: 20s

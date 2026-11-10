@@ -37,9 +37,12 @@ The `db/` source files are already in the repository. You do not need to run
    | Branch | `main`, or the branch containing the desired release |
    | Compose path | `./docker-compose.yml` |
 
-4. Save the configuration. Leave the environment variables empty: the image
-   already sets the host and port. Use the repository as the source so Docker
-   can access the Dockerfile and dataset when it builds.
+4. Save the configuration. Leave the environment variables empty unless you want
+   to change runtime behaviour: the image already sets the host, port and worker
+   count. Set `WEB_CONCURRENCY` to cap processes (for example `2` on a small
+   server); leave it unset (or `auto`) to start one worker per available CPU.
+   Use the repository as the source so Docker can access the Dockerfile and
+   dataset when it builds.
 
 The supplied [Compose file](../docker-compose.yml) is:
 
@@ -49,9 +52,12 @@ services:
     build:
       context: .
       dockerfile: Dockerfile
+    environment:
+      WEB_CONCURRENCY: ${WEB_CONCURRENCY:-auto}
     expose:
       - "3000"
     restart: unless-stopped
+    stop_grace_period: 20s
 ```
 
 It does not publish a host port or contain domain-specific Traefik labels.

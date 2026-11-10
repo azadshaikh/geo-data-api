@@ -103,6 +103,7 @@ before(async () => {
   port = await availablePort();
   const environment = { ...process.env, PORT: String(port) };
   delete environment.HOST;
+  delete environment.WEB_CONCURRENCY;
   const observeAddress = `
     const http = require("node:http");
     const listen = http.Server.prototype.listen;
@@ -178,6 +179,10 @@ test("answers HEAD requests without a response body", async () => {
   const response = await request("/api/sample.json", "HEAD");
   assert.equal(response.status, 200);
   assert.equal(response.headers["content-type"], "application/json");
+  assert.equal(
+    response.headers["content-length"],
+    String(Buffer.byteLength('{"data":[1]}')),
+  );
   assert.equal(response.body.length, 0);
 });
 

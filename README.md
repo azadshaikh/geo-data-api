@@ -109,6 +109,22 @@ For Dokploy, use the [Dokploy Compose file](docker-compose.yml), select the `geo
 
 The included server and deployment headers require revalidation for mutable `/api/v2/` URLs. For immutable CDN caching, use an exact published package version. `npm run build:compress` can generate `.gz` and `.br` JSON siblings; a host must be configured to negotiate those files because the included Node server does not select them automatically.
 
+### Concurrency and CPU cores
+
+The image starts one Node process per available CPU core with `WEB_CONCURRENCY=auto`. Workers share the listening port, so concurrent requests are spread across cores instead of one event loop. Override it when you need a different number of processes:
+
+```sh
+# Local preview with four workers
+WEB_CONCURRENCY=4 docker compose -f compose.yaml up --build -d
+
+# Single process (the default outside Docker)
+WEB_CONCURRENCY=1 npm run serve
+```
+
+`WEB_CONCURRENCY` accepts `auto` or an integer from 1 to 128. Each worker is a separate Node process using roughly 50–80 MB of memory, so cap the value on small containers (for example `WEB_CONCURRENCY=2`). Docker reports the container's CPU quota through `auto`, but a cap keeps memory predictable when the host has many cores. `docker compose down` sends `SIGTERM`; workers finish in-flight requests and exit before the 20-second grace period.
+
+Clustering applies when you run `node src/server.js` directly (including the container command); requiring the file from another script always starts one server. For the highest static-file throughput, put nginx, Caddy, or a CDN in front of the container — they serve pre-generated JSON with `sendfile` and offload TLS while the Node workers handle what the proxy passes through.
+
 The optional `npm run deploy:s3` command does not delete remote files. Use a new versioned S3 prefix for each snapshot, or separately reconcile removed files and compressed variants before switching traffic; otherwise older records can remain available.
 
 ## Source and reproducible releases
