@@ -20,7 +20,7 @@ RUN chmod a+rx /app/dist/api/v2
 
 # Keep the license alongside generated files when inspecting the npm package
 # from the builder stage.
-COPY LICENSE ./
+COPY LICENSE LICENSE-DATA ATTRIBUTION.md NOTICE-SOURCES.txt NOTICE-Unicode-3.0.txt ./
 
 FROM node:22-alpine AS runtime
 

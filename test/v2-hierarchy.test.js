@@ -4,6 +4,7 @@ const os = require("node:os");
 const path = require("node:path");
 const { test } = require("node:test");
 const { DataProcessor } = require("../src/data-processor");
+const config = require("../src/config");
 const { createGeoClient } = require("../packages/client");
 
 const countries = [
@@ -149,7 +150,7 @@ test("builds hierarchical v2 files, complete country pages, and empty lists", as
   assert.equal(city.data.wikidata_id, "Q80989");
   assert.equal(city.data.timezone, null);
   assert.equal(city.meta.api_version, "v2");
-  assert.equal(city.meta.generated_at, "2025-09-12T09:30:16.000Z");
+  assert.equal(city.meta.generated_at, config.RELEASE_TIMESTAMP);
 
   const index = await f.read("countries/in/cities/index.json");
   assert.deepEqual(

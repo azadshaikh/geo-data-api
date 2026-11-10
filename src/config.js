@@ -17,7 +17,7 @@ module.exports = {
 
   // Timestamp of this repository's checked-in dataset snapshot. Set
   // SOURCE_DATE_EPOCH for a different reproducible release timestamp.
-  RELEASE_TIMESTAMP: "2025-09-12T09:30:16.000Z",
+  RELEASE_TIMESTAMP: "2026-11-03T08:18:19.000Z",
 
   // CDN settings (for reference)
   CDN_BASE_URL: "https://unpkg.com/geo-data-api@2.0.0/dist/api/v2",

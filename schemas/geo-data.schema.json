@@ -859,6 +859,30 @@
         "data_analysis": {
           "type": "object"
         },
+        "attribution": {
+          "type": "object",
+          "properties": {
+            "data": { "type": "string" },
+            "data_url": { "type": "string" },
+            "data_license": { "type": "string" },
+            "data_license_url": { "type": "string" },
+            "snapshot": { "type": "string" },
+            "code_license": { "type": "string" },
+            "credit": { "type": "string" },
+            "notice": { "type": "string" }
+          },
+          "required": [
+            "data",
+            "data_url",
+            "data_license",
+            "data_license_url",
+            "snapshot",
+            "code_license",
+            "credit",
+            "notice"
+          ],
+          "additionalProperties": false
+        },
         "endpoints": {
           "type": "object"
         },
@@ -875,6 +899,7 @@
         "base_url",
         "statistics",
         "data_analysis",
+        "attribution",
         "endpoints",
         "usage_examples",
         "notes"

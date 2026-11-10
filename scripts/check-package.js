@@ -22,6 +22,11 @@ if (
 for (const required of [
   "dist/404.html",
   "dist/api/v2/manifest.json",
+  "ATTRIBUTION.md",
+  "LICENSE",
+  "LICENSE-DATA",
+  "NOTICE-SOURCES.txt",
+  "NOTICE-Unicode-3.0.txt",
   "src/data-processor.js",
   "src/config.js",
   "src/api-contract.js",

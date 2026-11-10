@@ -127,14 +127,17 @@ Clustering applies when you run `node src/server.js` directly (including the con
 
 The optional `npm run deploy:s3` command does not delete remote files. Use a new versioned S3 prefix for each snapshot, or separately reconcile removed files and compressed variants before switching traffic; otherwise older records can remain available.
 
-## Source and reproducible releases
+## Source, license and reproducible releases
 
-The checked-in source snapshot comes from [dr5hn/countries-states-cities-database](https://github.com/dr5hn/countries-states-cities-database). Review the upstream license, attribution requirements and update notes when replacing the dataset. Updates are deliberate: replace all three source JSON files as a coherent snapshot, select a release timestamp, build, verify, and review the resulting manifest before publishing or deploying.
+The checked-in snapshot is derived from the [Countries States Cities Database](https://github.com/dr5hn/countries-states-cities-database) release `v5.2.0-export.1` (published 2026-11-03). That database is licensed under the [Open Database License (ODbL) v1.0](LICENSE-DATA), which requires attribution and share-alike for derivative databases. The required credit and the exact changes made for this API are documented in [ATTRIBUTION.md](ATTRIBUTION.md); upstream source notices are in [NOTICE-SOURCES.txt](NOTICE-SOURCES.txt) and [NOTICE-Unicode-3.0.txt](NOTICE-Unicode-3.0.txt). The application code remains under the [MIT License](LICENSE).
 
-`meta.generated_at` is the stable dataset release time, not the wall-clock time of each build. The checked-in snapshot defaults to `2025-09-12T09:30:16.000Z`; set `SOURCE_DATE_EPOCH` to a Unix timestamp in seconds when preparing a different release. With the same source, generator, runtime, options and release timestamp, output bytes are reproducible. The manifest records the source hash and release timestamp and checksums the output files; `build-report.json` records source validation. Builds stage and verify the generated output before replacement. `npm run verify` also enforces a 25 MiB manifest budget by default and accepts `--max-manifest-bytes` when a host needs a different limit; country city pages can be bounded with `--max-search-shard-bytes`.
+Run `npm run data:import` to download the latest upstream release and rebuild `db/`. The importer keeps the fields the v2 model uses, validates record relationships, and reports any records it had to skip. Updates are deliberate: import, set `RELEASE_TIMESTAMP` in `src/config.js` (or `SOURCE_DATE_EPOCH`), build, verify, and review the resulting manifest before publishing or deploying.
+
+`meta.generated_at` is the stable dataset release time, not the wall-clock time of each build. The checked-in snapshot defaults to `2026-11-03T08:18:19.000Z`; set `SOURCE_DATE_EPOCH` to a Unix timestamp in seconds when preparing a different release. With the same source, generator, runtime, options and release timestamp, output bytes are reproducible. The manifest records the source hash and release timestamp and checksums the output files; `build-report.json` records source validation. Builds stage and verify the generated output before replacement. `npm run verify` also enforces a 25 MiB manifest budget by default and accepts `--max-manifest-bytes` when a host needs a different limit; country city pages can be bounded with `--max-search-shard-bytes`.
 
 ## Project links
 
 - [Documentation](docs/README.md)
 - [GitHub repository](https://github.com/azadshaikh/geo-data-api)
-- [MIT License](LICENSE)
+- [Data attribution](ATTRIBUTION.md)
+- [MIT License](LICENSE) · [ODbL 1.0 data license](LICENSE-DATA)

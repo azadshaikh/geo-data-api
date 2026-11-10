@@ -248,6 +248,16 @@ export type ApiInfo = {
   base_url: string;
   statistics: Record<string, unknown>;
   data_analysis: Record<string, unknown>;
+  attribution: {
+    data: string;
+    data_url: string;
+    data_license: string;
+    data_license_url: string;
+    snapshot: string;
+    code_license: string;
+    credit: string;
+    notice: string;
+  };
   endpoints: Record<string, unknown>;
   usage_examples: Record<string, unknown>;
   notes: Record<string, unknown>;

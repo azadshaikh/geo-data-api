@@ -22,6 +22,8 @@ const mimeTypes = {
   ".js": "text/javascript",
   ".css": "text/css",
   ".json": "application/json",
+  ".md": "text/markdown",
+  ".txt": "text/plain",
   ".png": "image/png",
   ".jpg": "image/jpeg",
   ".gif": "image/gif",

@@ -16,6 +16,20 @@ class DemoCopier {
       path.join(projectRoot, "404.html"),
       path.join(projectRoot, "dist", "404.html"),
     );
+
+    // Ship the attribution and license notices with the served dataset.
+    for (const name of [
+      "LICENSE",
+      "LICENSE-DATA",
+      "ATTRIBUTION.md",
+      "NOTICE-SOURCES.txt",
+      "NOTICE-Unicode-3.0.txt",
+    ]) {
+      await FileUtils.copyFile(
+        path.join(projectRoot, name),
+        path.join(projectRoot, "dist", name),
+      );
+    }
     // Copy the playground page and its assets.
     const playgroundSourceDir = path.join(projectRoot, "playground");
     const playgroundDestDir = path.join(projectRoot, "dist", "playground");

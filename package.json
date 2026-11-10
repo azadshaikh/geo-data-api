@@ -15,6 +15,7 @@
     "test:client": "npm --prefix packages/client test",
     "contracts": "node scripts/generate-contracts.js",
     "contracts:check": "node scripts/generate-contracts.js --check",
+    "data:import": "node scripts/import-upstream.js",
     "build": "node src/data-processor.js && npm run build:demo",
     "build:pretty": "node src/data-processor.js --pretty",
     "build:compress": "node src/data-processor.js --compress && npm run build:demo",
@@ -43,6 +44,11 @@
   },
   "homepage": "https://geo-data-api.asterodigital.com",
   "files": [
+    "LICENSE",
+    "LICENSE-DATA",
+    "ATTRIBUTION.md",
+    "NOTICE-SOURCES.txt",
+    "NOTICE-Unicode-3.0.txt",
     "dist/api/v2/",
     "dist/index.html",
     "dist/404.html",
@@ -72,7 +78,7 @@
     "country-state-city",
     "countries-states-cities"
   ],
-  "license": "MIT",
+  "license": "MIT AND ODbL-1.0",
   "author": {
     "name": "Astero Digital",
     "url": "https://asterodigital.com"

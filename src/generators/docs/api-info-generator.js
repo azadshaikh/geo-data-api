@@ -3,6 +3,7 @@ const config = require("../../config");
 const DataUtils = require("../../utils/data-utils");
 const { releaseTimestamp } = require("../../utils/build-context");
 const { getRoutes } = require("../../api-contract");
+const attribution = require("../../attribution");
 
 class APIInfoGenerator {
   constructor(countries, states, cities, dataAnalysis) {
@@ -45,6 +46,16 @@ class APIInfoGenerator {
           .length,
       },
       data_analysis: this.dataAnalysis || {},
+      attribution: {
+        data: attribution.data_source,
+        data_url: attribution.data_source_url,
+        data_license: attribution.data_license,
+        data_license_url: attribution.data_license_url,
+        snapshot: attribution.snapshot,
+        code_license: attribution.code_license,
+        credit: attribution.credit,
+        notice: attribution.notice_url,
+      },
       endpoints,
       usage_examples: {
         "Get all countries": `${config.CDN_BASE_URL}/countries.json`,

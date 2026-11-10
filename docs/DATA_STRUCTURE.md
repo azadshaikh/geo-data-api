@@ -16,4 +16,4 @@ City summary lists contain `id`, `name`, `name_normalized`, `state_id`, `state_c
 
 Country index entries contain `filename` and `count`; global city-index entries add `country_code`. Filenames are relative to the API base. Normalize names and queries by lowercasing, applying Unicode NFD, and removing combining marks; this folds diacritics, not every writing system. Follow every page for complete country coverage.
 
-The `manifest.json` records the source hash and stable release timestamp. Source IDs identify records within a snapshot and are not guaranteed to persist across upstream updates. See the repository README for attribution and release policy.
+The `manifest.json` records the source hash and stable release timestamp. Source IDs identify records within a snapshot and are not guaranteed to persist across upstream updates. The data is derived from the [Countries States Cities Database](https://github.com/dr5hn/countries-states-cities-database) and licensed under the [ODbL 1.0](../LICENSE-DATA); see [ATTRIBUTION.md](../ATTRIBUTION.md) for the required credit and the changes made for this API.
