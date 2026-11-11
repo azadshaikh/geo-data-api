@@ -129,7 +129,7 @@ The optional `npm run deploy:s3` command does not delete remote files. Use a new
 
 ## Source, license and reproducible releases
 
-The checked-in snapshot is derived from the [Countries States Cities Database](https://github.com/dr5hn/countries-states-cities-database) release `v5.2.0-export.1` (published 2026-11-03). That database is licensed under the [Open Database License (ODbL) v1.0](LICENSE-DATA), which requires attribution and share-alike for derivative databases. The required credit and the exact changes made for this API are documented in [ATTRIBUTION.md](ATTRIBUTION.md); upstream source notices are in [NOTICE-SOURCES.txt](NOTICE-SOURCES.txt) and [NOTICE-Unicode-3.0.txt](NOTICE-Unicode-3.0.txt). The application code remains under the [MIT License](LICENSE).
+The checked-in snapshot is derived from the [Countries States Cities Database](https://github.com/dr5hn/countries-states-cities-database) release `v5.2.0-export.1` (published 2026-11-03). That database is licensed under the [Open Database License (ODbL) v1.0](LICENSE-DATA), which requires attribution and share-alike for derivative databases. The required credit and the exact changes made for this API are documented in [ATTRIBUTION.md](ATTRIBUTION.md); upstream source notices are in [NOTICE-SOURCES.txt](NOTICE-SOURCES.txt) and [NOTICE-Unicode-3.0.txt](NOTICE-Unicode-3.0.txt). The application code remains under the [MIT License](LICENSE). The demo's country flags come from [flag-icons](https://github.com/lipis/flag-icons) (MIT); see [NOTICE-flag-icons.txt](NOTICE-flag-icons.txt).
 
 Run `npm run data:import` to download the latest upstream release and rebuild `db/`. The importer keeps the fields the v2 model uses, validates record relationships, and reports any records it had to skip. Updates are deliberate: import, set `RELEASE_TIMESTAMP` in `src/config.js` (or `SOURCE_DATE_EPOCH`), build, verify, and review the resulting manifest before publishing or deploying.
 
@@ -140,4 +140,5 @@ Run `npm run data:import` to download the latest upstream release and rebuild `d
 - [Documentation](docs/README.md)
 - [GitHub repository](https://github.com/azadshaikh/geo-data-api)
 - [Data attribution](ATTRIBUTION.md)
+- [Flag icons](https://github.com/lipis/flag-icons) · [MIT notice](NOTICE-flag-icons.txt)
 - [MIT License](LICENSE) · [ODbL 1.0 data license](LICENSE-DATA)

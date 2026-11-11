@@ -21,23 +21,6 @@ let currentCities = [];
 let stateRequest = 0;
 let cityRequest = 0;
 
-// Helper function to convert ISO2 country code to flag emoji
-function iso2ToFlag(iso2) {
-  if (!/^[a-z]{2}$/i.test(iso2 || "")) return "🌍";
-  try {
-    // Convert ISO2 code to flag emoji
-    // Each letter is converted to its corresponding regional indicator symbol
-    const codePoints = iso2
-      .toUpperCase()
-      .split("")
-      .map((char) => 0x1f1e6 + char.charCodeAt(0) - 65);
-    return String.fromCodePoint(...codePoints);
-  } catch (e) {
-    console.warn("Failed to convert ISO2 to flag:", iso2, e);
-    return "🌍";
-  }
-}
-
 const countryCodeSelect = document.getElementById("country-code-select");
 const countrySelect = document.getElementById("country-select");
 const stateSelect = document.getElementById("state-select");
@@ -62,11 +45,8 @@ async function loadCountries() {
     countries.forEach((country) => {
       const option = document.createElement("option");
       option.value = country.id;
-
-      // Generate flag emoji from ISO2 code
-      const flagEmoji = iso2ToFlag(country.iso2);
-
-      option.textContent = `${flagEmoji} ${country.name}`;
+      option.textContent = country.name;
+      option.dataset.flag = String(country.iso2 || "").toLowerCase();
       option.dataset.country = JSON.stringify(country);
       countrySelect.appendChild(option);
     });
@@ -84,13 +64,18 @@ async function loadCountries() {
     countriesWithPhoneCodes.forEach((country) => {
       const option = document.createElement("option");
       const phoneCode = `+${String(country.phonecode).trim().replace(/^\+/, "")}`;
-      const flagEmoji = iso2ToFlag(country.iso2);
 
       option.value = phoneCode;
-      option.textContent = `${flagEmoji} ${country.name} ${phoneCode}`;
+      option.textContent = country.name;
+      option.dataset.display = phoneCode;
+      option.dataset.code = phoneCode;
+      option.dataset.flag = String(country.iso2 || "").toLowerCase();
       option.dataset.countryName = country.name;
       countryCodeSelect.appendChild(option);
     });
+
+    window.FlagSelect?.refresh(countrySelect);
+    window.FlagSelect?.refresh(countryCodeSelect);
   } catch (error) {
     console.error("Error loading countries:", error);
     countrySelect.innerHTML =

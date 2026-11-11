@@ -24,6 +24,7 @@ class DemoCopier {
       "ATTRIBUTION.md",
       "NOTICE-SOURCES.txt",
       "NOTICE-Unicode-3.0.txt",
+      "NOTICE-flag-icons.txt",
     ]) {
       await FileUtils.copyFile(
         path.join(projectRoot, name),

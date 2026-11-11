@@ -65,3 +65,19 @@ travel with copies.
 Source credits and notices for the upstream sources are in
 [NOTICE-SOURCES.txt](NOTICE-SOURCES.txt). Keep the applicable credits and
 notices when redistributing the data.
+
+## Demo assets
+
+### Flag icons
+
+The demo in `playground/` shows country flags from
+[flag-icons](https://github.com/lipis/flag-icons) v7.6.0, which is licensed
+under the MIT License (Copyright (c) 2013 Panayiotis Lipiridis).
+
+The vendored files are the 4x3 flags for the 250 country ISO 3166-1 alpha-2
+codes in this dataset, stored in `playground/assets/flags/4x3/`. They are
+unmodified copies of the upstream files. `playground/assets/flag-icons.css` is
+generated from them by `scripts/vendor-flags.js`; run `npm run vendor:flags` to
+refresh the assets after updating the `flag-icons` dev dependency. The full
+license text travels with this repository in
+[NOTICE-flag-icons.txt](NOTICE-flag-icons.txt).

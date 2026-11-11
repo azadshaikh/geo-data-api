@@ -223,6 +223,7 @@
               const option = document.createElement("option");
               option.value = country.iso2.toLowerCase();
               option.textContent = country.name;
+              option.dataset.flag = country.iso2.toLowerCase();
               searchCountry.append(option);
             }
             if (!searchCountry.options.length)
@@ -234,6 +235,7 @@
               ? "br"
               : searchCountry.options[0].value;
             searchCountry.disabled = false;
+            window.FlagSelect?.refresh(searchCountry);
             searchButton.disabled = false;
             return runSearch();
           })

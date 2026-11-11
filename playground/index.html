@@ -16,6 +16,7 @@
       rel="stylesheet"
     />
     <script src="https://cdn.tailwindcss.com"></script>
+    <script src="./flag-select.js" defer></script>
     <script src="./contact.js" defer></script>
     <script src="./examples.js" defer></script>
     <style>
@@ -105,6 +106,8 @@
           32px 32px;
       }
     </style>
+    <link rel="stylesheet" href="./assets/flag-icons.css" />
+    <link rel="stylesheet" href="./flag-select.css" />
   </head>
   <body class="min-h-screen bg-[#f5f7f2] text-[#173229] antialiased">
     <svg xmlns="http://www.w3.org/2000/svg" class="hidden" aria-hidden="true">
@@ -613,6 +616,8 @@
                       ><select
                         id="country-select"
                         class="field"
+                        data-combobox
+                        data-placeholder="Search countries"
                         autocomplete="country"
                         required
                       >
@@ -672,6 +677,9 @@
                         <select
                           id="country-code-select"
                           class="field max-w-[145px]"
+                          data-combobox
+                          data-placeholder="Code"
+                          data-combobox-popup="wide"
                           aria-label="Phone country code"
                         >
                           <option value="">Country code</option></select
@@ -856,7 +864,13 @@ const { data } = await response.json();</code></pre>
                       class="mb-2 block text-xs font-bold text-[#405e4b]"
                       for="search-country"
                       >Country</label
-                    ><select id="search-country" class="field" disabled>
+                    ><select
+                      id="search-country"
+                      class="field"
+                      data-combobox
+                      data-placeholder="Search countries"
+                      disabled
+                    >
                       <option>Loading countries…</option>
                     </select>
                   </div>
@@ -1173,6 +1187,10 @@ const { data } = await response.json();</code></pre>
             class="hover:text-[#216c47]"
             href="https://github.com/azadshaikh/geo-data-api"
             >GitHub</a
+          ><a
+            class="hover:text-[#216c47]"
+            href="https://github.com/lipis/flag-icons"
+            >Flags by flag-icons (MIT)</a
           ><a
             class="hover:text-[#216c47]"
             href="https://opensource.org/licenses/MIT"

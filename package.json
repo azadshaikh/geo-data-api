@@ -16,6 +16,7 @@
     "contracts": "node scripts/generate-contracts.js",
     "contracts:check": "node scripts/generate-contracts.js --check",
     "data:import": "node scripts/import-upstream.js",
+    "vendor:flags": "node scripts/vendor-flags.js",
     "build": "node src/data-processor.js && npm run build:demo",
     "build:pretty": "node src/data-processor.js --pretty",
     "build:compress": "node src/data-processor.js --compress && npm run build:demo",
@@ -49,6 +50,7 @@
     "ATTRIBUTION.md",
     "NOTICE-SOURCES.txt",
     "NOTICE-Unicode-3.0.txt",
+    "NOTICE-flag-icons.txt",
     "dist/api/v2/",
     "dist/index.html",
     "dist/404.html",
@@ -85,6 +87,7 @@
   },
   "devDependencies": {
     "ajv": "^8.20.0",
+    "flag-icons": "^7.6.0",
     "prettier": "^3.6.2",
     "typescript": "5.9.3"
   }

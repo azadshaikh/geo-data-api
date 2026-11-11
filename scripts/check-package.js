@@ -27,6 +27,7 @@ for (const required of [
   "LICENSE-DATA",
   "NOTICE-SOURCES.txt",
   "NOTICE-Unicode-3.0.txt",
+  "NOTICE-flag-icons.txt",
   "src/data-processor.js",
   "src/config.js",
   "src/api-contract.js",
